@@ -48,8 +48,9 @@ function raidPlans(seed,deepest,vein){const out=[];for(let f=1;f<=deepest;f++)ou
 // A raid that ends early still had the whole Rootworks laid out, so its first three floors always count.
 function signature(plans){const ev=plans.find(p=>p.event);return`${plans.length>3?plans[3].vein:'rootworks'}|${plans.map(p=>p.layout).join('>')}|${ev?ev.event+'@'+ev.f:'-'}`}
 // The parts a seed decides before anyone knows how deep the raid will go: the Rootworks and each vein's floors.
-const seedKeys=seed=>{const ev=raidEvent(seed),e=ev?ev.id+'@'+ev.floor:'-';
-  return['root|'+[1,2,3].map(f=>floorLayout(seed,f,'rootworks')).join('>')+'|'+e,...DEEP.map(v=>v+'|'+[4,5,6].map(f=>floorLayout(seed,f,v)).join('>'))]};
+// An event below Floor 3 only shows in a raid that goes that deep, so it belongs to the vein keys, not the Rootworks key.
+const seedKeys=seed=>{const ev=raidEvent(seed),e=ev?ev.id+'@'+ev.floor:'-',shallow=!ev||ev.floor<=3;
+  return['root|'+[1,2,3].map(f=>floorLayout(seed,f,'rootworks')).join('>')+'|'+(shallow?e:'-'),...DEEP.map(v=>v+'|'+[4,5,6].map(f=>floorLayout(seed,f,v)).join('>')+(shallow?'':'|'+e))]};
 
 /* ---------- variety: pick a seed whose combinations are fresh ---------- */
 function bloomState(){return S.bloom||(S.bloom=newBloom())}
@@ -69,7 +70,7 @@ function rememberSeed(seed){
 }
 
 /* ---------- veins ---------- */
-const veinBlock=(vein,partyTypes)=>{const k=B.VEINS[vein].key;return k&&!partyTypes.includes(k)?`Needs a ${TYPES[k].name} in your party`:''};
+const veinBlock=(vein,partyTypes)=>{const k=B.VEINS[vein].key;return k&&!partyTypes.includes(k)?`Needs ${/^[AEIOU]/.test(TYPES[k].name)?'an':'a'} ${TYPES[k].name} in your party`:''};
 function pickBoss(vein,tier){return vein==='unbound'?unboundBoss(tier||1):pick(BOSS_IDS.filter(b=>(BOSSES[b].vein||'rootworks')===vein))}
 // Wild creatures in a vein lean toward its types; Venom only lives in the Sump (or wherever the Apothecary's T2 lets it).
 function wildTypeWeight(t,floor,vein,lair,mapMul){

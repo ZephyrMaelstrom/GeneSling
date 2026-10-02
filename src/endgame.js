@@ -7,7 +7,7 @@
      - the Archive's rune translation with a Lumen creature, from relics found deep down,
      - Renown, weekly shows, the weekly Deepening and 90-day seasons.
    Numbers live in src/data/endgame.json. */
-import {ENDGAME as E,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS} from './content.js';
+import {LORE,ENDGAME as E,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS} from './content.js';
 import {S,addLog,byId,lineOf,makeCreature,recordLineage,stats,unplace} from './state.js';
 import {mixSeed,rand,withSeed} from './rng.js';
 import {pick,ri} from './util.js';
@@ -98,10 +98,12 @@ function knownLetters(){const s=new Set();E.RELICS.slice(0,S.archive.read).forEa
 const runeWall=text=>{const k=knownLetters();return[...text].map(ch=>ch===' '?' ':k.has(ch)?ch:runeOf(ch)).join('')};
 const archivist=()=>{const c=byId(S.archive.archivist);return c&&(c.type==='lumen'||c.type2==='lumen')?c:null};
 // Each day a Lumen archivist translates one relic.
+// A Lumen archivist reads a relic a day. Without one, Odile Quill (once she has arrived) reads one every few days.
 function archiveDay(notes){
-  const A=S.archive;if(!archivist()||!A.unread||A.read>=E.RELICS.length)return;
-  const n=Math.min(A.unread,E.ARCHIVE.perDay);A.unread-=n;
-  for(let i=0;i<n&&A.read<E.RELICS.length;i++){const r=E.RELICS[A.read++];notes.push(`${archivist().name} translated the ${r.name.toLowerCase()} in the Archive.`)}
+  const A=S.archive,ar=archivist(),odile=!ar&&S.npc&&S.npc.odile&&S.day%LORE.ARCHIVE.odileEvery===0;
+  if((!ar&&!odile)||!A.unread||A.read>=E.RELICS.length)return;
+  const who=ar?ar.name:'Odile Quill',n=Math.min(A.unread,E.ARCHIVE.perDay);A.unread-=n;
+  for(let i=0;i<n&&A.read<E.RELICS.length;i++){const r=E.RELICS[A.read++];notes.push(`${who} translated the ${r.name.toLowerCase()} in the Archive.`)}
 }
 
 /* ---------- breeding tools ---------- */
@@ -150,7 +152,8 @@ function renown(){
   const mastered=Object.keys(S.mastery||{}).filter(k=>masteryLevel(k)>=3).length;
   const craft=mastered*RN.recipeMastered+(S.renownLog.legendary||0)*RN.legendary;
   const st=story();
-  const collection=(S.dex.claimed||0)*RN.milestone+(S.archive.read||0)*RN.relic+Object.keys(st.endings).length*RN.ending+(st.ilsa?RN.ilsa:0);
+  const lore=S.lore?S.lore.pages.length+S.lore.walls.length+S.lore.whispers.length:0;
+  const collection=(S.dex.claimed||0)*RN.milestone+(S.archive.read||0)*RN.relic+Object.keys(st.endings).length*RN.ending+(st.ilsa?RN.ilsa:0)+lore*LORE.ARCHIVE.fragmentRenown;
   return{depth,genetics,craft,collection,total:depth+genetics+craft+collection};
 }
 

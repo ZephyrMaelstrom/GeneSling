@@ -1,6 +1,6 @@
 /* ================= Creature sprites: one body per species, evolution adornments per stage ================= */
 import {esc} from './util.js';
-import {BOSSES,FOES,GENETICS,LINES,NPCS,SPECIES,TYPES,typesOf} from './content.js';
+import {LORE,BOSSES,FOES,GENETICS,LINES,NPCS,SPECIES,TYPES,typesOf} from './content.js';
 import {S,byId,formName,lineage,sexSym} from './state.js';
 import {drawBossBody,drawFoeBody} from './draw.js';
 const OL='#160f2c';
@@ -285,6 +285,24 @@ function drawPerson(g,id,x,y,s,t){
   g.fillStyle=OL;if(id!=='sorrel'){g.fillRect(-3,-9,2,2);g.fillRect(2,-9,2,2)}
   g.restore();
 }
+// A mural, painted from its palette and motif; more of it appears with each act.
+function paintMural(g,w,h,m,stage){
+  const [a,b,c]=m.pal,k=stage+1;
+  const sky=g.createLinearGradient(0,0,0,h);sky.addColorStop(0,b);sky.addColorStop(1,a);g.fillStyle=sky;g.fillRect(0,0,w,h);
+  g.fillStyle='rgba(0,0,0,.18)';for(let x=0;x<w;x+=22)g.fillRect(x,0,1,h);
+  g.strokeStyle=c;g.fillStyle=c;g.lineWidth=2;
+  const fig=(x,y,s)=>{g.beginPath();g.arc(x,y-s*1.6,s*.6,0,7);g.fill();g.fillRect(x-s*.4,y-s,s*.8,s*1.4)};
+  if(m.motif==='ring'){g.beginPath();g.arc(w/2,h*.62,6+k*3,0,7);g.fill();for(let i=0;i<k*4;i++){const t=i/(k*4)*Math.PI*2;fig(w/2+Math.cos(t)*(30+k*4),h*.66+Math.sin(t)*14,4)}}
+  if(m.motif==='sky'){g.fillStyle=k>=3?'#7fd860':'#8a8a9a';g.fillRect(0,0,w,h*.45);g.fillStyle=c;for(let i=0;i<(k>=2?6:0)+(k>=4?10:0);i++)fig(20+i*12,h*.85,4);g.fillStyle='#17122e';g.beginPath();g.arc(w*.85,h,28,Math.PI,0);g.fill()}
+  if(m.motif==='pair'){fig(w*.35,h*.8,k<2?7:0);g.beginPath();g.arc(w*.55,h*.75,8+(k>=3?10:0),Math.PI,0);g.fill();if(k>=3){g.beginPath();for(let i=0;i<5;i++){g.moveTo(w*.55,h*.75);g.lineTo(w*.4+i*14,h)}g.stroke()}}
+  if(m.motif==='thread'){fig(w*.3,h*.8,7);if(k>=3)fig(w*.6,h*.8,7);g.strokeStyle='#ff6688';g.beginPath();g.moveTo(w*.3,h*.65);g.lineTo(w*.3,h);if(k>=3){g.moveTo(w*.6,h*.65);g.lineTo(w*.6,h)}if(k>=4){g.clearRect(w*.3-3,h*.86,6,4);g.clearRect(w*.6-3,h*.86,6,4)}g.stroke()}
+  if(m.motif==='three'){for(let i=0;i<3+(k>=4?1:0);i++){const x=w*.2+i*w*.2;if(k>=2){g.beginPath();g.arc(x,h*.4,7,Math.PI,0);g.stroke()}if(!(k===3&&i===2))fig(x,h*.85,6)}}
+  if(m.motif==='map'){const rows=Math.min(k,4);for(let i=0;i<rows;i++){g.strokeRect(w*.15+i*8,10+i*18,w*.7-i*16,14)}if(k>=4){g.beginPath();g.ellipse(w/2,h*.88,10,6,0,0,7);g.fill()}}
+  if(m.motif==='hand'){const n=k>=2?Math.min(40,k*10):1;for(let i=0;i<n;i++){const x=12+(i*37)%(w-24),y=14+((i*53)%(h-28));g.globalAlpha=i?.55:1;g.fillRect(x-4,y-5,8,10);g.fillRect(x-5,y-11,2,6);g.fillRect(x-1,y-12,2,7);g.fillRect(x+3,y-11,2,6)}g.globalAlpha=1}
+  if(m.motif==='hills'){g.fillStyle='#2a6a3a';g.beginPath();g.ellipse(w*.3,h,w*.4,h*.45,0,Math.PI,0);g.ellipse(w*.8,h,w*.35,h*.35,0,Math.PI,0);g.fill();g.fillStyle=c;for(let i=0;i<(k>=2?6:3);i++)g.fillRect(w*.15+i*22,h*.75,4,4);
+    if(k>=3){g.fillStyle='rgba(10,6,30,.6)';g.beginPath();g.ellipse(w/2,h*.95,w*.4,h*.18,0,0,7);g.fill()}if(k>=4){g.fillStyle='#ffcf4a';g.beginPath();g.ellipse(w*.62,h*.93,6,2.5,0,0,7);g.fill()}}
+}
+
 function paintSprites(root){
   const dpr=window.devicePixelRatio||1;
   root.querySelectorAll('canvas.spr').forEach(cv=>{
@@ -295,6 +313,7 @@ function paintSprites(root){
     if(cv.dataset.boss){drawBossBody(g,BOSSES[cv.dataset.boss],w/2,h/2+2,w/110,0,false);if(cv.dataset.sil)silhouette(g,w,h);return}
     if(cv.dataset.foe){drawFoeBody(g,FOES[cv.dataset.foe],w/2,h/2+2,w/44,0,{});if(cv.dataset.sil)silhouette(g,w,h);return}
     if(cv.dataset.npc){drawPerson(g,cv.dataset.npc,w/2,h/2+4,w/40,0);return}
+    if(cv.dataset.mural){const m=LORE.MURALS.find(x=>x.id===cv.dataset.mural);if(m)paintMural(g,w,h,m,+cv.dataset.stage||0);return}
     let c=null;
     if(cv.dataset.sp){const sp=cv.dataset.sp,S0=SPECIES[sp];c={species:sp,type:S0.hybrid?S0.types[0]:S0.type,type2:S0.hybrid?S0.types[1]:null,stage:+cv.dataset.st||0}}
     else if(cv.dataset.cid)c=byId(+cv.dataset.cid)||(cv.dataset.mem?null:null);
@@ -329,4 +348,4 @@ function drawSigil(g,sig,x,y,r,alpha=1){
 }
 const sigilSvg=(sig,size=22)=>sig?`<svg class="sigil" width="${size}" height="${size}" viewBox="-11 -11 22 22" aria-label="Breeder's sigil"><path d="${SIGIL_PATHS[sig.shape]||SIGIL_PATHS.shield}" fill="${sig.color}" stroke="${OL}" stroke-width="1.6"/><text x="0" y="${sig.shape==='shield'?3.5:4}" text-anchor="middle" font-size="10" font-weight="700" fill="${OL}">${esc(sig.glyph||'')}</text></svg>`:'';
 
-export {SIGIL_PATHS,drawSigil,sigilSvg,OL,hueShift,drawPattern,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};
+export {SIGIL_PATHS,drawSigil,sigilSvg,OL,hueShift,drawPattern,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintMural,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};

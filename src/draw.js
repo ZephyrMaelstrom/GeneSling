@@ -1,6 +1,6 @@
 /* ---------- drawing ---------- */
 import {$,TOUCH,clamp,dist,esc,fxRnd} from './util.js';
-import {ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} from './content.js';
+import {LORE,ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} from './content.js';
 import {loadSave,migrate,save} from './save.js';
 import {S,formName,newGame,secTier,setS,sexSym,stats,supportText} from './state.js';
 import {itemName} from './jobs.js';
@@ -11,6 +11,7 @@ import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,rele
 import {startMarket} from './exchange/market.js';
 import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
+import {runeWall} from './endgame.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -30,9 +31,8 @@ function goLandscape(){
   }catch(e){}
 }
 // Belt and braces for browsers that still scroll a pinned page: swallow every touch drag mid-raid.
-// Menus in a raid (the ⚙ menu, the peddler, shrines, the vein choice, the arena panel and pop-ups) still scroll.
-const SCROLLERS='#pauseBox,#modalBox,#arenaPanel';
-document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding')&&!(e.target.closest&&e.target.closest(SCROLLERS)))e.preventDefault()},{passive:false});
+// Nothing in a raid scrolls: its menus are laid out to fit the screen at once (see fitOverlay).
+document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
 function resize(){
   const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
@@ -113,6 +113,9 @@ function draw(){
     if(r.kind==='portal'){zone(r.cx-80,r.cy,'#9b7bff','RIFT HOME');if(r.deep)zone(r.cx+80,r.cy,'#ff5c7a',M.floor===3?'THE VEINS ↓':M.floor===6?'UNDERHEART ↓':'THE HEART ↓')}
     if(r.kind==='shop'){drawPeddler(g,r.cx,r.cy,t);g.fillStyle='#ffcf4a';g.fillText('PEDDLER',r.cx,r.cy-34)}
     if(r.kind==='shrine'){drawShrine(g,r.cx,r.cy,t,r.used);g.fillStyle=r.used?'#b4a9d8':'#5de8b0';g.fillText(r.used?'SHRINE (USED)':'SHRINE',r.cx,r.cy-36)}
+    if(r.rune)drawRuneWall(g,r,t);
+    if(r.page){const pg=r.page,b=Math.sin(t*3)*2;g.save();g.translate(pg.x,pg.y+b);g.rotate(-.15);g.fillStyle='#f2e6c8';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(-9,-12,18,24);g.strokeRect(-9,-12,18,24);
+      g.fillStyle='#8a7a5a';for(let k=-6;k<9;k+=4)g.fillRect(-6,k,12,1.5);g.restore();g.globalAlpha=.35+.25*Math.sin(t*4);g.strokeStyle='#fff3a8';g.beginPath();g.arc(pg.x,pg.y,18,0,7);g.stroke();g.globalAlpha=1}
     if(r.chest){const c=r.chest;g.fillStyle=c.open?'#5c4a2a':c.rich?'#ffcf4a':'#c98a2b';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(c.x-14,c.y-10,28,20);g.strokeRect(c.x-14,c.y-10,28,20);g.fillStyle=c.open?'#3a2e1a':c.rich?'#fff6c8':'#ffcf4a';g.fillRect(c.x-14,c.y-10,28,6);g.fillRect(c.x-3,c.y-4,6,6)}
   });
   R.items.forEach(it=>{
@@ -160,6 +163,15 @@ function draw(){
       g.fillStyle=c+(tc?'.55)':'.18)');g.beginPath();g.arc(kx,ky,rr*.4,0,7);g.fill();
     });
   }
+}
+// A rune wall: a carved slab along the top of the room. Letters the Archive has translated show as plain text.
+function drawRuneWall(g,r,t){
+  const w=LORE.WALLS.find(x=>x.id===r.rune);if(!w)return;
+  const txt=runeWall(w.text),x=r.cx,y=r.oy*TS+TS*1.5,wd=Math.min(RW*TS-60,Math.max(160,txt.length*10+30));
+  g.save();g.fillStyle='#3a3450';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(x-wd/2,y-16,wd,32);g.strokeRect(x-wd/2,y-16,wd,32);
+  g.fillStyle='#2a2440';g.fillRect(x-wd/2+4,y-12,wd-8,24);
+  const seen=r.loreSeen;g.globalAlpha=seen?1:.6+.3*Math.sin(t*2);g.fillStyle=seen?'#c8b8ff':'#9b7bff';g.font='600 15px "Noto Sans Runic","Segoe UI Historic","Pixelify Sans",monospace';g.textAlign='center';g.textBaseline='middle';
+  g.fillText(txt,x,y+1,wd-14);g.restore();g.textBaseline='alphabetic';g.font='600 12px "Pixelify Sans", monospace';g.textAlign='center';
 }
 function drawPeddler(g,x,y,t){
   g.save();g.translate(x,y);g.strokeStyle=OL;g.lineWidth=2;
@@ -291,7 +303,16 @@ function loop(ts){
   draw();hudT+=dt;if(hudT>.1){hudT=0;updHud()}
   raf=requestAnimationFrame(loop);
 }
-function showOverlay(html){R.paused=true;R.firing=false;keys.clear();touch.move=touch.aim=null;$('#pause').hidden=false;$('#pauseBox').innerHTML=html}
+// Raid menus never scroll. Each is laid out in landscape columns; if one still runs past the screen
+// (a long buff list, a small window) its contents are zoomed down a step at a time until it fits.
+function showOverlay(html){R.paused=true;R.firing=false;keys.clear();touch.move=touch.aim=null;$('#pause').hidden=false;$('#pauseBox').innerHTML=`<div class="ov">${html}</div>`;fitOverlay()}
+function fitOverlay(){
+  const box=$('#pauseBox'),ov=box.firstElementChild;if(!ov)return 1;
+  let z=1;ov.style.zoom='';
+  const over=()=>box.scrollHeight>box.clientHeight+1||box.scrollWidth>box.clientWidth+1;
+  while(over()&&z>.56){z=+(z-.06).toFixed(2);ov.style.zoom=z}
+  box.scrollTop=0;return z;
+}
 /* ---------- the raid menu (⚙, or Esc): backpack, creatures, weapons and settings; the raid waits while it's open ---------- */
 const MENU_TABS=[['bag','Backpack'],['party','Creatures'],['gear','Weapons'],['options','Settings']];
 function setPause(on){
@@ -300,41 +321,40 @@ function setPause(on){
 }
 function menuHtml(){
   const t=R.menuTab||'bag',where=R.mode==='arena'?'Arena':R.mode==='tutorial'?'Tutorial':`Floor ${R.map.floor}`;
-  return`<div class="row" style="justify-content:space-between"><h2>${where} · paused</h2><button class="btn primary" data-p="resume">Resume</button></div>
-    <div class="mtabs" role="tablist">${MENU_TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${t===k}" data-p="mtab" data-k="${k}">${l}</button>`).join('')}</div>
+  return`<div class="ovhead"><h2>${where}</h2><div class="mtabs" role="tablist">${MENU_TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${t===k}" data-p="mtab" data-k="${k}">${l}</button>`).join('')}</div><button class="btn primary" data-p="resume">Resume</button></div>
     ${({bag:menuBag,party:menuParty,gear:menuGear,options:menuOptions})[t]()}`;
 }
 function menuBag(){
   const b=R.bag,used=bagUsed(),it=(label,v)=>`<div class="mitem ${v?'':'empty'}"><span>${label}</span><b>${v}</b></div>`;
-  const bl=Object.entries(R.buffs).map(([k,n])=>`<li><b>${BUFFS[k].name}${n>1?' ×'+n:''}</b> · ${BUFFS[k].desc}</li>`).join('')+[...R.curses].map(k=>`<li style="color:var(--rose)"><b>${CURSES[k].name}</b> · ${CURSES[k].desc}</li>`).join('');
-  return`<p class="status">Bag ${used}/${R.bagCap} slots${R.satchel?' with your satchel':''}. Everything here is lost if you fall.</p><div class="bagbar"><i style="width:${Math.min(100,used/Math.max(1,R.bagCap)*100)}%"></i></div>
+  const bl=Object.entries(R.buffs).map(([k,n])=>`<li><b>${BUFFS[k].name}${n>1?' ×'+n:''}</b> ${BUFFS[k].desc}</li>`).join('')+[...R.curses].map(k=>`<li class="bad"><b>${CURSES[k].name}</b> ${CURSES[k].desc}</li>`).join('');
+  return`<div class="ovcols c2"><div class="ovcol"><p class="status">Bag ${used}/${R.bagCap} slots${R.satchel?' with your satchel':''}. Everything here is lost if you fall.</p><div class="bagbar"><i style="width:${Math.min(100,used/Math.max(1,R.bagCap)*100)}%"></i></div>
     <div class="mgrid">${it('Coin',b.coin)}${it('Ore',b.ore)}${it('Food',b.food)}${it('Hide',b.hide)}${it('Crystal dust',b.dust)}${it('Tonics',R.tonics)}${it('Cages',R.mode==='arena'?'∞':R.cages.basic)}${it('Gilded cages',R.cages.gilded)}</div>
-    ${R.prints.length?`<h3>Prints</h3><ul class="plain">${R.prints.map(id=>`<li>${GUNS[id].name}</li>`).join('')}</ul>`:''}
-    ${bl?`<h3>Buffs and pacts</h3><ul class="plain">${bl}</ul>`:''}
-    <p class="status">${R.caught||0} caught this raid · Keeper XP so far ${R.kxp}</p>`;
+    <p class="status">${R.caught||0} caught this raid · Keeper XP so far ${R.kxp}</p></div>
+    <div class="ovcol"><h3>Buffs and pacts</h3>${bl?`<ul class="ovlist">${bl}</ul>`:'<p class="status">None yet. Shrines and the peddler sell them.</p>'}
+    ${R.prints.length?`<h3>Prints</h3><p class="status">${R.prints.map(id=>GUNS[id].name).join(' · ')}</p>`:''}</div></div>`;
 }
 function menuParty(){
   const card=slot=>{
-    const m=slot===2?R.slot3:R.comps[slot],label=slot===2?'Slot 3':`Combat slot ${slot+1}`;
+    const m=slot===2?R.slot3:R.comps[slot],label=slot===2?'Slot 3':`Combat ${slot+1}`;
     if(!m)return`<div class="mcre"><b>${label}</b><span class="status">${slot===2?'Free for a catch':'Empty'}</span></div>`;
     const c=m.c,caught=c.captureRaid===R.id,down=slot<2&&m.downed;
     const hp=slot===2?c.hp/stats(c).hp:m.hp/m.maxHp,armed=R.releaseArm===slot;
     const what=slot===2?(caught?'Caught this raid':`Support: ${supportText(c)}`):`Skill ${slot+1}: ${ABILITIES[m.st.abilId].name}${m.abil>0?` (${Math.ceil(m.abil)}s)`:''}`;
-    const btns=(slot===2?`<button class="btn small" data-p="swap" data-i="0">To combat slot 1</button><button class="btn small" data-p="swap" data-i="1">To combat slot 2</button>`:'')
-      +(canRelease(slot)?`<button class="btn small ${armed?'danger':''}" data-p="release" data-i="${slot}">${armed?`Confirm: release ${esc(c.name)}`:'Release'}</button>`:'');
-    return`<div class="mcre ${caught?'caught':''} ${down?'down':''}"><div><b>${label}: ${esc(c.name)}</b> <small class="status">${esc(formName(c))} · Lv ${c.level} · ${TYPES[c.type].name}${c.type2?'/'+TYPES[c.type2].name:''}${down?' · down':''}</small></div>
+    const btns=(slot===2?`<button class="btn small" data-p="swap" data-i="0">To combat 1</button><button class="btn small" data-p="swap" data-i="1">To combat 2</button>`:'')
+      +(canRelease(slot)?`<button class="btn small ${armed?'danger':''}" data-p="release" data-i="${slot}">${armed?`Confirm: release`:'Release'}</button>`:'');
+    return`<div class="mcre ${caught?'caught':''} ${down?'down':''}"><b>${label}: ${esc(c.name)}</b><small class="status">${esc(formName(c))} · Lv ${c.level} · ${TYPES[c.type].name}${c.type2?'/'+TYPES[c.type2].name:''}${down?' · down':''}</small>
       <div class="bagbar"><i style="width:${clamp(hp,0,1)*100}%;background:var(--rose)"></i></div><span class="status">${what}</span>
-      ${armed&&S.creatures.includes(c)?`<p class="status" style="color:var(--rose)">${esc(c.name)} is from your roster. Released, it leaves for good unless you catch it again before the raid ends.</p>`:''}
+      ${armed?`<p class="status warn">${S.creatures.includes(c)?`${esc(c.name)} is from your roster. Released, it leaves for good unless you catch it again before the raid ends.`:`${esc(c.name)} turns wild in this room.`}</p>`:''}
       ${btns?`<div class="row">${btns}</div>`:''}</div>`;
   };
-  return`<p class="hint">Slot 3 holds a catch or a support creature, and can swap into combat. To make room for a stronger catch, release one: it turns wild in this room and attacks you, and you can weaken and catch it again.</p>
-    ${[0,1,2].map(card).join('')}`;
+  return`<p class="status">Slot 3 holds a catch or a support creature and can swap into combat. Release one to make room: it turns wild in this room, and you can catch it again.</p>
+    <div class="ovcols c3">${[0,1,2].map(card).join('')}</div>`;
 }
 function menuGear(){
   const rows=[0,1].map(i=>{const id=R.guns[i];if(!id)return`<div class="mcre"><b>Weapon ${i+1}</b><span class="status">Empty</span></div>`;
     const it=R.gunItem[i];
-    return`<div class="mcre ${i===R.active?'caught':''}"><div><b>${it?esc(itemName(it)):GUNS[id].name}</b> <small class="status">${i===R.active?'in hand':'on your back'}${it?` · ${it.dur}/${it.max} durability`:id==='pistol'?' · never breaks':' · found this raid'}</small></div><span class="status">${weaponLine(GUNS[id])}</span></div>`}).join('');
-  return`${rows}${R.guns[0]&&R.guns[1]?'<div class="row"><button class="btn" data-p="switch">Switch weapon</button></div>':''}<p class="status">Weapons in your hands come home if you extract. Pick up finds by walking over them.</p>`;
+    return`<div class="mcre ${i===R.active?'caught':''}"><b>${it?esc(itemName(it)):GUNS[id].name}</b><small class="status">${i===R.active?'in hand':'on your back'}${it?` · ${it.dur}/${it.max} durability`:id==='pistol'?' · never breaks':' · found this raid'}</small><span class="status">${weaponLine(GUNS[id])}</span></div>`}).join('');
+  return`<div class="ovcols c2">${rows}</div><div class="row">${R.guns[0]&&R.guns[1]?'<button class="btn" data-p="switch">Switch weapon</button>':''}<span class="status">Weapons in your hands come home if you extract. Pick up finds by walking over them.</span></div>`;
 }
 function menuOptions(){
   const safe=R.mode==='arena'||R.mode==='tutorial';
@@ -396,7 +416,7 @@ function bindCanvas(){
     if(k==='pause'){setPause(!R.paused);return}if(R.paused)return;
     if(k==='roll')doRoll();if(k==='q')useAbility(0);if(k==='e')useAbility(1);if(k==='cage')useCage();if(k==='s1')swapSlot3(0);if(k==='s2')swapSlot3(1);if(k==='gun')switchGun();if(k==='use')interact();if(k==='combo')useCombo()});
 }
-window.addEventListener('resize',()=>{if(cv)resize()});
+window.addEventListener('resize',()=>{if(cv)resize();if(R&&!$('#pause').hidden)fitOverlay()});
 
 /* ================= Boot ================= */
 async function start(data){
@@ -415,4 +435,4 @@ function boot(){
   return new Promise(res=>{const go=d=>res(start(d));if(window.claude?.hot?.ready)window.claude.hot.ready(go);else go(window.claude?.hot?.data??{})});
 }
 
-export {goLandscape,ctx,cv,mini,mctx,lockPage,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};
+export {goLandscape,ctx,cv,mini,mctx,lockPage,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,fitOverlay,setPause,bindCanvas,start,boot};

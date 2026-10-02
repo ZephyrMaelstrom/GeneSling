@@ -18,6 +18,7 @@ import {ENDGAME as ED} from './content.js';
 import {chooseEnding,rulesFor,tethered,unboundMods} from './endgame.js';
 import {OL,drawCreature} from './sprites.js';
 import {drawPeddler,showOverlay,setPause} from './draw.js';
+import {onEnding} from './lore.js';
 import {mutateGenome} from './genetics.js';
 import {sfx} from './audio.js';
 
@@ -60,10 +61,10 @@ function floorStart(){
 function openVeinChoice(){
   const types=partyCreatures().flatMap(c=>[c.type,c.type2].filter(Boolean));
   const cards=B.VEIN_ORDER.map(v=>{const V=B.VEINS[v],why=veinBlock(v,types);
-    return`<div class="mcre" style="box-shadow:0 0 0 2px ${why?'var(--line)':V.col}"><div><b style="color:${V.col}">${V.name}</b>${V.key?` <small class="status">key: ${TYPES[V.key].name}</small>`:''}</div>
-      <span class="status">${V.blurb}</span>
-      <div class="row"><button class="btn small ${why?'':'primary'}" data-p="vein" data-k="${v}" ${why?'disabled':''}>${why||'Go down'}</button></div></div>`}).join('');
-  showOverlay(`<h2>Five veins below</h2><p class="hint">Choose where floors 4 to 6 take you. Three veins need a creature of their key type in your party, slot 3 included. Everything there hits much harder: +6 minutes on the clock.</p>${cards}<button class="btn" data-p="resume">Not yet</button>`);
+    return`<div class="mcre" style="box-shadow:0 0 0 2px ${why?'var(--line)':V.col}"><b style="color:${V.col}">${V.name}</b>${V.key?`<small class="status">Key: ${TYPES[V.key].name}</small>`:'<small class="status">No key needed</small>'}
+      <small class="grow">${V.blurb}</small>
+      <button class="btn small ${why?'':'primary'}" data-p="vein" data-k="${v}" ${why?'disabled':''}>${why||'Go down'}</button></div>`}).join('');
+  showOverlay(`<div class="ovhead"><h2>Five veins below</h2><span class="status">Floors 4 to 6. Three veins need their key type in your party, slot 3 included. Everything hits much harder: +6 minutes on the clock.</span><button class="btn" data-p="resume">Not yet</button></div><div class="ovcols c5">${cards}</div>`);
 }
 function chooseVein(v){
   const types=partyCreatures().flatMap(c=>[c.type,c.type2].filter(Boolean));
@@ -81,11 +82,11 @@ function enterUnderheart(){
 // A Bloomlord that copies your party sends shadows first.
 function lordShadows(b){const r=b.room;for(const m of R.comps){if(!m||m.downed)continue;const c=structuredClone(m.c);c.name='Shade of '+c.name;const e=wildEnemy(spawnPos(r),c,r);e.shadow=true;e.hp=e.maxHp=Math.round(e.maxHp*ED.LORDS.mirror.hp*3)}}
 function openEndingChoice(){
-  const cards=Object.entries(ED.ENDINGS).map(([k,D])=>`<div class="mcre" style="box-shadow:0 0 0 2px ${D.col}"><b style="color:${D.col}">${D.name}</b><span class="status">${D.desc}</span>
-    <span class="status">Afterwards: ${D.unbound.desc} Title: ${D.title}.</span><div class="row"><button class="btn small primary" data-p="ending" data-k="${k}">${D.name} the Bloom</button></div></div>`).join('');
-  showOverlay(`<h2>The Heart</h2><p class="hint">Ilsa is beside you. The Bloom is quiet, and listening. What will you do with it?</p>${cards}<p class="status">Whatever you choose, the Bloom re-forms as the Unbound Bloom, twenty tiers deep. You can come back to the Heart and choose again.</p>`);
+  const cards=Object.entries(ED.ENDINGS).map(([k,D])=>`<div class="mcre" style="box-shadow:0 0 0 2px ${D.col}"><b style="color:${D.col}">${D.name}</b><small class="grow">${D.desc}</small>
+    <small class="status">Afterwards: ${D.unbound.desc} Title: ${D.title}.</small><button class="btn small primary" data-p="ending" data-k="${k}">${D.name} the Bloom</button></div>`).join('');
+  showOverlay(`<div class="ovhead"><h2>The Heart</h2><span class="status">Ilsa is beside you. The Bloom is quiet, and listening. What will you do with it?</span></div><div class="ovcols c3">${cards}</div><p class="status">Whatever you choose, the Bloom re-forms as the Unbound Bloom, twenty tiers deep. You can come back to the Heart and choose again.</p>`);
 }
-function pickEnding(k){if(!chooseEnding(k))return false;setPause(false);msg(`You ${ED.ENDINGS[k].name.toLowerCase()} the Bloom. Step into the rift to go home, ${ED.ENDINGS[k].title}.`);return true}
+function pickEnding(k){if(!chooseEnding(k))return false;onEnding();setPause(false);msg(`You ${ED.ENDINGS[k].name.toLowerCase()} the Bloom. Step into the rift to go home, ${ED.ENDINGS[k].title}.`);return true}
 
 /* ---------- each frame ---------- */
 const inRoom=(r,x,y)=>r&&x>=r.ox*TS&&x<=(r.ox+RW)*TS&&y>=r.oy*TS&&y<=(r.oy+RH)*TS;

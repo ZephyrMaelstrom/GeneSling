@@ -101,13 +101,13 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 7 · Lore (weeks 18 to 31, alongside 5 and 6)
 
-- [ ] Write Ilsa's 30 journal pages
-- [ ] Write the 40 Old Keeper relics and 20 boss memories
-- [ ] Write the 15 whispers and 8 murals
-- [ ] Rewrite codex entries for every evolution
-- [ ] Write the six NPC quest arcs
-- [ ] Design the rune alphabet and write every rune wall
-- [ ] Exit test: the fragments tell the story in order, and the cipher can be broken
+- [x] Write Ilsa's 30 journal pages
+- [x] Write the 40 Old Keeper relics and 20 boss memories
+- [x] Write the 15 whispers and 8 murals
+- [x] Rewrite codex entries for every evolution
+- [x] Write the six NPC quest arcs
+- [x] Design the rune alphabet and write every rune wall
+- [x] Exit test: the fragments tell the story in order, and the cipher can be broken
 
 ### Phase 8 · Balance and playtest (weeks 32 to 36)
 

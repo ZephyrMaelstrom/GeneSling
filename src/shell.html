@@ -199,6 +199,9 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 /* modal */
 #modal{position:fixed;inset:0;z-index:80;background:rgba(8,5,20,.78);display:flex;align-items:center;justify-content:center;padding:16px}
 #modal .box{background:var(--panel);box-shadow:0 0 0 2px var(--gold-d),6px 6px 0 0 var(--deep);padding:18px;width:min(560px,100%);max-height:86vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+#modal .box.wide{width:min(880px,100%)}
+.report{display:grid;gap:8px 16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));align-items:start}
+.rsec{display:flex;flex-direction:column;gap:4px;min-width:0}
 .choose-list{display:flex;flex-direction:column;gap:8px}
 .choice{display:flex;gap:10px;align-items:center;background:var(--deep);border:0;box-shadow:0 0 0 2px var(--line);padding:8px;cursor:pointer;text-align:left;width:100%}
 .choice:hover{box-shadow:0 0 0 2px var(--gold)}
@@ -243,16 +246,43 @@ html.raiding,html.raiding body{position:fixed;inset:0;width:100%;height:100%;ove
 #hudPrompt{max-width:100%;background:rgba(14,10,31,.9);border:0;box-shadow:0 0 0 2px var(--sky);padding:7px 12px;text-align:center;max-width:80vw;font-family:var(--display);font-size:.85rem;color:var(--ink);pointer-events:none;touch-action:none}
 #hudPrompt.tap{pointer-events:auto;background:var(--sky);color:var(--deep);box-shadow:0 0 0 2px var(--deep),0 3px 0 2px var(--deep);cursor:pointer}
 .hud-keys{left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);font-size:.78rem;color:var(--muted);background:rgba(14,10,31,.75);padding:5px 8px;max-width:60vw}
-#pause{position:absolute;inset:0;background:rgba(8,5,20,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
-#pause .box{background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:18px;display:flex;flex-direction:column;gap:10px;width:min(380px,100%);max-height:88vh;overflow:auto}
-/* Raid menus scroll with a finger even though the raid itself blocks page drags */
-#pauseBox,#modalBox,#arenaPanel{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-#arenaPanel{position:absolute;right:8px;top:calc(env(safe-area-inset-top,0px) + 136px);display:flex;flex-direction:column;gap:5px;max-width:200px;background:rgba(14,10,31,.85);box-shadow:0 0 0 2px var(--line);padding:6px 8px;max-height:34vh;overflow:auto}
-@media (min-width:700px) and (min-height:560px){#arenaPanel{top:calc(env(safe-area-inset-top,0px) + 170px);max-height:55vh}}
+/* Raid menus fill a phone held sideways and never scroll: a header row (title, tabs or a note, the way back)
+   over columns of cards. If something still runs long, fitOverlay() zooms the contents down to fit. */
+#pause{position:absolute;inset:0;background:rgba(8,5,20,.8);display:flex;align-items:center;justify-content:center;
+  padding:max(8px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:5}
+#pause .box{background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:12px 14px;width:min(900px,100%);max-height:100%;overflow:hidden;touch-action:none}
+.ov{display:flex;flex-direction:column;gap:8px}
+.ovhead{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.ovhead h2{flex:none}
+.ovhead .status{flex:1 1 200px;min-width:0}
+.ovhead>.btn{margin-left:auto;flex:none}
+.ovhead .mtabs{flex:1}
+.ovcols{display:grid;gap:8px;align-items:stretch}
+.ovcols.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ovcols.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ovcols.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ovcols.offers{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.ovcol{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ovcols .mcre{min-width:0}
+.ovcols .mcre small{font-size:.76rem;line-height:1.3}
+.ovcols .mcre .grow{flex:1;color:var(--ink)}
+.ovcols .mcre .btn{align-self:flex-start}
+.ovlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:.8rem;line-height:1.3}
+.ovlist b{font-family:var(--display);font-weight:600;color:var(--mint)}
+.ovlist li.bad b{color:var(--rose)}
+.status.warn{color:var(--rose)}
+.choice.offer{flex-direction:column;align-items:flex-start;gap:4px;height:100%}
+.choice.offer small{flex:1;font-size:.76rem;line-height:1.3}
+.choice.offer .price{font-family:var(--display);color:var(--gold)}
+@media (max-width:620px){.ovcols.c5{grid-template-columns:repeat(3,minmax(0,1fr))}.ovcols.c3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* The arena's spawn panel: a small button under the minimap that opens a no-scroll grid of label and controls rows */
+#arenaPanel{position:absolute;right:calc(env(safe-area-inset-right,0px) + 8px);top:calc(env(safe-area-inset-top,0px) + 100px);display:flex;flex-direction:column;gap:5px;background:rgba(14,10,31,.9);box-shadow:0 0 0 2px var(--line);padding:5px 8px;overflow:hidden;font-size:.8rem}
+@media (min-width:700px) and (min-height:560px){#arenaPanel{top:calc(env(safe-area-inset-top,0px) + 140px)}}
 #arenaPanel summary{font-family:var(--display);cursor:pointer;color:var(--gold)}
-#arenaPanel .ap{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:flex-start}
-#arenaPanel .lab{font-family:var(--display);font-size:.78rem;color:var(--muted);text-transform:uppercase}
-#arenaPanel .row{gap:4px}
+#arenaPanel .ap{display:grid;grid-template-columns:auto auto;gap:4px 8px;margin-top:5px;align-items:center}
+#arenaPanel .lab{font-family:var(--display);font-size:.7rem;color:var(--muted);text-transform:uppercase}
+#arenaPanel .row{gap:4px;flex-wrap:nowrap}
+#arenaPanel .btn.small{padding:3px 7px;font-size:.74rem}
 /* Touch controls, laid out for a phone held sideways: move stick bottom left, aim stick bottom right,
    skills 1 and 2 above the aim stick, the combo above them, a large Catch button left of the aim stick
    and Roll above it. Positions follow the stick (--sm from the side, --sb from the bottom, --sr radius). */
@@ -294,7 +324,8 @@ html.raiding,html.raiding body{position:fixed;inset:0;width:100%;height:100%;ove
   .hud-tr{top:calc(env(safe-area-inset-top,0px) + 6px);right:calc(env(safe-area-inset-right,0px) + 6px)}
   .ccol{top:22%}
   #raid{--tb:50px}
-  #pause .box{width:min(620px,100%);max-height:94vh;padding:12px}
+  #pause .box{width:100%;padding:10px 12px}
+  #pause h2{font-size:1.05rem}
 }
 .hud-tr{flex-direction:row;align-items:flex-start}
 #btnPause{font-size:1.2rem;line-height:1;padding:6px 10px}
@@ -453,6 +484,13 @@ input[type=range]{accent-color:var(--gold);width:100%}
 .page small{color:#7a6a4a;font-family:var(--display)}
 .page.locked{background:var(--deep);color:var(--muted);box-shadow:0 0 0 2px var(--line)}
 .page.locked h3{color:var(--muted)}
+.cipher{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px}
+.cipher span{display:flex;flex-direction:column;align-items:center;background:var(--deep);padding:3px;font-family:var(--display);font-size:.8rem;color:var(--muted)}
+.cipher b{font-size:1.1rem;color:#c8b8ff;font-family:"Noto Sans Runic","Segoe UI Historic",var(--display)}
+.mural{display:flex;flex-direction:column;gap:4px;background:var(--deep);padding:8px;box-shadow:0 0 0 2px var(--line)}
+.mural canvas.spr{width:100%!important;height:auto!important;aspect-ratio:220/96}
+.mural b{font-family:var(--display);color:var(--gold)}
+.mural p{font-size:.9rem}
 .say{margin:0;background:var(--deep);padding:12px 14px;box-shadow:inset 3px 0 0 var(--gold);font-style:italic;line-height:1.5}
 .elemrow{display:flex;flex-wrap:wrap;gap:6px}
 .choice.cursed{box-shadow:0 0 0 2px var(--rose)}
@@ -465,6 +503,32 @@ input[type=range]{accent-color:var(--gold);width:100%}
 #raid .tb.combo{background:rgba(255,207,74,.85);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
 #actCol .tb.combo{display:flex;align-items:center;justify-content:center;padding:0;gap:0}
 @media (max-width:700px){#bossBar{top:calc(env(safe-area-inset-top,0px) + 262px)!important}.ccol{top:calc(env(safe-area-inset-top,0px) + 272px)!important}.ccol.low{top:calc(env(safe-area-inset-top,0px) + 306px)!important}}
+/* Landscape first: a phone held sideways (the S23 is about 780 × 360) gets the brand and the tabs as a rail
+   down the left edge, one thin pinned row of resources, and the page in two columns beside them.
+   Hideout pages scroll; raid screens never do. */
+@media (orientation:landscape) and (max-height:500px){
+  :root{--rail:calc(96px + env(safe-area-inset-left,0px))}
+  html{font-size:15px}
+  .app{padding-left:calc(var(--rail) + 10px)}
+  .topbar{margin-left:-10px;padding-left:10px}
+  .brand{position:fixed;left:0;top:0;z-index:12;width:var(--rail);padding:6px 6px 4px max(6px,env(safe-area-inset-left,0px));background:var(--night);font-size:.95rem;border-right:2px solid var(--line)}
+  nav.tabs{position:fixed;left:0;top:28px;bottom:0;z-index:12;width:var(--rail);flex-direction:column;overflow-x:hidden;overflow-y:auto;gap:3px;
+    padding:4px 6px calc(env(safe-area-inset-bottom,0px) + 6px) max(6px,env(safe-area-inset-left,0px));background:var(--night);border-right:2px solid var(--line)}
+  .tab{padding:4px 10px;font-size:.82rem}
+  .filters{gap:4px}
+  nav.tabs .tab{text-align:left;padding:4px 7px;font-size:.78rem;flex:none}
+  header.top{padding-block:4px;border-bottom:0}
+  .res{margin-left:0}
+  .cols{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px}
+  .grid{gap:12px}
+  .card{padding:12px;gap:10px}
+  .hideout{grid-template-columns:minmax(0,180px) minmax(0,1fr);gap:12px}
+  .seclist{display:flex}
+  .secbtn{padding:6px 8px}
+  #modal{padding:8px}
+  html #modal .box{width:min(680px,100%);max-height:100%}
+  html #modal .box.wide{width:min(880px,100%)}
+}
 </style>
 
 <div class="app" id="app">

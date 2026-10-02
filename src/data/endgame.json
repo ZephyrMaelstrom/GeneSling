@@ -50,23 +50,8 @@
   },
   "ARCHIVE": {"perDay": 1},
   "RUNES": {
-    "alphabet": "ᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚴᛚᛗᚾᛟᛈᛩᚱᛋᛏᚢᚡᚹᛪᛇᛉ",
-    "walls": ["KEEP IT ASLEEP", "THE WORLD HEALED LONG AGO", "WE SANG SO IT WOULD DREAM", "THREE STAYED BELOW", "THE THIRD SINGER WAS MARROW", "WHAT DIES INSIDE GROWS BACK", "BRED TRUE THRICE THE BLOOM LETS GO"]
+    "alphabet": "ᚨᛒᚲᛞᛖᚠᚷᚺᛁᛃᚴᛚᛗᚾᛟᛈᛩᚱᛋᛏᚢᚡᚹᛪᛇᛉ"
   },
-  "RELICS": [
-    {"name": "Cracked seed-ark plaque", "letters": "KEPIT", "text": "A brass plaque: SEED ARK SEVEN. HOLD EVERYTHING UNTIL THE SKY IS KIND."},
-    {"name": "Gardener's trowel", "letters": "ASL", "text": "Worn smooth. The handle is carved with a vine wrapped around a heart."},
-    {"name": "Tether loom shuttle", "letters": "GROWB", "text": "The Old Keepers wove tethers like cloth. This one still hums."},
-    {"name": "Withering ledger", "letters": "WHDN", "text": "Columns of dead rivers and empty fields, then one line: WE GO DOWN TOMORROW."},
-    {"name": "Choir tuning fork", "letters": "SAYM", "text": "Struck, it plays the note the Choir has held for a hundred years."},
-    {"name": "Second singer's mask", "letters": "HRUC", "text": "Inside, scratched small: I AM TIRED. LET THE NEXT ONE SING."},
-    {"name": "Marrow family ring", "letters": "MAR", "text": "A ring with the Marrow crest. It is very, very old."},
-    {"name": "Sky map", "letters": "LGO", "text": "The surface as the Keepers last saw it: grey. Someone has painted it green, much later."},
-    {"name": "Tether scar cast", "letters": "TY", "text": "A plaster cast of a Keeper's wrist. The scar on it matches yours."},
-    {"name": "Hybrid breeder's notes", "letters": "BDFV", "text": "Three generations true and the Bloom stops pulling. It said so on the wall."},
-    {"name": "Lullaby sheet", "letters": "QJXZ", "text": "Sheet music with the words crossed out and rewritten: SLEEP, BUT NOT FOREVER."},
-    {"name": "Ilsa's last pen", "letters": "", "text": "Her pen, ink dried at the nib. She was writing to you."}
-  ],
   "RENOWN": {"tier": 25, "deepeningTop": [120, 60, 30], "apex": 40, "ribbon": [30, 15, 8], "hybridHatched": 4, "recipeMastered": 10, "legendary": 25, "milestone": 15, "relic": 5, "ending": 100, "ilsa": 150},
   "SHOWS": {
     "every": 7, "rivals": 5, "rivalScore": [0.55, 0.95],

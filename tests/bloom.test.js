@@ -123,7 +123,8 @@ test('vein twists: vents, rising water, the dark, wind and poison pools', async 
     // Poison pools hurt, and Sump catches mutate.
     startRaid('raid', 4, null, 'sump'); await sleep(100);
     rm = fightRoom(); await goTo(rm); R.enemies.forEach(e => { e.dmg = 0; e.fire = {kind: 'none', every: 99}; e.melee = false; });
-    const pool = rm.pools[0]; R.p.x = pool.x; R.p.y = pool.y; R.p.hp = 100; await sleep(300); out.pool = R.p.hp < 100;
+    // No companions (their healing can outpace a short sip of poison) and no invulnerability frames.
+    R.comps = [null, null]; R.slot3 = null; refreshSupport(); const pool = rm.pools[0]; R.p.x = pool.x; R.p.y = pool.y; R.p.inv = 0; R.p.hp = 100; await sleep(500); out.pool = R.p.hp < 100;
     const c = makeCreature('toxlet', 'wild', 10), g0 = JSON.stringify(c.genome); caughtExtras(c); out.mutated = JSON.stringify(c.genome) !== g0;
     endQuiet();
     return out;
@@ -275,7 +276,7 @@ test('a v10 save loads into the current version with the Apothecary on the map',
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, sec: !!S.sections.apothecary, placed: S.layout.some(i => i.key === 'apothecary'), bloom: !!S.bloom && Array.isArray(S.bloom.maps), map: S.loadout.map}));
-  assert.deepEqual(s, {v: 12, sec: true, placed: true, bloom: true, map: null});
+  assert.deepEqual(s, {v: 13, sec: true, placed: true, bloom: true, map: null});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

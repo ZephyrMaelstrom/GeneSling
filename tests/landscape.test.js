@@ -75,7 +75,7 @@ test('the menu holds the backpack, creatures, weapons and settings', async () =>
   });
   assert.equal(r.paused, true);
   assert.match(r.bag, /Ore\s*7/); assert.match(r.bag, /Tonics\s*1/); assert.match(r.bag, /Bag \d+\/\d+/);
-  assert.match(r.party, /Combat slot 1/); assert.match(r.party, /Slot 3/);
+  assert.match(r.party, /Combat 1/); assert.match(r.party, /Slot 3/);
   assert.match(r.gear, /durability|never breaks/);
   assert.equal(r.switched, true);
   assert.match(r.opts, /Abandon raid/);
@@ -120,24 +120,51 @@ test('a released roster creature is gone unless caught again before the raid end
   assert.equal(t, false, 'nothing can be released in the tutorial');
 });
 
-test('raid menus scroll with a finger, while drags on the game stay blocked', async () => {
+test('every raid menu fits the screen at once, and no drag in a raid scrolls anything', async () => {
   const r = await page.evaluate(async () => {
     S.settings.god = true; startRaid('raid', 1); await new Promise(res => setTimeout(res, 200));
+    BUFF_IDS.slice(0, 6).forEach(k => applyBuff(k, true)); applyCurse(CURSE_IDS[0]);
+    const c = makeCreature('cindlet', 'wild', 3); c.captureRaid = R.id; R.slot3 = {c};
+    const box = document.getElementById('pauseBox'), out = {};
+    const check = name => { const b = box.getBoundingClientRect();
+      out[name] = {fits: box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1, onScreen: b.top >= 0 && b.bottom <= innerHeight && b.left >= 0 && b.right <= innerWidth,
+        zoom: +(box.firstElementChild.style.zoom || 1), overflow: getComputedStyle(box).overflowY}; };
+    for (const t of ['bag', 'party', 'gear', 'options']) { R.menuTab = t; setPause(true); check(t); }
+    R.releaseArm = 1; R.menuTab = 'party'; setPause(true); check('release');
+    setPause(false); openShop({idx: 0}); check('peddler');
+    setPause(false); openShrine({idx: 1}); check('shrine');
+    setPause(false); openVeinChoice(); check('veins');
+    setPause(false); openEndingChoice(); check('ending');
     const drag = el => { const t = new Touch({identifier: 7, target: el, clientX: 300, clientY: 200});
       const ev = new TouchEvent('touchmove', {bubbles: true, cancelable: true, touches: [t], changedTouches: [t]}); el.dispatchEvent(ev); return ev.defaultPrevented; };
-    document.getElementById('btnPause').click(); document.querySelector('[data-p="mtab"][data-k="party"]').click();
-    const box = document.getElementById('pauseBox'), inner = box.querySelector('.mcre') || box;
-    const menu = drag(inner), game = drag(document.getElementById('hudParty')), css = getComputedStyle(box).touchAction;
+    out.dragMenu = drag(box.querySelector('.mcre') || box); out.dragHud = drag(document.getElementById('hudParty'));
     setPause(false); R.enemies = []; endRaid('quit'); closeModal(); S.settings.god = false;
-    return {menu, game, css, scrolls: box.scrollHeight >= box.clientHeight};
+    return out;
   });
-  assert.equal(r.menu, false, 'a drag inside the menu is left to scroll it');
-  assert.equal(r.game, true, 'a drag elsewhere in the raid is still blocked');
-  assert.equal(r.css, 'pan-y');
+  for (const k of ['bag', 'party', 'gear', 'options', 'release', 'peddler', 'shrine', 'veins', 'ending']) {
+    assert.equal(r[k].fits, true, `${k} fits without scrolling`);
+    assert.equal(r[k].onScreen, true, `${k} is on screen`);
+    assert.equal(r[k].overflow, 'hidden', `${k} can't scroll`);
+    assert.ok(r[k].zoom >= .8, `${k} needs little or no shrinking (zoom ${r[k].zoom})`);
+  }
+  assert.equal(r.dragMenu, true, 'a drag on a raid menu is blocked');
+  assert.equal(r.dragHud, true, 'a drag elsewhere in the raid is blocked');
+});
+
+test('the hideout puts its tabs in a rail down the left side', async () => {
+  const x = await page.evaluate(async () => { ui.tab = 'breeding'; renderAll(); await new Promise(r => setTimeout(r, 50));
+    const box = el => { const b = el.getBoundingClientRect(); return {left: b.left, right: b.right, width: b.width, height: b.height, bottom: b.bottom}; };
+    const n = box(document.getElementById('tabs')), m = box(document.getElementById('main')), last = box([...document.querySelectorAll('#tabs .tab')].pop());
+    const cols = getComputedStyle(document.querySelector('.cols')).gridTemplateColumns.split(' ').length;
+    return {n, m, last, cols, vh: innerHeight}; });
+  assert.ok(x.n.left <= 0 && x.n.width < 140 && x.n.height > x.vh * .8, 'tabs run down the left edge');
+  assert.ok(x.m.left >= x.n.right, 'the page sits beside the rail');
+  assert.ok(x.last.bottom <= x.vh, 'every tab is reachable without scrolling the rail');
+  assert.equal(x.cols, 2, 'pages use two columns sideways');
 });
 
 test('the hideout’s pinned bar stays compact sideways', async () => {
   const h = await page.evaluate(async () => { ui.tab = 'hideout'; renderAll(); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.topbar').getBoundingClientRect().height; });
-  assert.ok(h <= 90, `topbar is ${h}px tall`);
+  assert.ok(h <= 44, `topbar is ${h}px tall`);
   assert.deepEqual(errors, []);
 });

@@ -79,6 +79,8 @@ For now the game is laid out for an Android phone held sideways (a Galaxy S23 is
 - The **minimap** and the **menu** (⚙) sit at the top right. Opening the menu pauses the raid. It holds the **backpack** (everything carried, bag slots, prints, buffs and pacts), the **creatures** (both combat slots and slot 3: swap slot 3 into combat, or release), the **weapons** (both slots with quality and durability, and switching), and settings (abandon, sound, full screen).
 - **Releasing a creature** frees its slot for a better catch. It turns wild in the same room and attacks you, and you can weaken and catch it again. A creature from your roster that isn't caught again before the raid ends is gone for good, so the menu warns first. Nothing can be released in the tutorial, and in the arena only creatures caught there.
 - Left-handed mode mirrors the controls. Stick and button sizes are in Settings.
+- **Nothing in a raid scrolls.** The ⚙ menu, the peddler, shrines, the vein choice and the ending choice fill the sideways screen at once: a header row (title, tabs or a short note, the way back) over columns of cards. Creatures sit three across, the peddler's five offers in one row, the five veins side by side. If a menu still runs long (a long list of buffs, a small window), its contents shrink a step at a time until it fits. Every touch drag during a raid is swallowed, so the page and the browser's bars never move.
+- **The hideout is laid out sideways too.** The brand and the tabs run down a rail on the left, the resources sit in one thin pinned row at the top, and pages use two columns beside the rail. Hideout pages scroll. The end-of-raid report lays its sections out in columns.
 
 ### Why the loop holds
 
@@ -415,6 +417,21 @@ The story is a mystery told in about 150 fragments over the 90 days, and each ac
 - The surface healed long ago. The hideout's green hills are proof. The Bloom is still asleep, lonely and afraid of everything that leaves.
 - **The turn:** Keepers carry a faded tether too. Humans were among the life the Bloom sheltered, and the Keepers are their descendants. Ilsa found her own scar in her final entries. That is why she went down.
 - **The payoff:** Ilsa is alive on Floor 9, half-sung into the Choir, holding the Bloom asleep in the Old Keepers' place. Freeing her is the Underheart boss fight.
+
+### Lore as built (Phase 7)
+
+All the words live in `src/data/lore.json` (with the v5 journal and residents still in `story.json`).
+
+- **Acts.** Act I opens at the start, Act II when you first reach the veins (Floor 4), Act III at the Underheart (Floor 7) and Act IV when Ilsa is free. Every fragment belongs to one act and can't be found before it opens, so the story arrives in order. The Codex's "The story so far" shows each act's question with the pages, rune walls and whispers found for it.
+- **Ilsa's journal, 30 pages.** Thirteen turn up with Keeper rank as before (now also waiting for their act). Fifteen lie on the floor of a room in the Bloom: three on the Rootworks floors, six in the veins (one per vein plus Floor 6), five in the Underheart. A page is picked up by walking over it and only kept if you extract; one lost with you turns up again on a later raid. One page waits in the Keepers' Rest, and the last is written after you choose an ending.
+- **Old Keeper relics, 40.** Read by the Archive in a fixed order. The first two teach the letters of KEEP IT ASLEEP, the rest one letter each, until the 23rd completes the alphabet; the rest are story. Relics come from Underheart and Unbound chests as before, and in Act II from vein chests (8%). A Lumen archivist reads one a day; without one, Odile Quill reads one every third day once she arrives.
+- **Rune walls, 16.** Each sits in a room on its floor or vein, and is copied the moment you walk in. Copied walls are listed in the Archive with every translated letter in plain text, beside a key of all 26 runes. The cipher is one rune per letter, so the walls can be broken by hand from day one (Ilsa's page "The same shapes" hints at the crib). Three walls give away secrets: VENOM WED TO LIGHT MAKES AN ECLIPSE (the Eclipsar hybrid, left off the breeding list until this wall is copied or one is seen), A DOOR SLEEPS BESIDE THE HEART (the Keepers' Rest, a hidden room off the Heart's antechamber with two relics and a page), and THE THIRD SINGER WAS MARROW.
+- **Boss memories.** All 25 bosses have one; the post-v5 bosses' memories were rewritten so each says what the boss was before the Bloom took it.
+- **Whispers, 15.** A whisper may come on entering any room (1 in 200 rooms, about one every 20 raids), never repeats, and only comes from the current act or earlier, some only in one vein. The design said 1 in 200 raids; at that rate a player would hear one or two in a whole season, so the roll is per room. It uses the visual-only random, so it can't shift a seeded raid.
+- **Murals, 8.** On the hideout's walls (shown in the Codex's Murals tab), each painted procedurally and described in four stages, one per act.
+- **Codex entries for every form.** All 129 forms have their own entry, shown in the Codex and on creature cards; the last form of each line tells its Bloom history.
+- **Six residents.** Brannoc, Pip and Sorrel keep their v5 quests and each gains a three-quest arc (Acts II to IV). Three new residents arrive with depth: Odile Quill the archivist (Floor 4, the Old Keepers and the runes), Hesper Wick the healer (Floor 5, the tether and the Keepers' scar) and Rowan Marrow, Ilsa's brother (Floor 7, the Marrows and Ilsa). Their quests count story progress: walls copied, relics read, pages found, Ilsa freed, an ending chosen and the deepest generation bred.
+- **Renown.** Every page, wall and whisper adds 2 to Collection Renown.
 
 ### Three endings
 
