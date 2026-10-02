@@ -1,7 +1,7 @@
 /* ================= Raid engine ================= */
 import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
-import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
+import {BLOOM,ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
 import {save} from './save.js';
 import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
@@ -10,6 +10,10 @@ import {closeModal,openModal,renderAll,validGuns} from './ui.js';
 import {goLandscape,lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
 import {marketDay} from './exchange/market.js';
+import {express} from './genetics.js';
+import {caravanPay,catchable,caughtExtras,deathExtras,enterExtras,floorStart,moveMul,makeNoise,openVeinChoice,twistUpdate} from './veins.js';
+import {settleContract} from './bloom.js';
+import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
 import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
@@ -19,52 +23,80 @@ const touch={move:null,aim:null};
 const localFloor=f=>(f-1)%3+1;
 const isBossFloor=f=>f%3===0;
 const capT=()=>res('capture',3)?.6:.5;
-const isWeak=e=>e.kind==='wild'&&e.hp>0&&e.hp/e.maxHp<=capT();
+const isWeak=e=>e.kind==='wild'&&!e.shadow&&e.hp>0&&e.hp/e.maxHp<=capT();
 
-function rollWildSpecies(floor,lair){
-  const rareMul=(floor===1?1:floor===2?2:floor>=4?3.5:3)*(lair?2:1);
-  const type=wpick(TYPE_IDS,t=>{const T=TYPES[t];return T.weight*(T.tier===3?rareMul:T.tier===4?(floor>=3?2:1):1)});
-  return wpick(speciesOf(type),k=>SPECIES[k].w*(SPECIES[k].w===1?(floor>=2?2:1):1));
-}
+function rollWildSpecies(floor,lair,vein){return rollWildIn(floor,vein||(R&&R.map&&R.map.plan?R.map.plan.vein:null),lair,R&&R.vmap&&R.vmap.kind==='lure'?BLOOM.MAPS.kinds.lure.typeMul:1)}
 function newRoom(rooms,grid,gx,gy,kind){const r={gx,gy,ox:gx*CW+3,oy:gy*CH+3,links:[],kind:kind||'fight',spawned:false,cleared:false,locked:false,visited:false,doors:[],idx:rooms.length};rooms.push(r);grid[gx+','+gy]=r;return r}
-function genMap(floor,arena,bossId){
+// plan: {vein, layout, event} from bloom.js (the arena and tutorial pass none).
+function genMap(floor,arena,bossId,plan){
+  plan=plan||{vein:veinOfFloor(floor),layout:'warrens',event:null};
+  const LR=BLOOM.LAYOUT_RULES,lay=plan.layout,vein=plan.vein,tw=BLOOM.VEINS[vein].twist;
   const G=arena?1:4,rooms=[],grid={};const loc=localFloor(floor),set=floor>=4?1:0;
   const add=(gx,gy,kind)=>newRoom(rooms,grid,gx,gy,kind);
   const start=add(arena?0:ri(0,3),arena?0:ri(0,3));
-  const target=arena?1:8+loc;let guard=0;
-  while(rooms.length<target&&guard++<1000){const a=pick(rooms);const[dx,dy]=pick([[1,0],[-1,0],[0,1],[0,-1]]);const nx=a.gx+dx,ny=a.gy+dy;
+  const target=arena?1:8+loc+(lay==='labyrinth'?LR.labyrinth.rooms:0);let guard=0;
+  const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+  if(lay==='gauntlet'){
+    // A chain: every new room hangs off the last one, so there's one way through.
+    let last=start;
+    while(rooms.length<target&&guard++<400){const opts=dirs.map(([dx,dy])=>[last.gx+dx,last.gy+dy]).filter(([x,y])=>x>=0&&y>=0&&x<G&&y<G&&!grid[x+','+y]);
+      if(!opts.length)break;const [nx,ny]=pick(opts);const b=add(nx,ny);last.links.push(b);b.links.push(last);last=b}
+  }
+  while(rooms.length<target&&guard++<1000){const a=pick(rooms);const[dx,dy]=pick(dirs);const nx=a.gx+dx,ny=a.gy+dy;
     if(nx<0||ny<0||nx>=G||ny>=G||grid[nx+','+ny])continue;const b=add(nx,ny);a.links.push(b);b.links.push(a)}
   start.dist=0;const q=[start];while(q.length){const r=q.shift();for(const n of r.links)if(n.dist==null){n.dist=r.dist+1;q.push(n)}}
   start.kind=arena?'arena':'start';start.cleared=true;start.visited=true;
   if(!arena){
     const others=rooms.filter(r=>r!==start).sort((a,b)=>b.dist-a.dist);let i=0;const set1=k=>{if(others[i])others[i++].kind=k};
-    if(isBossFloor(floor)){set1('boss');set1('rift');set1('cliff')}else{set1('stairs');set1('gate')}
+    if(isBossFloor(floor)){set1('boss');set1('rift');set1('cliff')}else{set1('stairs');set1('gate');if(tw==='wind')set1('cliff')}
     if(loc>=2)set1('lair');
-    const rest=shuffle(others.slice(i));let j=0;const put=k=>{if(rest[j])rest[j++].kind=k};
+    const rest=shuffle(others.slice(i));let j=0;const put=k=>{if(rest[j])rest[j++].kind=k;return rest[j-1]};
     put('chest');put('chest');
     if(rand()<.75)put('shop');
     if(rand()<.35)put('shrine');
-    const pool=foePool(floor),newIntro=loc+set*3;
+    const pool=foePool(floor,vein),newIntro=loc+set*3;
     const swarm=S.modes.swarm&&modeUnlocked('swarm')?2:0;
     const wildMul=(S.modes.hunter&&modeUnlocked('hunter')?2:1)*(secTier('roost')>=4?1.3:1)*(res('capture',4)?1.25:1);
     for(const r of rooms){
       if(['start','shop','shrine','boss'].includes(r.kind))continue;
       const base={fight:[3,4],chest:[1,2],stairs:[3,4],gate:[2,3],rift:[3,4],cliff:[2,3],lair:[3,4]}[r.kind];
-      const n=ri(base[0],base[1])+(loc-1)+swarm;
+      const n=Math.max(1,ri(base[0],base[1])+(loc-1)+swarm-(lay==='labyrinth'?LR.labyrinth.foesMinus:0));
       const wc=r.kind==='lair'?(rand()<.5?1:0):(rand()<(loc===3?.26:.2)*wildMul?1:0);
-      const foes=[];while(foes.length<n-wc)foes.push(wpick(pool,k=>FOES[k].intro===newIntro?2.2:1));
-      r.plan={foes,wilds:Array.from({length:wc},()=>rollWildSpecies(floor,r.kind==='lair')),elite:r.kind==='lair'};
+      const foes=[];while(foes.length<n-wc)foes.push(wpick(pool,k=>FOES[k].intro===newIntro||FOES[k].vein===vein&&vein!=='rootworks'?2.2:1));
+      r.plan={foes,wilds:Array.from({length:wc},()=>rollWildSpecies(floor,r.kind==='lair',vein)),elite:r.kind==='lair'};
       if((r.kind==='fight'||r.kind==='lair')&&rand()<(floor===1?.15:.25))r.mod=pick(ROOM_MOD_IDS);
     }
+    const fights=()=>shuffle(rooms.filter(r=>r.kind==='fight'||r.kind==='chest'));
+    // Layouts.
+    if(lay==='gauntlet')rooms.forEach(r=>{r.chain=r.dist});
+    if(lay==='nest'){const r=fights()[0];if(r){const sp=rollWildSpecies(floor,true,vein);r.nest=sp;r.mod=null;
+      r.plan={foes:Array.from({length:LR.nest.foes},()=>pick(pool)),wilds:Array.from({length:ri(LR.nest.wilds[0],LR.nest.wilds[1])},()=>sp),elite:false}}}
+    if(lay==='mirror')rooms.forEach(r=>{if(r.kind==='fight'&&rand()<LR.mirror.rooms)r.mirror=true});
+    // Events placed on this floor.
+    const ev=plan.event;
+    if(ev==='migration'){const r=fights()[0];if(r){const sp=herdSpecies(vein),E=BLOOM.EVENTS.list.migration;r.plan.wilds.push(...Array.from({length:ri(E.herd[0],E.herd[1])},()=>sp));r.herd=sp}}
+    if(ev==='lostkeeper'){const r=fights()[0];if(r)r.plan.keeper=true}
+    if(ev==='rivals'){const r=fights()[0];if(r)r.plan.rivals=BLOOM.EVENTS.list.rivals.n}
+    if(ev==='cache'){const r=rooms.find(x=>x.kind==='chest')||fights()[0];if(r){r.cache=true;if(r.kind!=='chest')r.kind='chest'}}
     if(bossId)rooms.find(r=>r.kind==='boss').bossId=bossId;
-    if(rand()<.65){
-      const hosts=shuffle(rooms.filter(r=>!['boss','start'].includes(r.kind)));
+    const secrets=lay==='labyrinth'?LR.labyrinth.secrets:1;
+    for(let k=0;k<secrets;k++)if(rand()<(lay==='labyrinth'?.9:.65)){
+      const hosts=shuffle(rooms.filter(r=>!['boss','start','secret'].includes(r.kind)));
       outer:for(const h of hosts)for(const[dx,dy]of shuffle([[1,0],[-1,0],[0,1],[0,-1]])){const nx=h.gx+dx,ny=h.gy+dy;if(nx<0||ny<0||nx>=G||ny>=G||grid[nx+','+ny])continue;
         const s=add(nx,ny,'secret');s.hidden=true;s.host=h;s.links.push(h);h.links.push(s);s.chest={x:0,y:0,open:false,rich:true};
-        s.plan={foes:[],wilds:rand()<.4?[rollWildSpecies(floor,true)]:[]};break outer}
+        s.plan={foes:[],wilds:rand()<.4?[rollWildSpecies(floor,true,vein)]:[]};break outer}
     }
   }
-  return buildMap(rooms,grid,G,G,floor,arena,start);
+  const M=buildMap(rooms,grid,G,G,floor,arena,start);M.plan=plan;
+  // Vein twists that live in the map: lava vents, poison pools and wind lanes.
+  if(!arena)for(const r of rooms){
+    if(['start','shop','shrine','secret'].includes(r.kind))continue;
+    const spot=()=>({x:(r.ox+rnd(2,RW-2))*TS,y:(r.oy+rnd(2,RH-2))*TS});
+    if(tw==='vents')r.vents=Array.from({length:BLOOM.TWISTS.vents.perRoom},spot);
+    if(tw==='poison')r.pools=Array.from({length:BLOOM.TWISTS.poison.pools},spot);
+    if(tw==='wind'){const a=pick([0,Math.PI/2,Math.PI,-Math.PI/2]);r.wind={x:Math.round(Math.cos(a)),y:Math.round(Math.sin(a))}}
+  }
+  return M;
 }
 function genTutorialMap(){
   const rooms=[],grid={};
@@ -127,9 +159,11 @@ function paintTile(g,M,x,y,pal){
   g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x*TS+(y%2?4:18),y*TS+12,10,2);
   if(M.tiles[y*M.W+x]===4){g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1.5;g.beginPath();g.moveTo(x*TS+8,y*TS+8);g.lineTo(x*TS+15,y*TS+16);g.lineTo(x*TS+11,y*TS+24);g.moveTo(x*TS+15,y*TS+16);g.lineTo(x*TS+24,y*TS+19);g.stroke()}
 }
+// Each vein has a palette per floor (in bloom.json); the arena keeps its own.
+const palFor=M=>M.arena?PALS.arena:BLOOM.VEINS[(M.plan&&M.plan.vein)||veinOfFloor(M.floor)].pals[localFloor(M.floor)-1];
 function renderMapCanvas(M){
   const c=document.createElement('canvas');c.width=M.W*TS;c.height=M.H*TS;const g=c.getContext('2d');
-  const pal=M.arena?PALS.arena:PALS[M.floor];
+  const pal=palFor(M);
   g.fillStyle='#0d0a1c';g.fillRect(0,0,c.width,c.height);
   for(let y=0;y<M.H;y++)for(let x=0;x<M.W;x++)paintTile(g,M,x,y,pal);
   return c;
@@ -138,7 +172,7 @@ function damageCrack(i,dmg){
   const M=R.map,cr=M.cracks.get(i);if(!cr||cr.broken)return;
   cr.hp-=dmg;R.fx.push({x:(i%M.W+.5)*TS,y:(Math.floor(i/M.W)+.5)*TS,r:10,t:.2,max:.2,col:'#c9b48a'});
   if(cr.hp>0)return;
-  cr.broken=true;const g=R.mapCv.getContext('2d'),pal=PALS[M.floor];
+  cr.broken=true;const g=R.mapCv.getContext('2d'),pal=palFor(M);
   cr.tiles.forEach(t=>{M.tiles[t]=1;M.cracks.delete(t)});
   cr.tiles.forEach(t=>{const x=t%M.W,y=Math.floor(t/M.W);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)paintTile(g,M,x+dx,y+dy,pal)});
   cr.room.hidden=false;R.fx.push({x:(cr.tiles[1]%M.W+.5)*TS,y:(Math.floor(cr.tiles[1]/M.W)+.5)*TS,r:60,t:.5,max:.5,col:'#ffcf4a'});
@@ -156,7 +190,7 @@ const roleInParty=r=>!!R&&partyCreatures().some(c=>roleOf(c)===r);
 const roleComp=(m,r)=>!!m&&!m.downed&&roleOf(m.c)===r;
 /* ---------- the bag ---------- */
 // Each slot holds BAG.stack of one material, or one print. Coin needs no room.
-const BAG_MATS=['ore','food','hide','dust'];
+const BAG_MATS=['ore','food','hide','dust','sap'];
 function bagUsed(){return BAG_MATS.reduce((a,m)=>a+Math.ceil((R.bag[m]||0)/JOBS.BAG.stack),0)+R.prints.length}
 function bagAdd(mat,n,x,y){
   const st=JOBS.BAG.stack,have=R.bag[mat]||0,room=(st-have%st)%st+Math.max(0,R.bagCap-bagUsed())*st,add=Math.min(n,room);
@@ -169,22 +203,29 @@ function makeComp(c){
   return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
     cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:rand()*9,lastStand:st.star>=5};
 }
-function pickBoss(set){return pick(BOSS_IDS.filter(b=>BOSSES[b].set===set))}
-// Each floor is generated on its own stream seeded from the raid seed and the floor number,
+// Each floor is generated on its own stream seeded from the raid seed, the floor number and the vein,
 // so the same seed always builds the same floors, whatever happened in the fight before.
-function genFloor(seed,f,arena){return withSeed(mixSeed(seed,f),()=>{const boss=isBossFloor(f)?pickBoss(f>=4?1:0):null;return{boss,M:genMap(f,arena,boss)}})}
-function startRaid(mode,startFloor,seed){
+function genFloor(seed,f,arena,vein){
+  const plan=arena?null:floorPlan(seed,f,vein),v=plan?plan.vein:'rootworks';
+  return withSeed(mixSeed(seed,f+veinIdx(v)*16),()=>{const boss=isBossFloor(f)&&!arena?pickBoss(v):null;return{boss,plan,M:genMap(f,arena,boss,plan)}});
+}
+// vein: for raids started below Floor 3 (the Test Lab), which vein the floors belong to.
+function startRaid(mode,startFloor,seed,vein){
   closeModal();
-  const f0=startFloor||1,tut=mode==='tutorial';
-  seed=seed!=null?seed>>>0:newSeed();seedRng(mixSeed(seed,0));
-  const{M}=tut?{M:genTutorialMap()}:genFloor(seed,f0,mode==='arena');
+  const f0=startFloor||1,tut=mode==='tutorial',real=mode==='raid'||mode==='scav';
+  // A new raid's seed is picked so its layouts and event don't repeat a recent raid's.
+  seed=seed!=null?seed>>>0:real?pickRaidSeed():newSeed();seedRng(mixSeed(seed,0));
+  if(real)rememberSeed(seed);
+  const deepVein=f0>=4?(vein||'ember'):null;
+  const{M}=tut?{M:genTutorialMap()}:genFloor(seed,f0,mode==='arena',deepVein);
   R={mode,seed,id:mode==='arena'||tut?mode:S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'||tut?0:600+(f0>=4?360:0),
     p:{x:M.start.cx,y:M.start.cy+40,r:11,hp:100,maxHp:100,roll:0,rollCd:0,rvx:0,rvy:0,vx:0,vy:0,inv:0,hurt:0,slow:0,fireCd:0},
     comps:[null,null],slot3:null,enemies:[],bullets:[],fields:[],floats:[],fx:[],items:[],trail:[],swings:[],timers:[],bolts:[],
-    bag:{coin:0,ore:0,food:0,hide:0,dust:0},prints:[],tonics:0,satchel:null,bagCap:JOBS.BAG.slots,cages:{basic:0,gilded:0},guns:['pistol',null],gunItem:[null,null],active:0,spin:0,burst:[],
+    bag:{coin:0,ore:0,food:0,hide:0,dust:0,sap:0},prints:[],tonics:0,satchel:null,bagCap:JOBS.BAG.slots,cages:{basic:0,gilded:0},guns:['pistol',null],gunItem:[null,null],active:0,spin:0,burst:[],
     buffs:{},curses:new Set(),leechAcc:0,aim:0,firing:false,mouse:null,shield:0,prism:0,taunt:0,tauntEnt:null,fortress:0,rally:null,
     combo:{cd:10,max:20*(res('bond',2)?.75:1)},kxp:0,kills:0,caught:0,autoRev:secTier('spring')>=5?1:0,
     msg:'',msgT:0,prompt:'',ext:0,stairT:0,cur:M.start,paused:false,over:false,last:0,saved:{},shops:{},taken:[],
+    vein:deepVein,vmap:null,fmods:{dmg:1,hp:1,coin:1,kxp:1,wild:1},hazards:[],beat:0,eliteKills:0,
     floorsSeen:new Set([f0]),heardCrack:false,god:tut,tut:tut?{step:0,moved:0,rolled:false,abil:false,lx:M.start.cx,ly:M.start.cy+40}:null};
   R.mods={hp:S.modes.hunter&&modeUnlocked('hunter')?1.2:1,dmg:S.modes.iron&&modeUnlocked('iron')?1.4:1,
     coin:(S.modes.iron&&modeUnlocked('iron')?1.6:1)*(S.modes.swarm&&modeUnlocked('swarm')?1.3:1)*(res('economy',0)?1.15:1),
@@ -207,7 +248,7 @@ function startRaid(mode,startFloor,seed){
     R.comps=[sl[0]?makeComp(sl[0]):null,sl[1]?makeComp(sl[1]):null];
     R.bagCap=JOBS.BAG.slots+sl.filter(Boolean).reduce((a,c)=>a+((roleInfo(c)||{}).bag||0),0)+satchelSlots(R.satchel);
     R.slot3=sl[2]&&!tut?{c:sl[2]}:null;
-    if(!tut)msg(mode==='arena'?'Arena: spawn foes from the panel. Leave from the pause menu.':`Floor ${f0}. Find the ${isBossFloor(f0)?'boss, rift or cliff':'stairs or the gate'}.`);
+    if(!tut)msg(mode==='arena'?'Arena: spawn foes from the panel. Leave from the pause menu.':`${floorStart()} Find the ${isBossFloor(f0)?'boss, rift or cliff':'stairs or the gate'}.`);
   }
   refreshSupport();R.p.hp=R.p.maxHp;
   if(mode==='raid'&&(secTier('warroom')>=5||res('combat',4)))applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true);
@@ -282,7 +323,7 @@ function wildEnemy(pos,c,room){
 }
 function spawnFoe(pos,id,floor,room,elite){
   const d=FOES[id],loc=localFloor(floor),hm=(1+.3*(loc-1))*hpMods()*(elite?3:1),dm=(1+.12*(loc-1))*R.mods.dmg;
-  if(id!=='dummy')dexFoe(id);
+  if(d.intro<99)dexFoe(id);
   const e=Object.assign(baseEnemy(pos,room),{kind:'foe',id,def:d,elite:!!elite,r:Math.round(d.r*(elite?1.35:1)),hp:Math.round(d.hp*hm),maxHp:Math.round(d.hp*hm),dmg:d.dmg*dm,spd:d.spd,fire:d.fire,every:d.fire.every*(elite?.8:1),cd:rnd(.9,2),melee:!!d.melee,bcol:d.bcol||'#ff6b6b'});
   R.enemies.push(e);return e;
 }
@@ -300,6 +341,7 @@ function enterRoom(r){
   const f=R.map.floor;
   r.plan.foes.forEach((id,i)=>spawnFoe(spawnPos(r),id,f,r,r.plan.elite&&i===0));
   r.plan.wilds.forEach(s=>spawnWild(spawnPos(r),s,r));
+  enterExtras(r);
   if(r.kind==='secret'){bump('secrets');if(rand()<.35){S.shards++;float(R.p.x,R.p.y-30,'+1 memory shard','#ff8fe0',true)}if(r.plan.wilds.length)msg(`A wild ${SPECIES[r.plan.wilds[0]].name} hides in the secret room.`);return}
   if(R.enemies.some(e=>e.room===r)){
     r.locked=true;pullComps();sfx('door');
@@ -353,6 +395,8 @@ function applyElem(e,elem,dmg,src){
   e.status[elem]=4;
   if(elem==='burn'){const bm=src&&src.c&&src.c.type==='ember'&&src.st.star>=3?1.5:1;e.burn={dps:Math.max(2,dmg*.3)*bm,t:3,src}}
   if(elem==='soak'&&src&&src.c&&src.c.type==='tide'&&src.st.star>=3&&e.kind!=='boss')e.slow=1.5;
+  // Poison: weaker than burning but lasts longer; Venom companions at 3 stars (Lingering) double it.
+  if(elem==='poison'){const lm=src&&src.c&&src.c.type==='venom'&&src.st.star>=3?2:1;e.status.poison=4*lm;e.poison={dps:Math.max(1.5,dmg*.22),t:4.5*lm,src}}
 }
 function react(e,r,dmg,src){
   const base=Math.max(dmg,8)*(res('combat',3)?1.3:1);
@@ -363,12 +407,17 @@ function react(e,r,dmg,src){
   else if(r.name==='Electrocute'){const hit=[e];let cur=e;for(let i=0;i<4;i++){const nx=R.enemies.filter(x=>x.hp>0&&!hit.includes(x)&&dist(x,cur)<190).sort((a,b)=>dist(a,cur)-dist(b,cur))[0];if(!nx)break;R.bolts.push({a:{x:cur.x,y:cur.y},b:{x:nx.x,y:nx.y},t:.25,col:'#c8a8ff'});hurtEnemy(nx,base*2,false,src);hit.push(nx);cur=nx}hurtEnemy(e,base*2,false,src)}
   else if(r.name==='Overgrowth'){if(e.kind!=='boss')e.stun=1.8;e.slow=3;hurtEnemy(e,base*1.5,false,src)}
   else if(r.name==='Shatter'){hurtEnemy(e,base*3,false,src)}
+  else if(r.name==='Toxic Flare'){explodeAt(e.x,e.y,90,base*2.2,'p',src,null,'#c8ff6a');R.fields.push({x:e.x,y:e.y,r:70,t:3,dps:base*.4,src,elem:'poison',col:'#9be35a'})}
+  else if(r.name==='Spreading Blight'){for(const x of R.enemies)if(x.hp>0&&dist(x,e)<170){x.status.poison=4;x.poison={dps:Math.max(2,base*.35),t:5,src}}hurtEnemy(e,base*1.5,false,src)}
   else if(r.name==='Thunderclap'){if(e.kind!=='boss')e.stun=1.2;hurtEnemy(e,base*2,false,src);R.bolts.push({a:{x:e.x,y:e.y-120},b:{x:e.x,y:e.y},t:.25,col:'#fff6a8'})}
 }
 
 /* ---------- combat helpers ---------- */
+// Poison rounds: a Venom in slot 3 (or the Apothecary at tier 3) gives the player's shots a chance to poison.
+const poisonRounds=()=>!!R&&(R.sup.has('venom')||secTier('apothecary')>=3);
 function hurtEnemy(e,dmg,quiet,src,elem){
-  if(e.hp<=0)return;e.hp-=dmg;e.flash=.08;if(src)e.lastHit=src;
+  if(e.hp<=0)return;
+  if(!elem&&src==='p'&&poisonRounds()&&rand()<.3)elem='poison';e.hp-=dmg;e.flash=.08;if(src)e.lastHit=src;
   if((src==='p'||src==='melee')&&B('leech')){R.leechAcc+=dmg*B('leech');while(R.leechAcc>=25){R.leechAcc-=25;healPlayer(1)}}
   if(src&&src.c&&src.st.vamp)src.hp=Math.min(src.maxHp,src.hp+dmg*src.st.vamp);
   if(!quiet){float(e.x+rnd(-6,6),e.y-e.r-8,Math.round(dmg),'#ffe38a');sfx('hit')}
@@ -499,13 +548,13 @@ function doRoll(){
   const l=Math.hypot(mx,my)||1;p.roll=.3;p.rollCd=.75*Math.pow(.65,B('roll'))*(res('combat',2)?.8:1);p.rvx=mx/l*440;p.rvy=my/l*440;sfx('roll');
   if(R.tut)R.tut.rolled=true;
 }
-function cageReady(){const rad=capRadius();return!R.slot3&&R.enemies.some(e=>e.kind==='wild'&&e.hp>0&&(S.settings.instant||isWeak(e))&&dist(e,R.p)<rad+e.r)}
+function cageReady(){const rad=capRadius();return!R.slot3&&R.enemies.some(e=>catchable(e)&&e.hp>0&&(S.settings.instant||isWeak(e))&&dist(e,R.p)<rad+e.r)}
 function useCage(){
   if(R.slot3){msg(`Slot 3 is full. Release a creature from the menu${TOUCH?' (⚙)':' (Esc)'} to make room.`);return}
   const kind=R.cages.gilded>0?'gilded':R.cages.basic>0?'basic':null;
   if(!kind){msg('No cages left.');return}
   const rad=capRadius();
-  const near=R.enemies.filter(e=>e.kind==='wild'&&e.hp>0&&dist(e,R.p)<rad+e.r);
+  const near=R.enemies.filter(e=>catchable(e)&&e.hp>0&&dist(e,R.p)<rad+e.r);
   if(!near.length){msg('No wild creature inside the cage ring. Get closer.');return}
   const weak=near.filter(e=>S.settings.instant||isWeak(e)).sort((a,b)=>dist(a,R.p)-dist(b,R.p));
   if(!weak.length){msg(`Weaken it below ${Math.round(capT()*100)}% health first.`);return}
@@ -557,7 +606,7 @@ function tryCapture(e,kind){
   let ch=(1-hpf)*1.15*(kind==='gilded'?1.7:1)*[1,1,.8,.6,.45][tier]*rare*(1-.12*(e.c.stage||0))+(partyTrait('lucky')?.1:0)+(roleInParty('catcher')?JOBS.ROLES.catcher.catch:0)+.1*B('cage')+(res('capture',2)?.1:0);
   if(e.stun>0)ch+=.1;if(R.mode==='tutorial')ch=1;
   if(S.settings.instant||rand()<ch){
-    const c=e.c;c.hp=stats(c).hp;c.captureRaid=R.id;c.bondXp=0;
+    const c=e.c;caughtExtras(c);express(c);c.hp=stats(c).hp;c.captureRaid=R.id;c.bondXp=0;
     e.hp=0;e.captured=true;R.slot3={c};refreshSupport();R.caught++;R.kxp+=15;dexForm(c.species,c.stage||0,'caught');sfx('capture');
     float(e.x,e.y-e.r-12,'Caught!','#ffcf4a',true);msg(`Caught ${c.name}, a ${sexSym(c.sex)} ${formName(c)}! ${TOUCH?'Open the menu (⚙) to swap it in':'Press 1 or 2'} to test it.`);
     R.fx.push({x:e.x,y:e.y,r:60,t:.5,max:.5,col:'#ffcf4a'});
@@ -645,6 +694,7 @@ function swing(g){
 }
 function fireWeapon(){
   const p=R.p,id=R.guns[R.active];if(!id)return;const g=GUNS[id];
+  makeNoise(p.x,p.y);
   let rate=g.rate*(1+.15*B('rate'))*(CU('blood')?1.3:1);
   if(g.melee){swing(g);p.fireCd=1/rate;return}
   const dm=g.dmg*playerDmgMul();sfx(g.dmg>=20||g.explode?'heavy':'shot');
@@ -708,7 +758,8 @@ function update(dt){
   for(const m of R.comps){if(!roleComp(m,'medic'))continue;const M=JOBS.ROLES.medic,rate=(m.medicT>0?M.burst:M.regen)*dt;m.medicT=Math.max(0,(m.medicT||0)-dt);
     if(p.hp>0)p.hp=Math.min(p.maxHp,p.hp+p.maxHp*rate);R.comps.forEach(o=>{if(o&&!o.downed)o.hp=Math.min(o.maxHp,o.hp+o.maxHp*rate)})}
   if(p.roll>0){p.roll-=dt;moveEnt(p,p.rvx*dt,p.rvy*dt);p.vx=p.rvx*.3;p.vy=p.rvy*.3}
-  else{const{mx,my}=moveVec();const sp=200*(R.sup.has('gale')?1.1:1)*(bondComp('gale')?1.08:1)*(1+.12*B('speed'))*(CU('doom')?1.25:1)*(p.slow>0?.6:1);
+  else{let{mx,my}=moveVec();const sp=200*(R.sup.has('gale')?1.1:1)*(bondComp('gale')?1.08:1)*(1+.12*B('speed'))*(CU('doom')?1.25:1)*(p.slow>0?.6:1);
+    const vm=moveMul();mx*=vm;my*=vm;
     if(modOn('slick')){p.vx+=(mx*sp-p.vx)*Math.min(1,dt*2);p.vy+=(my*sp-p.vy)*Math.min(1,dt*2)}else{p.vx=mx*sp;p.vy=my*sp}
     moveEnt(p,p.vx*dt,p.vy*dt);if(!R.mouse&&!touch.aim&&(mx||my))R.aim=Math.atan2(my,mx)}
   if(modOn('fog')){if(!S.settings.god&&!R.god&&R.shield<=0){p.hp-=2*dt;if(p.hp<=0){playerDown();return}}R.comps.forEach(m=>{if(m&&!m.downed)m.hp=Math.max(1,m.hp-m.maxHp*.02*dt)})}
@@ -722,6 +773,7 @@ function update(dt){
   R.enemies.forEach(e=>{
     for(const k in e.status){e.status[k]-=dt;if(e.status[k]<=0)delete e.status[k]}
     if(e.burn){e.burn.t-=dt;if(e.burn.t>0)hurtEnemy(e,e.burn.dps*dt,true,e.burn.src);else e.burn=null}
+    if(e.poison){e.poison.t-=dt;if(e.poison.t>0)hurtEnemy(e,e.poison.dps*dt,true,e.poison.src);else e.poison=null}
     if(e.kind==='boss')updBoss(e,dt);else updEnemy(e,dt*(frenzy?1.35:1));
   });
   updBullets(dt);if(R.over)return;
@@ -737,6 +789,7 @@ function update(dt){
   if(!R.heardCrack&&R.map.cracks.size){const hear=partyHas('echo')||R.comps.some(m=>m&&!m.downed&&m.c.pers==='curious')||(R.slot3&&R.slot3.c.pers==='curious');
     if(hear){const range=bondComp('echo')?520:260;for(const[i]of R.map.cracks){const cx=(i%R.map.W+.5)*TS,cy=(Math.floor(i/R.map.W)+.5)*TS;if(Math.hypot(cx-p.x,cy-p.y)<range){R.heardCrack=true;msg('Your companion hears a hollow wall nearby.');break}}}}
   if(R.tut)tutUpdate();
+  if(R.mode!=='tutorial'){twistUpdate(dt);if(R.windMove){moveEnt(p,R.windMove.x,R.windMove.y);R.comps.forEach(m=>{if(m&&!m.downed)moveEnt(m,R.windMove.x,R.windMove.y)})}}
   objectives(dt);
   R.floats.forEach(f=>{f.t-=dt*.9;f.y-=24*dt});R.floats=R.floats.filter(f=>f.t>0);
   R.fx.forEach(f=>f.t-=dt);R.fx=R.fx.filter(f=>f.t>0);
@@ -817,6 +870,7 @@ function updComp(m,dt,idx){
 }
 function updEnemy(e,dt){
   e.flash=Math.max(0,e.flash-dt);e.hitCd-=dt;
+  if(e.dormant)return;   // the Hollow Choir: asleep until it hears you
   for(let i=e.queue.length-1;i>=0;i--){const q=e.queue[i];q.t-=dt;if(q.t<=0){e.queue.splice(i,1);if(e.hp>0)q.f()}}
   if(e.stun>0){e.stun-=dt;return}
   e.slow=Math.max(0,e.slow-dt);
@@ -971,8 +1025,11 @@ function updBullets(dt){
 }
 function onEnemyDeath(e){
   if(e.kind==='boss'){onBossDeath(e);return}
+  deathExtras(e);
+  if(e.shadow){R.kills++;sfx('kill');float(e.x,e.y,'The shadow breaks','#b4a9d8',true);return}
+  if(e.elite)R.eliteKills=(R.eliteKills||0)+1;
   const f=R.map.floor,gold=e.room&&e.room.mod==='golden'?2:1,greedy=e.lastHit&&e.lastHit.c&&e.lastHit.c.pers==='greedy'?1.5:1;
-  const gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*gold*greedy;
+  const gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*gold*greedy*(R.fmods?R.fmods.coin:1);
   if(!e.captured){
     R.kills++;R.kxp+=e.kind==='wild'?4:2;sfx('kill');
     if(e.lastHit==='melee')bump('meleeKills');
@@ -1000,7 +1057,8 @@ function takeLoot(it){
 // A single-use print for a gun of at least PRINTS.minTier.
 function dropPrint(x,y){const ids=GUN_IDS.filter(k=>GUNS[k].tier>=JOBS.PRINTS.minTier);R.items.push({kind:'loot',id:'print',gun:pick(ids),x,y})}
 function openChest(r){
-  r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1),rich=r.chest.rich;
+  r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*(R.fmods?R.fmods.coin:1),rich=r.chest.rich;
+  if(r.cache){const E=BLOOM.EVENTS.list.cache,c=Math.round(ri(E.coin[0],E.coin[1])*gm);R.bag.coin+=c;for(let k=0;k<E.prints;k++)dropPrint(r.chest.x+(k?40:-40),r.chest.y+40);msg(`An estate cache! ${c} coin and old blueprints.`)}
   const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3),xm=rand()<.5?'hide':'dust',xn=ri(1,3)+(rich?2:0);R.bag.coin+=coin;
   const go=bagAdd('ore',ore,r.chest.x,r.chest.y),gf=bagAdd('food',food,r.chest.x,r.chest.y),gx=bagAdd(xm,xn,r.chest.x,r.chest.y);
   float(r.chest.x,r.chest.y-20,`+${coin} coin${go?` +${go} ore`:''}${gf?` +${gf} food`:''}${gx?` +${gx} ${matName(xm).toLowerCase()}`:''}`,'#ffcf4a',true);
@@ -1024,8 +1082,8 @@ function objectives(dt){
   if(r.kind==='portal'){
     const home={x:r.cx-80,y:r.cy},deep={x:r.cx+80,y:r.cy};
     if(dist(p,home)<44){R.ext+=dt;R.prompt=`Going home… ${Math.max(0,2-R.ext).toFixed(1)}s`;if(R.ext>=2){endRaid('extract','rift');return}}
-    else if(r.deep&&dist(p,deep)<44){R.stairT+=dt;R.prompt=`Descending to the Ember Abyss… ${Math.max(0,1.5-R.stairT).toFixed(1)}s`;if(R.stairT>=1.5)descend(R.map.floor+1)}
-    else{R.ext=0;R.stairT=0;R.prompt=r.deep?'Left circle: home · Right circle: Floor 4':'Step into the rift to go home'}
+    else if(r.deep&&dist(p,deep)<44){R.stairT+=dt;R.prompt=`The veins below… ${Math.max(0,1.2-R.stairT).toFixed(1)}s`;if(R.stairT>=1.2){R.stairT=-2;openVeinChoice()}}
+    else{R.ext=0;R.stairT=0;R.prompt=r.deep?'Left circle: home · Right circle: choose a vein':'Step into the rift to go home'}
     return;
   }
   if(['gate','rift','cliff'].includes(r.kind)){
@@ -1041,13 +1099,14 @@ function objectives(dt){
   }
 }
 function descend(f){
-  const{boss,M}=genFloor(R.seed,f,false);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
+  const{boss,M}=genFloor(R.seed,f,false,R.vein);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
   R.p.x=M.start.cx;R.p.y=M.start.cy+40;R.trail=[];R.comps.forEach(m=>{if(m){m.x=R.p.x+rnd(-30,30);m.y=R.p.y+rnd(-10,30)}});
   R.enemies=[];R.bullets=[];R.fields=[];R.items=[];R.timers=[];R.stairT=0;R.ext=0;R.heardCrack=false;R.floorsSeen.add(f);sfx('door');
   S.progress.deepest=Math.max(S.progress.deepest||0,f);
   if(f===4){R.time+=360;R.kxp+=60}
+  R.hazards=[];R.drownWarned=false;
   const roost5=secTier('roost')>=5&&boss?` ${BOSSES[boss].name} waits below.`:'';
-  msg(f===4?'Floor 4: the Ember Abyss. Everything here hits much harder. +6 minutes on the clock.':isBossFloor(f)?`Floor ${f}. A boss guards the end of this floor.${roost5}`:`Floor ${f}. Tougher enemies, rarer creatures.`);
+  msg(`${floorStart()}${f===4?' Everything here hits much harder. +6 minutes on the clock.':isBossFloor(f)?` A boss guards the end of this floor.${roost5}`:''}`);
 }
 
 /* ---------- end of raid ---------- */
@@ -1081,7 +1140,7 @@ function endRaid(outcome,via){
   R.comps.forEach(m=>{if(m)m.c.hp=m.downed?0:Math.round(m.hp/m.maxHp*stats(m.c).hp)});
   const party=R.comps.filter(Boolean);
   const scav=R.mode==='scav',vt=scav?0:secTier('vault'),at=scav?0:armoryTier();
-  const isNew=c=>!S.creatures.includes(c);
+  const isNew=c=>!S.creatures.includes(c),caughtC=[];
   // Guns in hand at the end: [id, owned item or null for a find].
   const held=[0,1].filter(i=>R.guns[i]&&R.guns[i]!=='pistol').map(i=>[R.guns[i],R.gunItem[i]]);
   const takenHome=it=>held.some(([,x])=>x===it);
@@ -1095,17 +1154,17 @@ function endRaid(outcome,via){
     S.stats.extracts++;
     const coinMul=1+.15*party.filter(m=>!m.downed&&m.c.traits.includes('hoard')).length;
     const coin=Math.round(R.bag.coin*coinMul*(1+perk('coin'))),food=R.bag.food+(R.sup.has('fungal')?2:0);
-    S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;give('hide',R.bag.hide);give('dust',R.bag.dust);S.prints.push(...R.prints);give('tonic',R.tonics);
+    S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;give('hide',R.bag.hide);give('dust',R.bag.dust);give('sap',R.bag.sap||0);S.prints.push(...R.prints);give('tonic',R.tonics);
     const home=held.map(bringHome);
     S.cages.basic+=scav?0:R.cages.basic;S.cages.gilded+=R.cages.gilded;
-    L.loot.push(`+${coin} coin`,`+${R.bag.ore} ore`,`+${food} food`);if(R.bag.hide)L.loot.push(`+${R.bag.hide} hide`);if(R.bag.dust)L.loot.push(`+${R.bag.dust} crystal dust`);
+    L.loot.push(`+${coin} coin`,`+${R.bag.ore} ore`,`+${food} food`);if(R.bag.hide)L.loot.push(`+${R.bag.hide} hide`);if(R.bag.dust)L.loot.push(`+${R.bag.dust} crystal dust`);if(R.bag.sap)L.loot.push(`+${R.bag.sap} bog sap`);
     R.prints.forEach(id=>L.loot.push(`Print: ${GUNS[id].name}`));if(R.tonics)L.loot.push(`${R.tonics} unused tonic${R.tonics>1?'s':''} back to stores`);
     home.forEach(it=>L.loot.push(`${itemName(it)}${R.taken.includes(it)?'':' (new)'}`));
     R.taken.forEach(it=>{if(!takenHome(it)){L.lost.push(`${itemName(it)} (left in the dungeon)`);loseItem(it)}});
     if(satchel)wear(satchel);
     const handle=(c,downed,xp,m)=>{
       if(downed){if(isNew(c))L.lost.push(`${c.name} (new catch, never revived)`);else{L.lost.push(`${c.name} (never revived)`);killCreature(c,fell)}return}
-      if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name}, a wild ${sexSym(c.sex)} ${formName(c)} (Lv ${c.level})`);return}
+      if(isNew(c)){S.creatures.push(c);S.stats.captures++;caughtC.push(c);L.caught.push(`${c.name}, a wild ${sexSym(c.sex)} ${formName(c)} (Lv ${c.level})`);return}
       c.raids++;const ups=gainXp(c,xp);if(ups)L.levels.push(`${c.name} reached Lv ${c.level}${canEvolve(c)?' and can evolve':''}`);
       if(addBond(c,m?20+Math.round((m.kills||0)/2):10))L.bond.push(`${c.name} reached ${bondStar(c)}★ bond${bondStar(c)===3?': '+BOND_PASSIVE[c.type].name+' unlocked':bondStar(c)===5?': Last Stand unlocked':''}`);
       if(!c.proven&&c.captureRaid>=0&&c.captureRaid<R.id){c.proven=true;L.proven.push(`${c.name} is proven. Traits: ${c.traits.map(t=>TRAITS[t].name).join(', ')}`)}
@@ -1114,6 +1173,7 @@ function endRaid(outcome,via){
     party.forEach(m=>handle(m.c,m.downed,25+m.xpGain,m));
     if(R.slot3)handle(R.slot3.c,false,10+party.reduce((a,m)=>a+m.xpGain,0)/4,null);
     R.kxp+=40;
+    const cp=caravanPay();if(cp){S.coin+=cp;L.loot.push(`+${cp} coin for seeing the trader home`)}
     // Pride: titles, friendships between creatures that came home together, and a boss's trophy.
     L.titles=extractTitles(party.map(m=>({c:m.c,downed:m.downed})),!!R.bossDown);
     recordShared([...party.filter(m=>!m.downed).map(m=>m.c),R.slot3&&R.slot3.c].filter(c=>c&&S.creatures.includes(c)).map(c=>c.id));
@@ -1135,14 +1195,15 @@ function endRaid(outcome,via){
     R.taken.forEach(it=>{if(!held.some(([,x])=>x===it)){L.lost.push(itemName(it));loseItem(it)}});
     if(satchel){L.lost.push(itemName(satchel));loseItem(satchel)}
     const keepCoin=Math.round(R.bag.coin*(vt>=5?.6:vt>=3?.3:0)),keepOre=vt>=5?R.bag.ore:0;
-    const keepMats=vt>=5;if(keepMats){give('hide',R.bag.hide);give('dust',R.bag.dust)}
+    const keepMats=vt>=5;if(keepMats){give('hide',R.bag.hide);give('dust',R.bag.dust);give('sap',R.bag.sap||0)}
     if(keepCoin||keepOre){S.coin+=keepCoin;S.ore+=keepOre;L.home.push(`Vault saved ${keepCoin} coin${keepOre?', '+keepOre+' ore, '+R.bag.hide+' hide and '+R.bag.dust+' crystal dust':''}`)}
     const lostLoot=[R.bag.coin-keepCoin&&(R.bag.coin-keepCoin)+' coin',R.bag.ore-keepOre&&(R.bag.ore-keepOre)+' ore',R.bag.food&&R.bag.food+' food',!keepMats&&R.bag.hide&&R.bag.hide+' hide',!keepMats&&R.bag.dust&&R.bag.dust+' crystal dust',...R.prints.map(id=>'print: '+GUNS[id].name),R.tonics&&R.tonics+' tonics'].filter(Boolean);
     if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
     const cg=scav?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
   }
   validGuns();
-  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp')));
+  if(R.mode==='raid'||scav){const cr=settleContract({extracted:outcome==='extract',bagCoin:R.bag.coin,bagOre:R.bag.ore,kills:R.kills,eliteKills:R.eliteKills||0,deepest,caught:caughtC});if(cr)L.notes.push(cr.text)}
+  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1));
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
@@ -1164,4 +1225,4 @@ function exitRaid(){
   setTimeout(()=>{if(R===done){R=null;if(ui.tab==='hideout')startHideoutMap()}},0);
 }
 
-export {stickInset,wildEnemy,canRelease,releaseCreature,TS,RW,RH,CW,CH,R,bagUsed,bagAdd,roleInParty,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};
+export {partyCreatures,stickInset,wildEnemy,canRelease,releaseCreature,TS,RW,RH,CW,CH,R,bagUsed,bagAdd,roleInParty,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};

@@ -8,10 +8,10 @@
      - crafting with quality tiers and recipe mastery, repairs and single-use prints,
      - the roster cap, Roost expeditions and the death legacy.
    All numbers live in src/data/jobs.json. */
-import {EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST} from './content.js';
+import {GENES,EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST} from './content.js';
 import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,secTier,unplace,whereIs} from './state.js';
 import {rand} from './rng.js';
-import {ancestors} from './genetics.js';
+import {GRADE_LOCI,ancestors,express} from './genetics.js';
 import {comfort,perk} from './hideout.js';
 
 /* ---------- materials ---------- */
@@ -56,6 +56,19 @@ const repairCost=it=>{const n=Math.ceil((it.max-it.dur)*J.DURABILITY.repairPerPo
 function repair(uid){const it=itemByUid(uid);if(!it)return false;const c=repairCost(it);if(!c||!pay(c))return false;it.dur=it.max;addLog(`Repaired the ${itemName(it)}.`);return true}
 function scrapItem(it){S.items=S.items.filter(x=>x!==it);if(S.loadout.guns.includes(it.uid))S.loadout.guns=S.loadout.guns.map(x=>x===it.uid?null:x);if(S.loadout.satchel===it.uid)S.loadout.satchel=null}
 
+/* ---------- gene serums (the Apothecary) ---------- */
+// A serum raises the weaker copy of the creature's lowest grade by 1, up to 10.
+function serumLocus(c){
+  const open=GRADE_LOCI.filter(k=>Math.min(...c.genome[k])<10);
+  return open.length?open.reduce((a,k)=>(c.genes[k]<c.genes[a]||(c.genes[k]===c.genes[a]&&Math.min(...c.genome[k])<Math.min(...c.genome[a]))?k:a)):null;
+}
+function useSerum(c){
+  const k=c&&serumLocus(c);if(!k||amt('serum')<1)return null;
+  const pair=c.genome[k],w=pair[0]<=pair[1]?0:1;pair[w]++;give('serum',-1);express(c);
+  addLog(`A gene serum raised ${c.name}'s weaker ${GENES[k]} copy to ${pair[w]}.`);
+  return k;
+}
+
 /* ---------- stations ---------- */
 const prodStation=k=>!!J.STATIONS[k];
 const fatigueMul=c=>1-J.FATIGUE.maxPenalty*Math.min(100,c.fat||0)/100;
@@ -81,7 +94,7 @@ function crewMods(k){
 function stationReport(k){
   const R=J.STATIONS[k];if(!R)return null;
   const m=members(k),mods=crewMods(k),f=foremanOf(k);
-  const tierMul=k==='garden'?J.WORK.gardenTier[secTier(k)]:1;
+  const tierMul=k==='garden'?J.WORK.gardenTier[secTier(k)]:k==='apothecary'?J.WORK.apothecaryTier[secTier(k)]:1;
   const rows=m.map(c=>({c,u:workUnit(c,k)}));
   const units=rows.reduce((a,r)=>a+r.u,0)*mods.mul*tierMul*(R.rate||1);
   // Batches: each needs R.in; inputs on hand can cap it.
@@ -236,7 +249,7 @@ function passLegacy(dead){
 const sellPrice=id=>(J.MATERIALS[id]||{}).sell||0;
 function sellMat(id,n=1){if(amt(id)<n||!sellPrice(id))return false;give(id,-n);S.coin+=sellPrice(id)*n;return true}
 
-export {amt,give,canPay,pay,matName,costText,QN,newItem,itemByUid,itemName,itemBase,makerText,usable,foundGun,gunDmgMul,satchelSlots,repairCost,repair,scrapItem,
+export {serumLocus,useSerum,amt,give,canPay,pay,matName,costText,QN,newItem,itemByUid,itemName,itemBase,makerText,usable,foundGun,gunDmgMul,satchelSlots,repairCost,repair,scrapItem,
   prodStation,fatigueMul,members,foremanOf,typeMatch,workUnit,crewMods,stationReport,runStations,tickFatigue,mouths,
   masteryLevel,knackOf,rollQuality,qualityOdds,keeperName,recipeCost,weaponCost,craft,craftWeapon,
   rosterCap,rosterCount,overCap,penCost,buildPen,roleOf,roleInfo,expAway,expeditionBlock,startExpedition,teamScale,tickExpeditions,

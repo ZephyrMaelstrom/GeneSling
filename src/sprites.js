@@ -125,8 +125,26 @@ const BODY={
     g.strokeStyle=C.acc;g.globalAlpha=.6+.4*Math.sin(t*3+s);g.lineWidth=1.6;g.beginPath();g.moveTo(-5,4);g.lineTo(-2,8);g.lineTo(2,4);g.lineTo(5,8);g.moveTo(-4,11);g.lineTo(4,11);g.stroke();g.globalAlpha=1;g.strokeStyle=OL;g.lineWidth=2.2;
     g.fillStyle='#fff';g.beginPath();g.arc(1,-5,4,0,7);fs();g.fillStyle=C.acc;g.beginPath();g.arc(2,-5,2,0,7);g.fill();
     g.fillStyle='#ffcf4a';g.beginPath();g.moveTo(-6,-21+f);g.lineTo(-6,-27+f);g.lineTo(-3,-24+f);g.lineTo(0,-29+f);g.lineTo(3,-24+f);g.lineTo(6,-27+f);g.lineTo(6,-21+f);g.closePath();fs()},
+  // Venom (Phase 5): a frilled bog newt, a coiled marsh serpent and a three-headed vine hydra.
+  toxlet(g,C,t,s){const{fs,eyes}=spriteKit(g,C),w=Math.sin(t*8+s)*2,d=(t*1.5+s)%1;
+    g.fillStyle=C.sh;g.beginPath();g.moveTo(-8,6);g.quadraticCurveTo(-20,4+w,-22,-4+w);g.quadraticCurveTo(-14,2,-6,0);g.closePath();fs();
+    g.fillStyle=C.col;g.beginPath();g.ellipse(0,4,12,9,0,0,7);fs();
+    g.fillStyle=C.acc;[-7,-1,5].forEach((x,i)=>{g.beginPath();g.moveTo(x-3,-3);g.lineTo(x,-11-(i===1?3:0)+w*.5);g.lineTo(x+3,-3);g.closePath();fs()});
+    g.fillStyle='rgba(230,255,106,.8)';g.beginPath();g.arc(6,10+d*8,2,0,7);g.fill();eyes(7,1,6)},
+  fangmire(g,C,t,s){const{fs,eye1}=spriteKit(g,C),w=Math.sin(t*5+s)*2;
+    g.fillStyle=C.sh;g.beginPath();g.ellipse(-4,9,14,6,0,0,7);fs();
+    g.fillStyle=C.col;g.beginPath();g.ellipse(-6,6,11,6,0,0,7);fs();
+    g.beginPath();g.moveTo(-2,4);g.quadraticCurveTo(2,-12+w,8,-12+w);g.quadraticCurveTo(14,-12+w,13,-5+w);g.quadraticCurveTo(10,-2+w,6,-4+w);g.quadraticCurveTo(4,0,4,6);g.closePath();fs();
+    g.fillStyle='#f6ffe0';g.beginPath();g.moveTo(9,-5+w);g.lineTo(10,0+w);g.lineTo(11,-5+w);g.closePath();g.fill();g.stroke();
+    g.fillStyle=C.acc;g.globalAlpha=.6+.4*Math.sin(t*6+s);g.beginPath();g.arc(10,1+w,1.6,0,7);g.fill();g.globalAlpha=1;eye1(9,-9+w)},
+  hydravine(g,C,t,s){const{fs,eye1}=spriteKit(g,C);
+    g.fillStyle=C.sh;g.beginPath();g.ellipse(0,10,14,7,0,0,7);fs();
+    [-1,0,1].forEach(k=>{const w=Math.sin(t*4+s+k*1.7)*3,hx=k*10+w*.5,hy=-12-(k?0:4)+w;
+      g.strokeStyle=OL;g.lineWidth=7;g.beginPath();g.moveTo(k*5,8);g.quadraticCurveTo(k*8,-2,hx,hy);g.stroke();
+      g.strokeStyle=C.col;g.lineWidth=4;g.beginPath();g.moveTo(k*5,8);g.quadraticCurveTo(k*8,-2,hx,hy);g.stroke();g.lineWidth=2.2;g.strokeStyle=OL;
+      g.fillStyle=C.col;g.beginPath();g.ellipse(hx,hy,6,5,0,0,7);fs();g.fillStyle=C.acc;g.beginPath();g.moveTo(hx-3,hy-4);g.lineTo(hx,hy-10);g.lineTo(hx+3,hy-4);g.closePath();fs();eye1(hx+2,hy-1,1.6)})},
 };
-const HYBRID_BODY={ember:'pyrrox',fungal:'shroomite',tide:'tidewyrm',echo:'vesperbat',gale:'kestrix',crystal:'prismoth',warden:'bastion'};
+const HYBRID_BODY={ember:'pyrrox',fungal:'shroomite',tide:'tidewyrm',echo:'vesperbat',gale:'kestrix',crystal:'prismoth',warden:'bastion',venom:'fangmire'};
 function drawMark(g,type2,t){
   g.lineWidth=2;g.strokeStyle=OL;const fs=()=>{g.fill();g.stroke()};
   if(type2==='ember'){const f=Math.sin(t*14)*2;g.fillStyle='#ffd23f';g.beginPath();g.moveTo(-4,-12);g.lineTo(-1,-22-f);g.lineTo(2,-15);g.lineTo(5,-21+f);g.lineTo(6,-12);g.closePath();fs()}
@@ -136,6 +154,7 @@ function drawMark(g,type2,t){
   if(type2==='echo'){g.fillStyle='#9b7bff';[-1,1].forEach(k=>{g.beginPath();g.moveTo(k*3,-11);g.lineTo(k*8,-22);g.lineTo(k*10,-9);g.closePath();fs()})}
   if(type2==='warden'){g.fillStyle='#c9b48a';[-1,1].forEach(k=>{g.beginPath();g.moveTo(k*4,-12);g.lineTo(k*10,-21);g.lineTo(k*9,-11);g.closePath();fs()})}
   if(type2==='fungal'){g.fillStyle='#e0527a';g.beginPath();g.ellipse(-6,-12,7,4,0,Math.PI,0);g.closePath();fs();g.fillStyle='#fff';g.beginPath();g.arc(-6,-14,1.4,0,7);g.fill()}
+  if(type2==='venom'){g.fillStyle='#9be35a';[-1,1].forEach(k=>{g.beginPath();g.moveTo(k*4,-11);g.lineTo(k*7,-19);g.lineTo(k*9,-10);g.closePath();fs()})}
 }
 function stageBack(g,type,st,C,t,fin){
   if(fin){g.globalAlpha=.25+.15*Math.sin(t*3);g.fillStyle=C.acc;g.beginPath();g.arc(0,0,25,0,7);g.fill();g.globalAlpha=1}
@@ -148,6 +167,7 @@ function stageBack(g,type,st,C,t,fin){
   if(type==='gale'){g.fillStyle=C.acc;[[-22,-12],[-24,-4],[-22,4]].forEach(([x,y])=>{g.beginPath();g.moveTo(-6,-2);g.quadraticCurveTo(x*.6,y-4,x,y);g.quadraticCurveTo(x*.6,y+4,-6,2);g.closePath();fs()})}
   if(type==='crystal'){g.fillStyle=C.acc;for(let i=0;i<3;i++){const a=t*1.5+i*2.09,x=Math.cos(a)*20,y=Math.sin(a)*12-4;g.beginPath();g.moveTo(x,y-5);g.lineTo(x+3,y);g.lineTo(x,y+5);g.lineTo(x-3,y);g.closePath();fs()}}
   if(type==='warden'){g.fillStyle=C.sh;[[-17,-10],[11,-10]].forEach(([x,y])=>{g.fillRect(x,y,7,7);g.strokeRect(x,y,7,7)})}
+  if(type==='venom'){g.fillStyle=C.acc;g.globalAlpha=.75;for(let i=0;i<3;i++){const p=(t*.8+i/3)%1;g.beginPath();g.arc(-14+i*6,-8-p*14,2.5-p*1.2,0,7);g.fill()}g.globalAlpha=1}
 }
 function stageFront(g,type,st,C,t,fin){
   if(st>=2){g.strokeStyle=C.acc;g.lineWidth=2;g.globalAlpha=.85;g.beginPath();g.moveTo(-9,6);g.lineTo(-5,10);g.moveTo(-5,4);g.lineTo(-1,8);g.stroke();g.globalAlpha=1}

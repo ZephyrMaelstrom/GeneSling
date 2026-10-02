@@ -23,7 +23,15 @@
     "hammer": {"name":"Quake Maul","melee":true,"tier":2,"dmg":34,"rate":0.9,"range":48,"arc":2.3,"knock":40,"shock":70,"col":"#b8862f","elem":"stagger","desc":"Crushing blows that stagger."},
     "scythe": {"name":"Reaper Scythe","melee":true,"tier":3,"dmg":24,"rate":1.4,"range":60,"arc":3.2,"reflect":true,"col":"#9b7bff","desc":"Huge sweep that sends bullets back."},
     "fangs": {"name":"Twin Fangs","melee":true,"tier":3,"dmg":9,"hits":2,"rate":3,"range":38,"arc":1.5,"leech":0.06,"col":"#ff6688","elem":"burn","desc":"Burning double slashes that heal you."},
-    "moonblade": {"name":"Moonblade","melee":true,"tier":4,"dmg":26,"rate":1.6,"range":54,"arc":2.4,"wave":true,"reflect":true,"col":"#7fd7ff","elem":"brittle","desc":"Crescent waves that reflect bullets."}
+    "moonblade": {"name":"Moonblade","melee":true,"tier":4,"dmg":26,"rate":1.6,"range":54,"arc":2.4,"wave":true,"reflect":true,"col":"#7fd7ff","elem":"brittle","desc":"Crescent waves that reflect bullets."},
+    "needler": {"name":"Bog Needler","tier":1,"dmg":6,"rate":3.2,"spread":0.06,"speed":620,"life":1,"col":"#9be35a","r":4,"elem":"poison","desc":"Fast darts that poison."},
+    "harpoon": {"name":"Harpoon Gun","tier":2,"dmg":30,"rate":0.8,"speed":700,"pierce":3,"life":1.2,"col":"#5cc8ff","r":6,"elem":"soak","desc":"Heavy bolts that soak and pierce three foes."},
+    "lantern": {"name":"Choir Lantern","tier":2,"dmg":9,"rate":1.6,"speed":330,"homing":2.5,"life":1.8,"col":"#c8a8ff","r":7,"elem":"static","desc":"Slow glowing orbs that seek in the dark."},
+    "windbow": {"name":"Windbow","tier":2,"dmg":14,"rate":1.3,"speed":900,"pierce":1,"life":1.2,"col":"#4fe0c8","r":5,"elem":"gust","desc":"Arrows that ride the wind."},
+    "bilecannon": {"name":"Bile Cannon","tier":3,"dmg":16,"rate":0.9,"speed":320,"explode":80,"life":0.9,"col":"#9be35a","r":8,"elem":"poison","desc":"Lobbed sacs that splash poison."},
+    "slagthrower": {"name":"Slagthrower","tier":3,"dmg":6,"rate":6,"spread":0.25,"speed":360,"life":0.45,"col":"#ff8a3d","r":6,"elem":"burn","desc":"A short gout of molten slag."},
+    "tidebreaker": {"name":"Tidebreaker","melee":true,"tier":3,"dmg":28,"rate":1.2,"range":58,"arc":2.6,"knock":30,"shock":60,"col":"#3fa9ff","elem":"soak","desc":"A wave-crested axe that soaks everything it hits."},
+    "venomfang": {"name":"Venom Fang","melee":true,"tier":4,"dmg":14,"hits":2,"rate":2.8,"range":40,"arc":1.6,"leech":0.05,"col":"#c8ff6a","elem":"poison","desc":"Twin poisoned fangs that heal you."}
   },
   "WEAPON_COST": {
     "1": {"coin":60,"ore":4},

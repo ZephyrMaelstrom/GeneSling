@@ -59,7 +59,8 @@
     "echo": {"name": "Echo's Lesson", "desc": "+5% Keeper XP from raids", "kxp": 0.05},
     "gale": {"name": "Gale's Breath", "desc": "+5 max HP for you in raids", "hp": 5},
     "crystal": {"name": "Crystal Hoard", "desc": "+5% coin from extractions", "coin": 0.05},
-    "warden": {"name": "Warden's Watch", "desc": "Hatchlings start with +15 bond", "bond": 15}
+    "warden": {"name": "Warden's Watch", "desc": "Hatchlings start with +15 bond", "bond": 15},
+    "venom": {"name": "Venom's Cure", "desc": "+1 gene serum every few days (a third of one a day)", "serum": 0.34}
   },
   "TITLES": {
     "wyrmslayer": {"name": "Wyrmslayer", "desc": "Came home from a raid where a boss fell"},
@@ -82,5 +83,5 @@
     "feedback": "feedback",
     "returnHours": 8
   },
-  "DEFAULT_LAYOUT": [["nursery",1,0], ["training",6,0], ["warroom",11,0], ["archive",16,0], ["board",9,2], ["forge",0,4], ["garden",4,4], ["spring",8,4], ["roost",12,4], ["vault",16,4], ["den",1,6], ["den",17,6], ["path",0,3], ["path",1,3], ["path",2,3], ["path",3,3], ["path",4,3], ["path",5,3], ["path",6,3], ["path",7,3], ["path",8,3], ["path",9,3], ["path",10,3], ["path",11,3], ["path",12,3], ["path",13,3], ["path",14,3], ["path",15,3], ["path",16,3], ["path",17,3], ["path",18,3], ["path",19,3], ["path",9,0], ["path",9,1], ["path",10,0], ["path",10,1]]
+  "DEFAULT_LAYOUT": [["nursery",1,0], ["training",6,0], ["warroom",11,0], ["archive",16,0], ["board",9,2], ["forge",0,4], ["garden",4,4], ["spring",8,4], ["roost",12,4], ["vault",16,4], ["den",1,6],["apothecary",2,2], ["den",17,6], ["path",0,3], ["path",1,3], ["path",2,3], ["path",3,3], ["path",4,3], ["path",5,3], ["path",6,3], ["path",7,3], ["path",8,3], ["path",9,3], ["path",10,3], ["path",11,3], ["path",12,3], ["path",13,3], ["path",14,3], ["path",15,3], ["path",16,3], ["path",17,3], ["path",18,3], ["path",19,3], ["path",9,0], ["path",9,1], ["path",10,0], ["path",10,1]]
 }

@@ -70,6 +70,15 @@ function autoPlace(key,ref){
   return null;
 }
 
+// A station that isn't on the map yet (one added by an update): its default spot if free, else the first fit.
+function placeStation(key){
+  if(S.layout.some(i=>i.key===key))return null;
+  const d=P.DEFAULT_LAYOUT.find(([k])=>k===key),spots=d?[[d[1],d[2]]]:[];
+  for(let y=minRow();y<G.baseRows;y++)for(let x=0;x<G.cols;x++)spots.push([x,y]);
+  for(const [x,y] of spots)if(fits(key,x,y)){const it={id:nextLayId(),key,x,y};S.layout.push(it);return it}
+  return null;
+}
+
 /* ---------- hillside terraces ---------- */
 const nextPlot=()=>P.PLOTS[S.plots||0]||null;
 function plotBlock(){
@@ -229,6 +238,6 @@ function pridify(d){
   return d;
 }
 
-export {STATION_KEYS,isStation,foot,layer,minRow,rowCount,defaultLayout,layItem,stationItem,fits,itemAt,placeable,placedRef,placeNew,moveItem,storable,storeItem,autoPlace,
+export {placeStation,STATION_KEYS,isStation,foot,layer,minRow,rowCount,defaultLayout,layItem,stationItem,fits,itemAt,placeable,placedRef,placeNew,moveItem,storable,storeItem,autoPlace,
   nextPlot,plotBlock,buyPlot,craftDecor,comfortPoints,comfort,dayPhase,isNight,pairKey,recordShared,sharedRaids,areFriends,friendsOf,lifePlan,
   giveTitle,titlesOf,extractTitles,trophyName,trophyStory,awardBossTrophy,displayWeapon,takeDownWeapon,retireBlock,retire,perk,setSigil,breederMark,pridify};

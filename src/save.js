@@ -13,12 +13,13 @@
    - The demo saves under its own names (database "genesling-demo"), so it can't overwrite the
      full game's save on the same site. With no save of its own, the full game loads the demo's,
      which is how a demo save carries into the full game. */
-import {S,defaultOpts} from './state.js';
 import {genomeFrom,express} from './genetics.js';
-import {pridify} from './hideout.js';
+import {pridify,placeStation} from './hideout.js';
+import {bloomify} from './bloom.js';
+import {S,setS,defaultOpts} from './state.js';
 import {DEMO} from './flags.js';
 
-const SAVE_VERSION=10;
+const SAVE_VERSION=11;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
 const OWN=DEMO?NAMES.demo:NAMES.full;
@@ -63,6 +64,13 @@ const MIGRATIONS={
   // hillside terraces, friendships, titles, the Hall of Legends and the breeder's sigil. Bosses already
   // beaten come home as trophies, waiting in stores to be placed.
   9:pridify,
+  // v11 (The Bloom expands): the Apothecary station (placed on the map where it fits), and the Bloom's
+  // state: recent raid combinations, contracts and vein maps.
+  10:d=>{
+    d.sections=d.sections||{};d.sections.apothecary=d.sections.apothecary||{cap:3,ids:[]};
+    if(d.layout){const keep=S;setS(d);try{placeStation('apothecary')}finally{setS(keep)}}
+    return bloomify(d);
+  },
 };
 
 function migrate(d){

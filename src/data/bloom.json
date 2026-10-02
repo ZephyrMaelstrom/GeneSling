@@ -1,0 +1,112 @@
+{
+  "VEINS": {
+    "rootworks": {"name": "The Rootworks", "short": "Rootworks", "col": "#5fb3a0", "key": null, "twist": null,
+      "blurb": "The shared entrance: all seven original types, and the first boss at the bottom.",
+      "pals": [
+        {"a": "#2c4a55", "b": "#284450", "fl": "#3a6070", "wall": "#336b66", "top": "#5fb3a0", "edge": "#142630"},
+        {"a": "#3a2a5e", "b": "#33255a", "fl": "#4a3878", "wall": "#5d43a3", "top": "#8d6fe0", "edge": "#1d1438"},
+        {"a": "#2f3a2a", "b": "#2a3426", "fl": "#3f4f34", "wall": "#4f6a3a", "top": "#a8d86a", "edge": "#141f0f"}],
+      "types": {}, "rich": {}, "extraFoes": []},
+    "ember": {"name": "The Ember Abyss", "short": "Ember Abyss", "col": "#ff8a5c", "key": null, "twist": "vents",
+      "blurb": "Lava vents erupt on a beat and leave the floor burning. Rich in ore and Ember creatures.",
+      "pals": [
+        {"a": "#4a2a2a", "b": "#432626", "fl": "#5e3434", "wall": "#8a3a3a", "top": "#ff8a5c", "edge": "#240f0f"},
+        {"a": "#3a1f2f", "b": "#341b2a", "fl": "#4f2a3f", "wall": "#7a2a4f", "top": "#ff5ca8", "edge": "#1f0a14"},
+        {"a": "#1f1f2f", "b": "#1b1b2a", "fl": "#2f2f45", "wall": "#3a3a5a", "top": "#ffa04f", "edge": "#0a0a14"}],
+      "types": {"ember": 3}, "rich": {"ore": 1.6}, "extraFoes": []},
+    "drowned": {"name": "The Drowned Galleries", "short": "Drowned Galleries", "col": "#5cc8ff", "key": "tide", "twist": "flood",
+      "blurb": "Water rises room by room. A Tide in your party swims the flooded halls; without one, deep water drags and drowns.",
+      "pals": [
+        {"a": "#1f3a4a", "b": "#1b3444", "fl": "#2a4f66", "wall": "#2f5f7a", "top": "#7fd7ff", "edge": "#0a1a24"},
+        {"a": "#1a3040", "b": "#172b3a", "fl": "#24465c", "wall": "#2a5570", "top": "#5cc8ff", "edge": "#08141c"},
+        {"a": "#142838", "b": "#122434", "fl": "#1f3c52", "wall": "#244a66", "top": "#9fe8ff", "edge": "#060f16"}],
+      "types": {"tide": 4}, "rich": {"food": 1.5, "hide": 1.5}, "extraFoes": ["voidbat", "shadewisp", "acidslime"]},
+    "choir": {"name": "The Hollow Choir", "short": "Hollow Choir", "col": "#c8a8ff", "key": "echo", "twist": "dark",
+      "blurb": "Darkness. Enemies hunt by sound, so firing gives you away. An Echo in your party lets you see.",
+      "pals": [
+        {"a": "#1f1830", "b": "#1b152b", "fl": "#2a2142", "wall": "#3a2f5e", "top": "#9b7bff", "edge": "#0c0818"},
+        {"a": "#1c142c", "b": "#181128", "fl": "#271d3e", "wall": "#352a58", "top": "#c8a8ff", "edge": "#0a0614"},
+        {"a": "#181024", "b": "#150e20", "fl": "#221836", "wall": "#30244f", "top": "#e8d8ff", "edge": "#080410"}],
+      "types": {"echo": 4}, "rich": {"shards": 0.12}, "extraFoes": ["voidbat", "heximp", "lich"]},
+    "spires": {"name": "The Glasswind Spires", "short": "Glasswind Spires", "col": "#4fe0c8", "key": "gale", "twist": "wind",
+      "blurb": "Wind lanes push bullets and bodies, and cliff drops wait between rooms. A Gale in your party rides the wind.",
+      "pals": [
+        {"a": "#2a3a4a", "b": "#263544", "fl": "#3a5066", "wall": "#4a6a8a", "top": "#e8fff8", "edge": "#101a24"},
+        {"a": "#30304a", "b": "#2b2b44", "fl": "#44446a", "wall": "#5a5a8a", "top": "#ff8fe0", "edge": "#121224"},
+        {"a": "#28384a", "b": "#243344", "fl": "#38506a", "wall": "#466a8e", "top": "#4fe0c8", "edge": "#0e1824"}],
+      "types": {"gale": 3, "crystal": 3}, "rich": {"dust": 2}, "extraFoes": ["weaver", "tyranteye", "heximp"]},
+    "sump": {"name": "The Sump", "short": "Sump", "col": "#9be35a", "key": null, "twist": "poison",
+      "blurb": "Poison pools seep across the floors. Creatures caught here carry extra mutations. Home of the Venom type.",
+      "pals": [
+        {"a": "#2a3420", "b": "#26301c", "fl": "#3a4a2a", "wall": "#4a5a2a", "top": "#9be35a", "edge": "#10160a"},
+        {"a": "#26301e", "b": "#222c1a", "fl": "#344428", "wall": "#425a26", "top": "#c8ff6a", "edge": "#0e1408"},
+        {"a": "#222a1a", "b": "#1e2616", "fl": "#2e3c24", "wall": "#3a4f22", "top": "#e6ff6a", "edge": "#0c1206"}],
+      "types": {"venom": 4, "fungal": 1.5}, "rich": {"sap": 1}, "extraFoes": ["acidslime", "weaver", "lich"]}
+  },
+  "VEIN_ORDER": ["ember", "drowned", "choir", "spires", "sump"],
+  "TWISTS": {
+    "vents": {"every": 3.2, "warn": 1.1, "radius": 46, "dmg": 16, "perRoom": 3, "burnT": 3, "burnDps": 6},
+    "flood": {"rise": 0.022, "slow": 0.62, "drown": 5, "deep": 0.75, "foeSlow": 0.85},
+    "dark": {"see": 150, "seeKey": 330, "hear": 430, "notice": 110},
+    "wind": {"push": 70, "keyPush": 0.35, "bullet": 120},
+    "poison": {"pools": 3, "radius": 42, "dps": 7, "mutations": 1}
+  },
+  "LAYOUTS": {
+    "warrens": {"name": "Warrens", "desc": "A grid of rooms. Clear them and pick your route.", "boss": true,
+      "w": {"rootworks": 3, "ember": 2, "drowned": 1.5, "choir": 1.5, "spires": 1.5, "sump": 1.5}},
+    "labyrinth": {"name": "Labyrinth", "desc": "Twisting halls with extra rooms and more secrets.", "boss": true,
+      "w": {"rootworks": 1, "ember": 1, "drowned": 1, "choir": 2.5, "spires": 1, "sump": 1.5}},
+    "gauntlet": {"name": "Gauntlet", "desc": "A chain of arena rooms. The doors behind you lock.", "boss": true,
+      "w": {"rootworks": 1, "ember": 2, "drowned": 1, "choir": 1, "spires": 1.5, "sump": 1}},
+    "sinkhole": {"name": "Sinkhole", "desc": "Rooms you leave collapse after a while. Keep moving.", "boss": false,
+      "w": {"rootworks": 1, "ember": 1.5, "drowned": 0.5, "choir": 1, "spires": 2, "sump": 1}},
+    "flood": {"name": "Flood", "desc": "Rooms fill with water over time.", "boss": true,
+      "w": {"rootworks": 0.6, "ember": 0.2, "drowned": 3, "choir": 0.6, "spires": 0.3, "sump": 1.5}},
+    "nest": {"name": "Nest", "desc": "A wild colony fills one great room. Bring cages.", "boss": false,
+      "w": {"rootworks": 1, "ember": 1, "drowned": 1, "choir": 1, "spires": 1, "sump": 2}},
+    "caravan": {"name": "Caravan", "desc": "Escort a trader to the extract for a large payout.", "boss": false,
+      "w": {"rootworks": 1, "ember": 1, "drowned": 1, "choir": 0.8, "spires": 1, "sump": 1}},
+    "mirror": {"name": "Mirror", "desc": "Shadow copies of your own creatures wait in the rooms.", "boss": true,
+      "w": {"rootworks": 0.8, "ember": 1, "drowned": 1, "choir": 1.5, "spires": 1.5, "sump": 1}}
+  },
+  "LAYOUT_RULES": {
+    "labyrinth": {"rooms": 4, "secrets": 2, "foesMinus": 1},
+    "gauntlet": {"sealAfter": 0.5},
+    "sinkhole": {"after": 22, "warn": 8},
+    "nest": {"wilds": [6, 8], "cages": 3, "foes": 1},
+    "caravan": {"hp": 260, "pay": [220, 500], "speed": 175, "aggro": 0.35},
+    "mirror": {"rooms": 0.4, "hp": 0.55, "dmg": 0.6}
+  },
+  "EVENTS": {
+    "chance": 0.25,
+    "list": {
+      "migration": {"name": "Migration", "desc": "A herd of one rare species is passing through.", "herd": [4, 6]},
+      "surge": {"name": "Surge", "desc": "The Bloom turns aggressive: enemies deal 30% more damage and loot doubles.", "dmg": 1.3, "loot": 2},
+      "lostkeeper": {"name": "Lost Keeper", "desc": "The echo of a dead Keeper wanders this floor. Follow it to a relic, or fight it for its gear.", "hp": 900, "shards": 2},
+      "rivals": {"name": "Rival Raiders", "desc": "Raiders from the Exchange are after the same extract. Rob them before they rob you.", "n": 3, "hp": 220, "steal": 0.25, "loot": [80, 160]},
+      "cache": {"name": "Estate Cache", "desc": "A sealed Keeper camp full of old blueprints.", "prints": 2, "coin": [120, 260]}
+    }
+  },
+  "VARIETY": {"memory": 20, "tries": 400},
+  "CONTRACTS": {
+    "offers": 3,
+    "list": {
+      "haul": {"name": "Haul", "desc": "Extract with at least {n} coin in your bag.", "n": [150, 400], "reward": {"coin": 1.2, "kxp": 60}},
+      "catchType": {"name": "Specimen", "desc": "Catch a {type} creature and extract with it.", "reward": {"coin": 220, "kxp": 80, "core": 1}},
+      "catchGrade": {"name": "Breeder's order", "desc": "Catch a creature with {gene} {n} or higher and extract with it.", "n": [7, 8], "reward": {"coin": 300, "kxp": 100, "lens": 1}},
+      "hunt": {"name": "Hunt", "desc": "Defeat {n} enemies in one raid and extract.", "n": [25, 45], "reward": {"coin": 200, "kxp": 70, "ingot": 2}},
+      "elite": {"name": "Warden hunt", "desc": "Defeat a lair's elite guardian and extract.", "reward": {"coin": 260, "kxp": 90, "parts": 1}},
+      "survey": {"name": "Survey", "desc": "Reach Floor {n} and extract.", "n": [3, 5], "reward": {"coin": 240, "kxp": 120, "glass": 2}},
+      "deliver": {"name": "Delivery", "desc": "Extract with at least {n} ore.", "n": [12, 30], "reward": {"coin": 180, "kxp": 60, "cloth": 2}}
+    }
+  },
+  "MAPS": {
+    "needRoost": 1,
+    "kinds": {
+      "lure": {"name": "Lure map", "desc": "The vein's signature types turn up twice as often, and wild creatures 50% more.", "cost": {"cloth": 1, "herbs": 2}, "wild": 1.5, "typeMul": 2},
+      "hoard": {"name": "Hoard map", "desc": "Marks the caches: +50% coin from enemies and chests.", "cost": {"cloth": 1, "ingot": 1}, "coin": 1.5},
+      "peril": {"name": "Peril map", "desc": "The hard way down: enemies +30% health and damage, +60% coin and Keeper XP.", "cost": {"cloth": 1, "glass": 1}, "hp": 1.3, "dmg": 1.3, "coin": 1.6, "kxp": 1.6}
+    }
+  },
+  "SUMP_SAP": {"foe": 0.35, "wild": 1, "pool": 0}
+}

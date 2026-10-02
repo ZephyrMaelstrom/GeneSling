@@ -241,7 +241,7 @@ test('the hideout, its panels and the Settings sigil designer render without err
   assert.deepEqual(errors, []);
 });
 
-test('a v9 save loads into v10 with the old map’s layout, and beaten bosses as trophies', async () => {
+test('a v9 save loads into the current version with the old map’s layout, and beaten bosses as trophies', async () => {
   const ctx = await browser.createBrowserContext();
   const {page: p2, errors: e2} = await openGame(browser, srv.url, {context: ctx});
   const r = await p2.evaluate(async () => {
@@ -255,7 +255,7 @@ test('a v9 save loads into v10 with the old map’s layout, and beaten bosses as
   void r;
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, layout: S.layout.length === defaultLayout().length, plots: S.plots, trophies: S.trophies.map(t => [t.boss, !!t.legacy]), placed: S.layout.some(i => i.key === 'trophy'), titles: S.creatures.every(c => Array.isArray(c.titles)), story: trophyStory(S.trophies[0])}));
-  assert.equal(s.v, 10);
+  assert.equal(s.v, 11);
   assert.equal(s.layout, true);
   assert.equal(s.plots, 0);
   assert.deepEqual(s.trophies, [['bloom', true]]);
