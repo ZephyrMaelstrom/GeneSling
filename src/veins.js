@@ -14,6 +14,8 @@ import {rand} from './rng.js';
 import {dist,ri} from './util.js';
 import {R,RH,RW,TS,bagAdd,descend,float,gunOfTier,hurtComp,hurtPlayer,msg,partyCreatures,roomAt,spawnFoe,spawnPos,wildEnemy} from './raid.js';
 import {veinBlock,useMap} from './bloom.js';
+import {ENDGAME as ED} from './content.js';
+import {chooseEnding,rulesFor,tethered,unboundMods} from './endgame.js';
 import {OL,drawCreature} from './sprites.js';
 import {drawPeddler,showOverlay,setPause} from './draw.js';
 import {mutateGenome} from './genetics.js';
@@ -23,8 +25,10 @@ const EXITS=['stairs','gate','rift','cliff','boss','portal'];
 const TW=B.TWISTS,LR=B.LAYOUT_RULES,EV=B.EVENTS.list;
 const plan=()=>R.map.plan||{vein:'rootworks',layout:'warrens',event:null};
 const twist=()=>B.VEINS[plan().vein].twist;
-const flooding=()=>twist()==='flood'||plan().layout==='flood';
-const isDark=()=>twist()==='dark';
+// Every twist on this floor: the vein's own plus any an Unbound tier lays over it (plan.twists).
+const hasTwist=k=>twist()===k||!!(plan().twists&&plan().twists.includes(k));
+const flooding=()=>hasTwist('flood')||plan().layout==='flood';
+const isDark=()=>hasTwist('dark');
 // The vein's key type is in the party and standing (a downed companion doesn't count; slot 3 does).
 function keyActive(type){type=type||B.VEINS[plan().vein].key;return!!type&&partyCreatures().some(c=>c.type===type||c.type2===type)}
 const floodKey=()=>keyActive('tide');
@@ -36,11 +40,14 @@ function floorStart(){
   const m=R.vmap&&f>=4?B.MAPS.kinds[R.vmap.kind]:{};
   const surge=P.event==='surge';
   R.fmods={dmg:(surge?EV.surge.dmg:1)*(m.dmg||1),hp:m.hp||1,coin:(surge?EV.surge.loot:1)*(m.coin||1),kxp:m.kxp||1,wild:m.wild||1};
+  // An Unbound tier (and the ending chosen at the Heart) weigh on every floor.
+  if(R.tier){const u=unboundMods(R.tier);for(const k in u)R.fmods[k]*=u[k]}
   R.beat=0;R.caravan=null;R.shadowed=new Set();
   if(P.layout==='caravan'&&f%3!==0&&R.mode==='raid'){const C=LR.caravan;R.caravan={x:R.p.x+30,y:R.p.y+20,hp:C.hp,maxHp:C.hp,pay:ri(C.pay[0],C.pay[1])*f}}
   if(P.layout==='nest'&&R.mode==='raid'){R.cages.basic+=LR.nest.cages}
-  const L=B.LAYOUTS[P.layout],V=B.VEINS[P.vein];
-  const bits=[`Floor ${f} · ${V.short} · ${L.name}.`,L.desc];
+  const L=B.LAYOUTS[P.layout]||{name:'The Heart',desc:'The Bloom itself waits in the next room.'},V=B.VEINS[P.vein];
+  const bits=[R.tier?`Unbound tier ${R.tier} · floor ${f-6} of 3 · ${L.name}.`:`Floor ${f} · ${V.short} · ${L.name}.`,L.desc];
+  if(R.tier)bits.push(`Rules: ${rulesFor(R.tier).map(x=>x.name).join(', ')}.`);
   if(P.layout==='nest')bits.push(`+${LR.nest.cages} cages for the colony.`);
   if(P.layout==='caravan'&&R.caravan)bits.push(`Keep the trader alive to the extract: ${R.caravan.pay} coin.`);
   if(P.event)bits.push(`Event: ${EV[P.event].name}. ${EV[P.event].desc}`);
@@ -64,6 +71,22 @@ function chooseVein(v){
   R.vein=v;setPause(false);descend(4);return true;
 }
 
+/* ---------- the Underheart and the Heart ---------- */
+// Only cut-free creatures can follow you below Floor 6.
+function enterUnderheart(){
+  const bad=tethered(partyCreatures());
+  if(bad.length){setPause(false);msg(`The Underheart won't let ${bad.map(c=>c.name).join(' and ')} pass: still tethered to the Bloom. Only cut-free creatures (Gen 3 and later) can go down.`);R.stairT=-3;return false}
+  descend(7);return true;
+}
+// A Bloomlord that copies your party sends shadows first.
+function lordShadows(b){const r=b.room;for(const m of R.comps){if(!m||m.downed)continue;const c=structuredClone(m.c);c.name='Shade of '+c.name;const e=wildEnemy(spawnPos(r),c,r);e.shadow=true;e.hp=e.maxHp=Math.round(e.maxHp*ED.LORDS.mirror.hp*3)}}
+function openEndingChoice(){
+  const cards=Object.entries(ED.ENDINGS).map(([k,D])=>`<div class="mcre" style="box-shadow:0 0 0 2px ${D.col}"><b style="color:${D.col}">${D.name}</b><span class="status">${D.desc}</span>
+    <span class="status">Afterwards: ${D.unbound.desc} Title: ${D.title}.</span><div class="row"><button class="btn small primary" data-p="ending" data-k="${k}">${D.name} the Bloom</button></div></div>`).join('');
+  showOverlay(`<h2>The Heart</h2><p class="hint">Ilsa is beside you. The Bloom is quiet, and listening. What will you do with it?</p>${cards}<p class="status">Whatever you choose, the Bloom re-forms as the Unbound Bloom, twenty tiers deep. You can come back to the Heart and choose again.</p>`);
+}
+function pickEnding(k){if(!chooseEnding(k))return false;setPause(false);msg(`You ${ED.ENDINGS[k].name.toLowerCase()} the Bloom. Step into the rift to go home, ${ED.ENDINGS[k].title}.`);return true}
+
 /* ---------- each frame ---------- */
 const inRoom=(r,x,y)=>r&&x>=r.ox*TS&&x<=(r.ox+RW)*TS&&y>=r.oy*TS&&y<=(r.oy+RH)*TS;
 // Movement multiplier for the player from water.
@@ -72,10 +95,13 @@ function moveMul(){
   return 1-(1-TW.flood.slow)*Math.min(1,r.water/TW.flood.deep);
 }
 function twistUpdate(dt){
-  const P=plan(),tw=twist(),p=R.p,r=R.cur;
+  const P=plan(),p=R.p,r=R.cur;
+  // The Underheart's song: every few beats it pulls you toward the middle of the room (a Lumen softens it).
+  if(hasTwist('song')&&r&&r.kind!=='start'){const G=TW.song,ph=R.beat%G.every;if(ph<G.dur){const k=keyActive('lumen')?G.lumenMul:1,dx=r.cx-p.x,dy=r.cy-p.y,l=Math.hypot(dx,dy)||1;
+    if(l>40)R.songPull={x:dx/l*G.pull*k*dt,y:dy/l*G.pull*k*dt};if(ph<dt)msg('The Choir sings, and the Bloom pulls.')}else R.songPull=null}else R.songPull=null;
   R.beat+=dt;
   // Lava vents: a warning ring, then an eruption that leaves burning ground.
-  if(tw==='vents'&&r&&r.vents&&r.spawned){
+  if(hasTwist('vents')&&r&&r.vents&&r.spawned){
     const V=TW.vents,ph=R.beat%V.every;
     r.ventPhase=ph;
     if(ph<dt&&R.beat>dt)for(const v of r.vents){
@@ -86,7 +112,7 @@ function twistUpdate(dt){
     }
   }
   // Poison pools (the Sump), unless the Apothecary has reached tier 5.
-  if(tw==='poison'&&r&&r.pools&&secTier('apothecary')<5){for(const q of r.pools)if(dist(q,p)<TW.poison.radius){hurtPlayer(TW.poison.dps*dt);break}}
+  if(hasTwist('poison')&&r&&r.pools&&secTier('apothecary')<5){for(const q of r.pools)if(dist(q,p)<TW.poison.radius){hurtPlayer(TW.poison.dps*dt);break}}
   // Lingering hazards: burning ground.
   if(R.hazards){for(const h of R.hazards){h.t-=dt;if(dist(h,p)<h.r)hurtPlayer(h.dps*dt)}R.hazards=R.hazards.filter(h=>h.t>0)}
   // Water rises in every room you've entered.
@@ -95,7 +121,7 @@ function twistUpdate(dt){
     if(r&&r.water>=TW.flood.deep&&!floodKey()){hurtPlayer(TW.flood.drown*dt);if(!R.drownWarned){R.drownWarned=true;msg('The water is over your head. Find a Tide, or get out of the deep rooms.')}}
   }
   // Wind lanes push you, your companions and every bullet in the room.
-  if(tw==='wind'&&r&&r.wind){
+  if(hasTwist('wind')&&r&&r.wind){
     const W=TW.wind,k=keyActive('gale')?W.keyPush:1,wx=r.wind.x*W.push*k*dt,wy=r.wind.y*W.push*k*dt;
     R.windMove={x:wx,y:wy};
     for(const b of R.bullets)if(!b.lob&&!b.orbit&&inRoom(r,b.x,b.y)){b.vx+=r.wind.x*W.bullet*dt;b.vy+=r.wind.y*W.bullet*dt}
@@ -119,7 +145,7 @@ function twistUpdate(dt){
 function wake(e){if(!e.dormant)return;e.dormant=false;e.cd=Math.max(e.cd||0,.6);float(e.x,e.y-e.r-12,'!','#ff6688',true)}
 // Firing in the dark wakes everything that can hear it.
 function makeNoise(x,y){if(!isDark())return;for(const e of R.enemies)if(e.dormant&&Math.hypot(e.x-x,e.y-y)<TW.dark.hear)wake(e)}
-const seeRadius=()=>keyActive('echo')?TW.dark.seeKey:TW.dark.see;
+const seeRadius=()=>keyActive('echo')||keyActive('lumen')?TW.dark.seeKey:TW.dark.see;
 
 /* ---------- rooms: what an entered room spawns besides its plan ---------- */
 function enterExtras(r){
@@ -136,7 +162,7 @@ function enterExtras(r){
 function deathExtras(e){
   if(e.keeper){const g=gunOfTier(3);R.items.push({kind:'gun',id:g,x:e.x,y:e.y+20});S.shards+=EV.lostkeeper.shards;float(e.x,e.y-40,`+${EV.lostkeeper.shards} memory shards`,'#ff8fe0',true);msg(`The Lost Keeper fades. Its ${GUNS[g].name} stays behind.`)}
   if(e.rival){const n=Math.round((e.loot||0)*R.fmods.coin);R.bag.coin+=n;float(e.x,e.y-20,`+${n} coin`,'#ffcf4a',true)}
-  if(twist()==='poison'&&e.kind==='foe'&&!e.shadow&&rand()<B.SUMP_SAP.foe)bagAdd('sap',1,e.x,e.y);
+  if(hasTwist('poison')&&e.kind==='foe'&&!e.shadow&&rand()<B.SUMP_SAP.foe)bagAdd('sap',1,e.x,e.y);
 }
 // A creature caught in the Sump carries extra mutations; caught in a vein, bog sap comes with Venom.
 function caughtExtras(c){
@@ -188,4 +214,4 @@ const drawShadow=(g,e,t)=>drawCreature(g,e.c,e.x,e.y,.9,t,{face:e.face,stone:tru
 /* ---------- the Test Lab ---------- */
 function labVein(v){if(!R)return;R.vein=v;descend(4)}
 
-export {plan,twist,flooding,isDark,keyActive,floorStart,openVeinChoice,chooseVein,moveMul,twistUpdate,wake,makeNoise,seeRadius,enterExtras,deathExtras,caughtExtras,catchable,updCaravan,caravanPay,drawTwists,drawDark,drawShadow,labVein};
+export {enterUnderheart,lordShadows,openEndingChoice,pickEnding,hasTwist,plan,twist,flooding,isDark,keyActive,floorStart,openVeinChoice,chooseVein,moveMul,twistUpdate,wake,makeNoise,seeRadius,enterExtras,deathExtras,caughtExtras,catchable,updCaravan,caravanPay,drawTwists,drawDark,drawShadow,labVein};

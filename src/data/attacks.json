@@ -85,19 +85,23 @@
     "gale": "gustDash",
     "crystal": "prismWard",
     "warden": "taunt",
-    "venom": "rotCloud"
+    "venom": "rotCloud",
+    "lumen": "prismWard"
   },
   "ELEM": {
     "burn": {"name":"Burning","col":"#ff7a3d"},
     "spore": {"name":"Spored","col":"#b8f06a"},
     "soak": {"name":"Soaked","col":"#5cc8ff"},
     "poison": {"name":"Poisoned","col":"#9be35a"},
+    "glare": {"name":"Dazzled","col":"#fff3a8"},
     "static": {"name":"Static","col":"#c8a8ff"},
     "gust": {"name":"Buffeted","col":"#4fe0c8"},
     "brittle": {"name":"Brittle","col":"#ffffff"},
     "stagger": {"name":"Staggered","col":"#e3b04b"}
   },
   "REACTIONS": [
+    {"a":"glare","b":"static","name":"Starfire","col":"#fff6c8","desc":"Dazzled + Static: a falling star strikes and stuns."},
+    {"a":"glare","b":"poison","name":"Purge","col":"#f6ffd0","desc":"Dazzled + Poisoned: light burns the venom out, all at once."},
     {"a":"poison","b":"burn","name":"Toxic Flare","col":"#c8ff6a","desc":"Poisoned + Burning: the venom ignites in a burst."},
     {"a":"poison","b":"soak","name":"Spreading Blight","col":"#9be35a","desc":"Poisoned + Soaked: the poison spreads to everything nearby."},
     {"a":"burn","b":"soak","name":"Steam Burst","col":"#e8f4ff","desc":"Burning + Soaked: a scalding blast hits everything nearby."},

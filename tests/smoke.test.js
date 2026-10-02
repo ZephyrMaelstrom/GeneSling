@@ -10,7 +10,7 @@ test('a new game boots to the intro with a starting roster', async () => {
   const {page, errors} = await openGame(browser, srv.url);
   const s = await page.evaluate(() => ({intro: !$('#modal').hidden, v: S.v, creatures: S.creatures.length, tab: ui.tab}));
   assert.equal(s.intro, true);
-  assert.equal(s.v, 11);
+  assert.equal(s.v, 12);
   assert.ok(s.creatures > 0);
   assert.deepEqual(errors, []);
 });

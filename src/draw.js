@@ -9,7 +9,7 @@ import {auVol,sfx} from './audio.js';
 import {openIntro,renderAll,weaponLine} from './ui.js';
 import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,releaseCreature,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 import {startMarket} from './exchange/market.js';
-import {chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
+import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
@@ -110,7 +110,7 @@ function draw(){
       const col={gate:'#ffcf4a',rift:'#9b7bff',cliff:'#4fe0c8'}[r.kind];zone(r.cx,r.cy,col,{gate:`GATE · ${M.floor>=4?40:20} COIN`,rift:'RIFT',cliff:'CLIFF · NEEDS GALE'}[r.kind]);
       if(R.cur===r&&R.ext>0){g.strokeStyle='#fff';g.lineWidth=5;g.beginPath();g.arc(r.cx,r.cy,52,-Math.PI/2,-Math.PI/2+R.ext/2.5*Math.PI*2);g.stroke()}
     }
-    if(r.kind==='portal'){zone(r.cx-80,r.cy,'#9b7bff','RIFT HOME');if(r.deep)zone(r.cx+80,r.cy,'#ff5c7a','THE VEINS ↓')}
+    if(r.kind==='portal'){zone(r.cx-80,r.cy,'#9b7bff','RIFT HOME');if(r.deep)zone(r.cx+80,r.cy,'#ff5c7a',M.floor===3?'THE VEINS ↓':M.floor===6?'UNDERHEART ↓':'THE HEART ↓')}
     if(r.kind==='shop'){drawPeddler(g,r.cx,r.cy,t);g.fillStyle='#ffcf4a';g.fillText('PEDDLER',r.cx,r.cy-34)}
     if(r.kind==='shrine'){drawShrine(g,r.cx,r.cy,t,r.used);g.fillStyle=r.used?'#b4a9d8':'#5de8b0';g.fillText(r.used?'SHRINE (USED)':'SHRINE',r.cx,r.cy-36)}
     if(r.chest){const c=r.chest;g.fillStyle=c.open?'#5c4a2a':c.rich?'#ffcf4a':'#c98a2b';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(c.x-14,c.y-10,28,20);g.strokeRect(c.x-14,c.y-10,28,20);g.fillStyle=c.open?'#3a2e1a':c.rich?'#fff6c8':'#ffcf4a';g.fillRect(c.x-14,c.y-10,28,6);g.fillRect(c.x-3,c.y-4,6,6)}
@@ -347,6 +347,7 @@ $('#pauseBox').addEventListener('click',e=>{
   const b=e.target.closest('[data-p]');if(!b||!R||b.disabled)return;const k=b.dataset.p;sfx('ui');
   if(k==='resume'){R.abandonArm=false;setPause(false)}
   if(k==='vein'){chooseVein(b.dataset.k);return}
+  if(k==='ending'){pickEnding(b.dataset.k);return}
   if(k==='mtab'){R.menuTab=b.dataset.k;R.releaseArm=null;setPause(true)}
   if(k==='swap'){swapSlot3(+b.dataset.i);setPause(true)}
   if(k==='switch'){switchGun();setPause(true)}

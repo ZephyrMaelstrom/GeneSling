@@ -15,6 +15,8 @@
     "frame": {"name":"Bag frame","kind":"component","sell":45,"desc":"Stitched frames for satchels."},
     "sap": {"name":"Bog sap","kind":"raw","sell":9,"desc":"From the Sump's pools and Venom creatures. The Apothecary brews it with herbs."},
     "serum": {"name":"Gene serum","kind":"finished","sell":60,"desc":"Raises the weaker copy of a creature's lowest gene by 1, up to 10. Use it from the creature's card."},
+    "apexshard": {"name":"Apex shard","kind":"raw","sell":200,"desc":"Only from the Unbound Bloom. Fuels the Apex Chamber."},
+    "bloomscar": {"name":"Bloomscar serum","kind":"finished","sell":250,"desc":"Writes the Bloomscar shine into one copy of a creature's shine gene. Only from Unbound tier 8 and deeper."},
     "lens": {"name":"Lens","kind":"component","sell":45,"desc":"Ground glass for gilded cages and satchel clasps."}
   },
   "STATIONS": {
