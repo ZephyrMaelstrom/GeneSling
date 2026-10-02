@@ -17,13 +17,15 @@ after(async () => { await browser.close(); srv.server.close(); });
 // Everything in the v5 save must come through. Creatures gain a genome (their v5 genes and
 // traits as matching allele pairs), lineage fields, and expressed genes under the new names.
 const NEW_NAMES = {vig: 'vig', pow: 'pow', swf: 'swf', hst: 'tem', tmp: 'foc'};
-const stripCreature = c => { const {genome, genes, traits, looks, mom, dad, pure, bred, fat, ...rest} = c; return rest; };
-// Phase 2 turned weapon counts (guns) into items and added the economy fields; those are checked separately.
-const P2 = ['mats', 'items', 'nextUid', 'prints', 'mastery', 'pens', 'expeditions', 'prod', 'keeperName', 'guns', 'loadout', 'market', 'marketSync', 'marketSeed'];
+const stripCreature = c => { const {genome, genes, traits, looks, mom, dad, pure, bred, fat, titles, ...rest} = c; return rest; };
+// Phase 2 turned weapon counts (guns) into items and added the economy fields; those are checked separately,
+// as are Phase 4's hideout layout and pride fields (tests/pride.test.js).
+const P2 = ['mats', 'items', 'nextUid', 'prints', 'mastery', 'pens', 'expeditions', 'prod', 'keeperName', 'guns', 'loadout', 'market', 'marketSync', 'marketSeed',
+  'layout', 'plots', 'decor', 'friends', 'legends', 'sigil', 'demo', 'telemetry', 'trophies'];
 const strip = s => ({...Object.fromEntries(Object.entries(s).filter(([k]) => !P2.includes(k))), v: 0, tree: undefined, settings: {...s.settings, genes: undefined},
   creatures: s.creatures.map(stripCreature), eggs: s.eggs.map(e => ({...e, child: stripCreature(e.child)}))});
 function assertSameSave(loaded, v5) {
-  assert.equal(loaded.v, 9);
+  assert.equal(loaded.v, 10);
   assert.deepEqual(strip(loaded), strip(v5));
   // Every weapon the v5 save owned is now an item, and the loadout points at the same weapons.
   for (const [id, n] of Object.entries(v5.guns)) if (id !== 'pistol') assert.equal(loaded.items.filter(i => i.id === id).length, n, `${n} × ${id}`);
@@ -57,7 +59,7 @@ test('a v5 save loads without loss and moves into IndexedDB', async () => {
     db.close();
     return {rec, legacy: localStorage.getItem('genesling-save-v5')};
   });
-  assert.equal(stored.rec.v, 9);
+  assert.equal(stored.rec.v, 10);
   assertSameSave(JSON.parse(stored.rec.data), v5);
   assert.deepEqual(JSON.parse(stored.legacy), v5);
 
@@ -106,8 +108,8 @@ test('migrations run in order and refuse what they cannot read', async () => {
   const {context, page} = await openGame(browser, srv.url);
   const r = await page.evaluate(() => {
     const tryM = d => { try { return migrate(d).v; } catch (e) { return 'error'; } };
-    return {v5: tryM({v: 5, opts: {}}), v6: tryM({v: 6}), v7: tryM({v: 7}), v8: tryM({v: 8}), v9: tryM({v: 9}), v4: tryM({v: 4}), v99: tryM({v: 99}), junk: tryM('x'), version: SAVE_VERSION};
+    return {v5: tryM({v: 5, opts: {}}), v6: tryM({v: 6}), v7: tryM({v: 7}), v8: tryM({v: 8}), v9: tryM({v: 9}), v10: tryM({v: 10}), v4: tryM({v: 4}), v99: tryM({v: 99}), junk: tryM('x'), version: SAVE_VERSION};
   });
-  assert.deepEqual(r, {v5: 9, v6: 9, v7: 9, v8: 9, v9: 9, v4: 'error', v99: 'error', junk: 'error', version: 9});
+  assert.deepEqual(r, {v5: 10, v6: 10, v7: 10, v8: 10, v9: 10, v10: 10, v4: 'error', v99: 'error', junk: 'error', version: 10});
   await context.close();
 });

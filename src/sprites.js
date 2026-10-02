@@ -204,9 +204,10 @@ function drawCreature(g,c,x,y,s,t,o={}){
   const sp=SPECIES[c.species],st=c.stage||0,flash=o.flash,L=c.looks||NATURAL;
   // Prismatic creatures drift through every hue.
   const deg=L.hue*45+(L.shine===1?t*50:0);
-  const C={col:flash?'#fff':hueShift(sp.col,deg),sh:flash?'#fff':hueShift(sp.shade,deg),acc:flash?'#fff':TYPES[c.type].acc};
+  // o.stone draws a statue (the Hall of Legends): carved grey, no pattern or shine.
+  const C=o.stone?{col:'#a9a3bd',sh:'#77718d',acc:'#d6d0e6'}:{col:flash?'#fff':hueShift(sp.col,deg),sh:flash?'#fff':hueShift(sp.shade,deg),acc:flash?'#fff':TYPES[c.type].acc};
   const body=sp.hybrid?HYBRID_BODY[c.type]:c.species;
-  const seed=o.seed||0,bob=Math.sin(t*6+seed)*1.5,sz=s*(sp.size||1)*(1+.1*st)*GENETICS.EFFECTS.sizeScale[L.size];
+  const seed=o.seed||0,bob=o.still?0:Math.sin(t*6+seed)*1.5,sz=s*(sp.size||1)*(1+.1*st)*GENETICS.EFFECTS.sizeScale[L.size];
   g.save();g.translate(x,y);g.scale(sz,sz);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,15,11,3.5,0,0,7);g.fill();
   g.translate(0,bob);if(o.face<0)g.scale(-1,1);
@@ -219,7 +220,8 @@ function drawCreature(g,c,x,y,s,t,o={}){
     BODY[body](G,C,t,seed);
     stageFront(G,c.type,st,C,t,fin);
   };
-  if(!flash&&(L.pat||L.shine))withOverlay(g,paint,G=>drawPattern(G,L,C,t,seed));else paint(g);
+  if(!flash&&!o.stone&&(L.pat||L.shine))withOverlay(g,paint,G=>drawPattern(G,L,C,t,seed));else paint(g);
+  if(c.by&&c.by.sigil&&!flash)drawSigil(g,c.by.sigil,-9,7,4.2,.5);
   if(o.sex){g.font='700 9px sans-serif';g.textAlign='center';g.fillStyle=o.sex==='F'?'#ff8fb1':'#7fc8ff';g.fillText(sexSym(o.sex),13,-12)}
   g.restore();
 }
@@ -260,11 +262,12 @@ function paintSprites(root){
     if(cv.dataset.sp){const sp=cv.dataset.sp,S0=SPECIES[sp];c={species:sp,type:S0.hybrid?S0.types[0]:S0.type,type2:S0.hybrid?S0.types[1]:null,stage:+cv.dataset.st||0}}
     else if(cv.dataset.cid)c=byId(+cv.dataset.cid)||(cv.dataset.mem?null:null);
     if(cv.dataset.mem){const m=S.memorial[+cv.dataset.mem];if(m)c={species:m.species,type:m.type,type2:m.type2,stage:m.stage,looks:m.looks}}
+    if(cv.dataset.legend){const l=S.legends.find(x=>x.id===+cv.dataset.legend);if(l)c=l}
     if(cv.dataset.tree){const e=lineage(+cv.dataset.tree);if(e)c={species:e.species,type:e.type,type2:e.type2,stage:e.stage,looks:e.looks}}
     if(!c)return;
     // Fit the sprite to its canvas, but let size genes still show: Huge only shrinks a little to fit.
     const ss=GENETICS.EFFECTS.sizeScale[(c.looks||NATURAL).size],sz=(SPECIES[c.species].size||1)*(1+.1*(c.stage||0))*Math.max(1,ss*.85);
-    drawCreature(g,c,w/2,h/2+3,w/50/Math.max(1,sz*.92),0,{face:1,sex:cv.dataset.sp||cv.dataset.mem||cv.dataset.tree?null:c.sex});
+    drawCreature(g,c,w/2,h/2+3,w/50/Math.max(1,sz*.92),0,{face:1,stone:!!cv.dataset.legend,sex:cv.dataset.sp||cv.dataset.mem||cv.dataset.tree||cv.dataset.legend?null:c.sex});
     if(cv.dataset.sil)silhouette(g,w,h);
   });
 }
@@ -276,4 +279,17 @@ const typeChips=c=>typesOf(c).map(typeChip).join('')+(c.type2?'<span class="chip
 const sexChip=c=>`<span class="chip sex ${c.sex==='F'?'f':'m'}" title="${c.sex==='F'?'Female: passes on her species':'Male: passes on most of his stats'}">${sexSym(c.sex)}</span>`;
 const stars=n=>`<span class="stars" aria-label="${n} of 5 bond stars">${'★'.repeat(n)}<i>${'★'.repeat(5-n)}</i></span>`;
 
-export {OL,hueShift,drawPattern,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};
+/* ---------- the breeder's sigil ---------- */
+// Shapes are SVG paths in a 20×20 box around 0,0, so the same sigil draws on canvas (Path2D) and in HTML (SVG).
+const starPath=()=>{let d='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?4.2:10;d+=(i?'L':'M')+(Math.cos(a)*r).toFixed(2)+' '+(Math.sin(a)*r).toFixed(2)}return d+'Z'};
+const SIGIL_PATHS={shield:'M-8 -9H8V0C8 5 4 8 0 10C-4 8 -8 5 -8 0Z',circle:'M0 -9A9 9 0 1 1 0 9A9 9 0 1 1 0 -9Z',diamond:'M0 -10L9 0L0 10L-9 0Z',hex:'M0 -10L8.7 -5V5L0 10L-8.7 5V-5Z',star:starPath()};
+function drawSigil(g,sig,x,y,r,alpha=1){
+  if(!sig)return;g.save();g.translate(x,y);g.scale(r/10,r/10);g.globalAlpha*=alpha;
+  const p=new Path2D(SIGIL_PATHS[sig.shape]||SIGIL_PATHS.shield);
+  g.fillStyle=sig.color;g.strokeStyle=OL;g.lineWidth=1.6;g.fill(p);g.stroke(p);
+  g.fillStyle=OL;g.font='700 10px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(sig.glyph||'',0,sig.shape==='shield'?0:.6);
+  g.restore();
+}
+const sigilSvg=(sig,size=22)=>sig?`<svg class="sigil" width="${size}" height="${size}" viewBox="-11 -11 22 22" aria-label="Breeder's sigil"><path d="${SIGIL_PATHS[sig.shape]||SIGIL_PATHS.shield}" fill="${sig.color}" stroke="${OL}" stroke-width="1.6"/><text x="0" y="${sig.shape==='shield'?3.5:4}" text-anchor="middle" font-size="10" font-weight="700" fill="${OL}">${esc(sig.glyph||'')}</text></svg>`:'';
+
+export {SIGIL_PATHS,drawSigil,sigilSvg,OL,hueShift,drawPattern,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};

@@ -1,4 +1,5 @@
-# Build the game and publish dist/ to GitHub Pages on every push to main.
+# Build the game and publish dist/ to GitHub Pages on every push to main:
+# the full game at /GeneSling/ and the demo at /GeneSling/demo/.
 # One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
 name: Deploy to Pages
 on:

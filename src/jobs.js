@@ -12,6 +12,7 @@ import {EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST} from './content
 import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,secTier,unplace,whereIs} from './state.js';
 import {rand} from './rng.js';
 import {ancestors} from './genetics.js';
+import {comfort,perk} from './hideout.js';
 
 /* ---------- materials ---------- */
 // coin, ore, food and shards keep their v5 homes on S; everything else lives in S.mats.
@@ -112,9 +113,9 @@ function runStations(notes){
 function tickFatigue(){
   const F=J.FATIGUE;
   for(const c of S.creatures){
-    const w=whereIs(c);let d=-F.rest;
-    if(w.kind==='section'){d=F.work*(crewHas(w.key,'tireless')(c)?F.tireless:1)}
-    else if(w.kind==='expedition')d=F.expedition;
+    const w=whereIs(c);let d=-F.rest-perk('rest');
+    if(w.kind==='section'){d=F.work*(crewHas(w.key,'tireless')(c)?F.tireless:1)*(1-comfort())}
+    else if(w.kind==='expedition')d=F.expedition*(1-comfort());
     c.fat=Math.max(0,Math.min(100,(c.fat||0)+d));
   }
 }

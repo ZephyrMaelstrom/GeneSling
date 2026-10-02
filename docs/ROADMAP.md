@@ -67,13 +67,13 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 4 · Hideout builder and demo (weeks 15 to 17)
 
-- [ ] Build free placement for stations, dens, paths, gardens and plots
-- [ ] Add creature life: sleeping, playing and following friends
-- [ ] Add crafted decor and the Comfort score
-- [ ] Add trophies, the Hall of Legends and the breeder's sigil
-- [ ] Add image export for hideout snapshots and creature cards
-- [ ] Cut the demo (the Rootworks and Act I) with a feedback button and opt-in play stats
-- [ ] Publish the demo at a public link
+- [x] Build free placement for stations, dens, paths, gardens and plots
+- [x] Add creature life: sleeping, playing and following friends
+- [x] Add crafted decor and the Comfort score
+- [x] Add trophies, the Hall of Legends and the breeder's sigil
+- [x] Add image export for hideout snapshots and creature cards
+- [x] Cut the demo (the Rootworks and Act I) with a feedback button and opt-in play stats
+- [ ] Publish the demo at a public link (built and deployed to /GeneSling/demo/ with `main`; feedback and stats need a Firebase project in `src/data/firebase.json`)
 - [ ] Exit test: testers share cards unprompted, and half of demo players return
 
 ### Phase 5 · The Bloom expands (weeks 18 to 25)

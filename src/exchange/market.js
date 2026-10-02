@@ -50,6 +50,7 @@ function materialize(item){
     const n=makeCreature(c.species,c.origin==='wild'?'wild':'bred',c.level||1,o);
     // A creature coming back from your own listing keeps its history.
     if(c.id!=null&&!byId(c.id)&&c.raids!=null){Object.assign(n,{id:c.id,raids:c.raids,xp:c.xp,bondXp:c.bondXp,mom:c.mom,dad:c.dad,fat:c.fat||0,captureRaid:c.captureRaid})}
+    if(c.by)n.by=c.by;if(c.titles)n.titles=c.titles.slice();
     recordLineage(n);return n;
   };
   if(item.kind==='egg'){const ch=fromPayload(item.child);S.eggs.push({id:ch.id,days:item.days||2,child:ch,cols:[SPECIES[ch.species].col,'#ffcf4a'],parents:'the Exchange',hybrid:!!ch.type2});return ch.id}

@@ -9,14 +9,21 @@
    - A save that can't be read or migrated (corrupt, or from a newer build) is copied
      to a backup key before anything new is written over it.
    - The v5 prototype's localStorage save is read once on first load and left in
-     place as a backup. */
+     place as a backup.
+   - The demo saves under its own names (database "genesling-demo"), so it can't overwrite the
+     full game's save on the same site. With no save of its own, the full game loads the demo's,
+     which is how a demo save carries into the full game. */
 import {S,defaultOpts} from './state.js';
 import {genomeFrom,express} from './genetics.js';
+import {pridify} from './hideout.js';
+import {DEMO} from './flags.js';
 
-const SAVE_VERSION=9;
+const SAVE_VERSION=10;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
-const FALLBACK_KEY='genesling-save';     // used only when IndexedDB is unavailable
-const DB_NAME='genesling',STORE='saves',SLOT='main';
+const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
+const OWN=DEMO?NAMES.demo:NAMES.full;
+const FALLBACK_KEY=OWN.fallback;          // used only when IndexedDB is unavailable
+const DB_NAME=OWN.db,STORE='saves',SLOT='main';
 
 // MIGRATIONS[n] turns a version-n save into a version-(n+1) save.
 const MIGRATIONS={
@@ -52,6 +59,10 @@ const MIGRATIONS={
   },
   // v9 (The Exchange): the market's state lives in the save. It's created on first load.
   8:d=>{d.market=d.market??null;d.marketSync=d.marketSync??d.day;return d},
+  // v10 (Hideout builder): the fixed map becomes a grid layout (laid out like the old map), with decor,
+  // hillside terraces, friendships, titles, the Hall of Legends and the breeder's sigil. Bosses already
+  // beaten come home as trophies, waiting in stores to be placed.
+  9:pridify,
 };
 
 function migrate(d){
@@ -68,22 +79,22 @@ function migrate(d){
 }
 
 /* ---------- IndexedDB ---------- */
-let dbP=null;
-function openDb(){
-  if(!dbP)dbP=new Promise((res,rej)=>{
+const dbs={};
+function openDb(name=DB_NAME){
+  if(!dbs[name])dbs[name]=new Promise((res,rej)=>{
     if(!window.indexedDB)return rej(new Error('IndexedDB unavailable'));
-    const q=indexedDB.open(DB_NAME,1);
+    const q=indexedDB.open(name,1);
     q.onupgradeneeded=()=>q.result.createObjectStore(STORE);
     q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);q.onblocked=()=>rej(new Error('IndexedDB blocked'));
   });
-  return dbP;
+  return dbs[name];
 }
-function idb(mode,fn){return openDb().then(db=>new Promise((res,rej)=>{
+function idb(mode,fn,name){return openDb(name).then(db=>new Promise((res,rej)=>{
   const tx=db.transaction(STORE,mode),st=tx.objectStore(STORE);let out;
   const q=fn(st);if(q)q.onsuccess=()=>{out=q.result};
   tx.oncomplete=()=>res(out);tx.onerror=tx.onabort=()=>rej(tx.error);
 }))}
-const idbGet=k=>idb('readonly',st=>st.get(k));
+const idbGet=(k,name)=>idb('readonly',st=>st.get(k),name);
 const idbPut=(k,v)=>idb('readwrite',st=>st.put(v,k));
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
@@ -92,6 +103,12 @@ let useIdb=true;
 async function readRecord(){
   try{const r=await idbGet(SLOT);if(r)return r}catch(e){useIdb=false}
   const fb=lsGet(FALLBACK_KEY);if(fb)return{data:fb};
+  if(!DEMO){
+    // A demo save on this site carries into the full game. The demo's copy stays where it is.
+    try{const r=await idbGet(SLOT,NAMES.demo.db);if(r)return{data:r.data,fromDemo:true}}catch(e){}
+    const dfb=lsGet(NAMES.demo.fallback);if(dfb)return{data:dfb,fromDemo:true};
+  }
+  if(DEMO)return null;
   const legacy=lsGet(LEGACY_KEY);if(legacy)return{data:legacy,legacy:true};
   return null;
 }
@@ -130,4 +147,4 @@ async function flush(){
 // Resolves once every save so far is on disk (used by tests and before reloads).
 const saveDone=()=>writing||Promise.resolve();
 
-export {SAVE_VERSION,MIGRATIONS,migrate,loadSave,save,saveDone};
+export {SAVE_VERSION,NAMES,MIGRATIONS,migrate,loadSave,save,saveDone};

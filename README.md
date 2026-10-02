@@ -8,6 +8,8 @@ GeneSling is a browser roguelite about creature capture with extraction stakes. 
 
 **Play it here: https://zephyrmaelstrom.github.io/GeneSling/** (rebuilt from `main` on every push).
 
+**Free demo** (the Rootworks and Act I): https://zephyrmaelstrom.github.io/GeneSling/demo/. A demo save carries into the full game on the same browser.
+
 Run `npm install && npm run build`, then open `dist/index.html` in a browser. Pushes to `main` also deploy it to GitHub Pages. It works on desktop (WASD and mouse) and on phones (touch joysticks).
 
 ## Docs
