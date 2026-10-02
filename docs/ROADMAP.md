@@ -25,13 +25,13 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 0 · Foundation (weeks 1 to 2)
 
-- [ ] Create the GitHub repo and turn on GitHub Pages
-- [ ] Split the v5 file into modules with a bundler build
-- [ ] Move species, attacks, items, enemies and bosses into data files
-- [ ] Add a seeded random number generator for replayable raids
-- [ ] Store saves in IndexedDB with a version number and migrations
+- [ ] Create the GitHub repo and turn on GitHub Pages (repo and deploy workflow done; Pages needs Settings → Pages → Source: GitHub Actions)
+- [x] Split the v5 file into modules with a bundler build
+- [x] Move species, attacks, items, enemies and bosses into data files
+- [x] Add a seeded random number generator for replayable raids
+- [x] Store saves in IndexedDB with a version number and migrations
 - [ ] Turn the headless test scripts into a suite that runs on every push
-- [ ] Exit test: v5 plays the same, all tests pass, and a v5 save loads
+- [ ] Exit test: v5 plays the same, all tests pass, and a v5 save loads (automated checks pass; needs a hand test on a phone)
 
 ### Phase 1 · Genetics 2.0 (weeks 3 to 6)
 

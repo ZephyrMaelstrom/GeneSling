@@ -1,5 +1,12 @@
 /* ================= State ================= */
+import {rand} from './rng.js';
+import {clamp,pick,ri} from './util.js';
+import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,FOE_IDS,GENES,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {SAVE_VERSION,save} from './save.js';
+import {sfx} from './audio.js';
+import {renderAll} from './ui.js';
 let S=null;
+const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
   lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'0'}};
 
@@ -17,10 +24,10 @@ function makeCreature(species,origin,level,o={}){
   const type=o.type||(sp.hybrid?sp.types[0]:sp.type);
   const type2=sp.hybrid?(o.type2||sp.types.find(t=>t!==type)):null;
   const wild=origin==='wild';
-  const c={id:S.nextId++,species,type,type2,sex:o.sex||(Math.random()<.5?'F':'M'),name:o.name||makeName(type),origin,
+  const c={id:S.nextId++,species,type,type2,sex:o.sex||(rand()<.5?'F':'M'),name:o.name||makeName(type),origin,
     proven:!wild||!!o.proven,stage:o.stage||0,pers:o.pers||pick(PERS_IDS),
     genes:o.genes||(wild?randGenes(Math.min(6,2+Math.ceil((o.floor||1)/2)),10):randGenes(2,7)),
-    traits:o.traits||rollTraits(wild?(Math.random()<.5?2:1):2),
+    traits:o.traits||rollTraits(wild?(rand()<.5?2:1):2),
     level:level||1,xp:0,bondXp:o.bondXp!=null?o.bondXp:(wild?0:30),gen:o.gen||0,raids:0,
     captureRaid:o.captureRaid!=null?o.captureRaid:-1};
   c.hp=stats(c).hp;return c;
@@ -61,7 +68,7 @@ function evolve(c){
 function defaultOpts(){return{stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
-  S={v:5,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},guns:{pistol:1,revolver:1,sword:1},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
+  S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},guns:{pistol:1,revolver:1,sword:1},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
     creatures:[],eggs:[],sections:secs,armory:0,keeper:{level:1,xp:0},progress:{bosses:{},deepest:0,memories:{}},modes:{},research:{combat:0,capture:0,breeding:0,economy:0,bond:0},
     dex:{forms:{},foes:{},claimed:0},npc:{},journalRead:0,tutorialDone:false,introSeen:false,memorial:[],
     loadout:{guns:['revolver','sword'],slots:[null,null,null]},
@@ -79,8 +86,6 @@ function newGame(){
   syncNpcs();
   addLog('You took over Ilsa Marrow’s hideout. Kindle stokes the Forge, Puffin tends the Garden and Shoal keeps the Spring.');
 }
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
-function load(){try{const r=localStorage.getItem(SAVE_KEY);if(r){const d=JSON.parse(r);if(d&&d.v===5){d.opts=Object.assign(defaultOpts(),d.opts||{});return d}}}catch(e){}return null}
 function addLog(msg){S.log.unshift({day:S.day,msg});S.log=S.log.slice(0,60)}
 const bump=(k,n=1)=>{S.stats[k]=(S.stats[k]||0)+n};
 
@@ -126,7 +131,8 @@ function giveReward(r){
 
 /* ---------- NPCs ---------- */
 function npcStat(q){return q.abs?(q.stat==='deepest'?S.progress.deepest||0:S.stats[q.stat]||0):S.stats[q.stat]||0}
-function syncNpcs(){const arrived=[];for(const id of NPC_IDS){if(S.npc[id])continue;if(NPCS[id].arrive()){const q=NPCS[id].quests[0];S.npc[id]={q:0,base:npcStat(q),met:false};arrived.push(id)}}return arrived}
+function npcArrives(a){return !!(a.always||(a.keeper!=null&&S.keeper.level>=a.keeper)||(a.section&&secTier(a.section)>=a.tier))}
+function syncNpcs(){const arrived=[];for(const id of NPC_IDS){if(S.npc[id])continue;if(npcArrives(NPCS[id].arrive)){const q=NPCS[id].quests[0];S.npc[id]={q:0,base:npcStat(q),met:false};arrived.push(id)}}return arrived}
 function npcQuest(id){const st=S.npc[id];if(!st)return null;const q=NPCS[id].quests[st.q];if(!q)return null;const v=q.abs?npcStat(q):npcStat(q)-st.base;return{q,v:Math.min(v,q.n),done:v>=q.n}}
 function npcAttention(id){const st=S.npc[id];if(!st)return false;if(!st.met)return true;const p=npcQuest(id);return!!(p&&p.done)}
 function npcTurnIn(id){const p=npcQuest(id);if(!p||!p.done)return null;const st=S.npc[id];const got=giveReward(p.q.reward);st.q++;const nq=NPCS[id].quests[st.q];if(nq)st.base=npcStat(nq);addLog(`${NPCS[id].name}: quest complete. Received ${got}.`);return got}
@@ -206,17 +212,17 @@ function breed(){
   const mc=mutChance();
   let species=mom.species,type=mom.type,type2=mom.type2;
   const h=hybridChance(mom,dad);let isHybrid=false;
-  if(h.id&&Math.random()<h.p){species=h.id;type=mom.type;type2=dad.type;isHybrid=true}
+  if(h.id&&rand()<h.p){species=h.id;type=mom.type;type2=dad.type;isHybrid=true}
   const genes={};
-  for(const k in GENES){let v=Math.random()<.7?dad.genes[k]:mom.genes[k];if(Math.random()<mc)v+=pick([-2,-1,1,1,2]);genes[k]=clamp(v,1,10)}
+  for(const k in GENES){let v=rand()<.7?dad.genes[k]:mom.genes[k];if(rand()<mc)v+=pick([-2,-1,1,1,2]);genes[k]=clamp(v,1,10)}
   const traits=[];
   for(let i=0;i<2;i++){
     let tr=null;
-    if(Math.random()<.08)tr=rollTraits(1,traits)[0];
-    else{const src=Math.random()<.6?dad:mom;const pool=src.traits.filter(x=>!traits.includes(x));const alt=(src===dad?mom:dad).traits.filter(x=>!traits.includes(x));tr=pool.length?pick(pool):alt.length?pick(alt):rollTraits(1,traits)[0]}
+    if(rand()<.08)tr=rollTraits(1,traits)[0];
+    else{const src=rand()<.6?dad:mom;const pool=src.traits.filter(x=>!traits.includes(x));const alt=(src===dad?mom:dad).traits.filter(x=>!traits.includes(x));tr=pool.length?pick(pool):alt.length?pick(alt):rollTraits(1,traits)[0]}
     traits.push(tr);
   }
-  const r=Math.random(),pers=r<.5?mom.pers:r<.75?dad.pers:pick(PERS_IDS);
+  const r=rand(),pers=r<.5?mom.pers:r<.75?dad.pers:pick(PERS_IDS);
   const child=makeCreature(species,'bred',t>=5||res('breeding',4)?5:1,{type,type2,genes,traits,pers,gen:Math.max(mom.gen,dad.gen)+1});
   const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
   S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});
@@ -225,3 +231,5 @@ function breed(){
   else addLog(`${mom.name} and ${dad.name} produced an egg.`);
   sfx('pickup');ui.mom='';ui.dad='';save();renderAll();
 }
+
+export {S,setS,ui,randGenes,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,mutChance,breed};

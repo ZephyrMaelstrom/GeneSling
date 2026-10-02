@@ -1,4 +1,12 @@
 /* ================= Hideout UI ================= */
+import {$,clamp,esc,fxPick,pick} from './util.js';
+import {ABILITIES,ARMORY_TH,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GENE_HINT,GUNS,GUN_IDS,HYBRIDS,JOURNAL,LINES,LORE_INTRO,MODES,NEG_TRAITS,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,WEAPON_COST,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {save} from './save.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,bump,buyResearch,byId,cageCap,canCraft,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,hybridChance,keeperNeed,lineOf,makeCreature,modeUnlocked,mutChance,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,priceMul,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
+import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
+import {auVol,sfx} from './audio.js';
+import {HMAP,startHideoutMap} from './map.js';
+import {startRaid} from './raid.js';
 const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Armory'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']];
 function renderAll(){renderHeader();renderTabs();renderMain()}
 function renderHeader(){
@@ -390,7 +398,7 @@ function openChooser(slot){
 }
 function openNpc(id){
   const n=NPCS[id],st=S.npc[id];if(!st)return;
-  let line;if(!st.met){line=n.intro;st.met=true;save()}else line=pick(n.idle);
+  let line;if(!st.met){line=n.intro;st.met=true;save()}else line=fxPick(n.idle);
   const p=npcQuest(id);
   const quest=p?`<div class="slot"><div class="slot-label">Quest ${st.q+1} of ${n.quests.length}</div><p>${p.q.text}</p>
     <div class="bar"><i style="width:${p.v/p.q.n*100}%;background:var(--gold)"></i></div><p class="status">${p.v}/${p.q.n} · Reward: ${questRewardText(p.q.reward)}</p>
@@ -492,3 +500,5 @@ document.addEventListener('change',e=>{
   else if(a==='opthud'){S.opts.hudAlpha=+el.value;save()}
 });
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act==='optr'){S.opts[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();save()}});
+
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,openChooser,openNpc,questRewardText,openIntro,act};

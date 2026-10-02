@@ -6,18 +6,20 @@ GeneSling is a browser roguelite about creature capture with extraction stakes. 
 
 ## Play the prototype
 
-Open `prototype/index.html` in a browser. It works on desktop (WASD and mouse) and on phones (touch joysticks).
+Run `npm install && npm run build`, then open `dist/index.html` in a browser. Pushes to `main` also deploy it to GitHub Pages. It works on desktop (WASD and mouse) and on phones (touch joysticks).
 
 ## Docs
 
 - [Design](docs/DESIGN.md): the vision for 1.0
 - [Roadmap](docs/ROADMAP.md): ten phases from prototype to launch
 - [Development phases](docs/DEVELOPMENT_PHASES.md): goals, build lists and exit tests
-- [Prototype notes](docs/PROTOTYPE.md): how the current build works
+- [Code](docs/CODE.md): how the code is built
 
 ## Develop
 
 ```bash
-python3 prototype/build.py   # rebuild the game from prototype/src
-npm install && npm test      # headless browser tests
+npm install       # once
+npm run dev       # rebuild dist/index.html on every change in src/
+npm run lint      # ESLint
+npm test          # build, then run the headless browser tests
 ```

@@ -1,0 +1,695 @@
+{
+ "v": 5,
+ "day": 2,
+ "coin": 2970,
+ "food": 54,
+ "ore": 485,
+ "shards": 12,
+ "cages": {
+  "basic": 0,
+  "gilded": 0
+ },
+ "guns": {
+  "pistol": 1,
+  "revolver": 0,
+  "sword": 0
+ },
+ "blueprints": {
+  "revolver": 1,
+  "scatter": 1,
+  "dagger": 1,
+  "sword": 1
+ },
+ "creatures": [
+  {
+   "id": 4,
+   "species": "cindlet",
+   "type": "ember",
+   "type2": null,
+   "sex": "F",
+   "name": "Kindle",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "curious",
+   "genes": {
+    "vig": 7,
+    "pow": 6,
+    "swf": 3,
+    "hst": 5,
+    "tmp": 3
+   },
+   "traits": [
+    "worker",
+    "quick"
+   ],
+   "level": 2,
+   "xp": 6,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 148
+  },
+  {
+   "id": 5,
+   "species": "shroomite",
+   "type": "fungal",
+   "type2": null,
+   "sex": "M",
+   "name": "Puffin",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "brave",
+   "genes": {
+    "vig": 2,
+    "pow": 5,
+    "swf": 7,
+    "hst": 2,
+    "tmp": 2
+   },
+   "traits": [
+    "worker",
+    "reach"
+   ],
+   "level": 2,
+   "xp": 6,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 146
+  },
+  {
+   "id": 6,
+   "species": "coralisk",
+   "type": "tide",
+   "type2": null,
+   "sex": "M",
+   "name": "Shoal",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "timid",
+   "genes": {
+    "vig": 2,
+    "pow": 4,
+    "swf": 5,
+    "hst": 7,
+    "tmp": 3
+   },
+   "traits": [
+    "worker",
+    "thick"
+   ],
+   "level": 2,
+   "xp": 6,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 182
+  },
+  {
+   "id": 7,
+   "species": "monolord",
+   "type": "warden",
+   "type2": null,
+   "sex": "M",
+   "name": "Hulel",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "playful",
+   "genes": {
+    "vig": 4,
+    "pow": 3,
+    "swf": 4,
+    "hst": 6,
+    "tmp": 7
+   },
+   "traits": [
+    "worker",
+    "keen"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 448
+  },
+  {
+   "id": 8,
+   "species": "shardling",
+   "type": "crystal",
+   "type2": null,
+   "sex": "M",
+   "name": "Luma",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "fierce",
+   "genes": {
+    "vig": 4,
+    "pow": 7,
+    "swf": 3,
+    "hst": 2,
+    "tmp": 5
+   },
+   "traits": [
+    "lucky",
+    "rapid"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 202
+  },
+  {
+   "id": 9,
+   "species": "geodon",
+   "type": "crystal",
+   "type2": null,
+   "sex": "M",
+   "name": "Prisus",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "brave",
+   "genes": {
+    "vig": 4,
+    "pow": 7,
+    "swf": 6,
+    "hst": 5,
+    "tmp": 4
+   },
+   "traits": [
+    "keen",
+    "thick"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 340
+  },
+  {
+   "id": 10,
+   "species": "pebblet",
+   "type": "warden",
+   "type2": null,
+   "sex": "M",
+   "name": "Kedwyn",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "playful",
+   "genes": {
+    "vig": 2,
+    "pow": 2,
+    "swf": 6,
+    "hst": 3,
+    "tmp": 6
+   },
+   "traits": [
+    "reach",
+    "thick"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 325
+  },
+  {
+   "id": 11,
+   "species": "kestrix",
+   "type": "gale",
+   "type2": null,
+   "sex": "F",
+   "name": "Wispder",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "calm",
+   "genes": {
+    "vig": 3,
+    "pow": 7,
+    "swf": 4,
+    "hst": 2,
+    "tmp": 7
+   },
+   "traits": [
+    "rapid",
+    "reach"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 185
+  },
+  {
+   "id": 12,
+   "species": "puffcap",
+   "type": "fungal",
+   "type2": null,
+   "sex": "F",
+   "name": "Truus",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "calm",
+   "genes": {
+    "vig": 4,
+    "pow": 4,
+    "swf": 2,
+    "hst": 3,
+    "tmp": 5
+   },
+   "traits": [
+    "sturdy",
+    "rapid"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 310
+  },
+  {
+   "id": 13,
+   "species": "puffcap",
+   "type": "fungal",
+   "type2": null,
+   "sex": "F",
+   "name": "Fenel",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "loyal",
+   "genes": {
+    "vig": 2,
+    "pow": 3,
+    "swf": 7,
+    "hst": 2,
+    "tmp": 3
+   },
+   "traits": [
+    "quick",
+    "regen"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 256
+  },
+  {
+   "id": 14,
+   "species": "pebblet",
+   "type": "warden",
+   "type2": null,
+   "sex": "F",
+   "name": "Torble",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "loyal",
+   "genes": {
+    "vig": 2,
+    "pow": 2,
+    "swf": 6,
+    "hst": 3,
+    "tmp": 4
+   },
+   "traits": [
+    "quick",
+    "glow"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 290
+  },
+  {
+   "id": 15,
+   "species": "chirrup",
+   "type": "echo",
+   "type2": null,
+   "sex": "F",
+   "name": "Noxett",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "playful",
+   "genes": {
+    "vig": 7,
+    "pow": 6,
+    "swf": 3,
+    "hst": 5,
+    "tmp": 3
+   },
+   "traits": [
+    "quick",
+    "hoard"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 221
+  },
+  {
+   "id": 16,
+   "species": "shardling",
+   "type": "crystal",
+   "type2": null,
+   "sex": "M",
+   "name": "Sharett",
+   "origin": "bred",
+   "proven": true,
+   "stage": 0,
+   "pers": "curious",
+   "genes": {
+    "vig": 3,
+    "pow": 6,
+    "swf": 5,
+    "hst": 5,
+    "tmp": 3
+   },
+   "traits": [
+    "sturdy",
+    "glow"
+   ],
+   "level": 10,
+   "xp": 0,
+   "bondXp": 30,
+   "gen": 0,
+   "raids": 0,
+   "captureRaid": -1,
+   "hp": 185
+  }
+ ],
+ "eggs": [],
+ "sections": {
+  "forge": {
+   "cap": 3,
+   "ids": [
+    4
+   ]
+  },
+  "garden": {
+   "cap": 3,
+   "ids": [
+    5
+   ]
+  },
+  "spring": {
+   "cap": 3,
+   "ids": [
+    6
+   ]
+  },
+  "roost": {
+   "cap": 3,
+   "ids": []
+  },
+  "vault": {
+   "cap": 3,
+   "ids": []
+  },
+  "nursery": {
+   "cap": 3,
+   "ids": []
+  },
+  "training": {
+   "cap": 3,
+   "ids": []
+  },
+  "warroom": {
+   "cap": 3,
+   "ids": []
+  }
+ },
+ "armory": 0,
+ "keeper": {
+  "level": 1,
+  "xp": 25
+ },
+ "progress": {
+  "bosses": {},
+  "deepest": 1,
+  "memories": {}
+ },
+ "modes": {},
+ "research": {
+  "combat": 2,
+  "capture": 2,
+  "breeding": 2,
+  "economy": 2,
+  "bond": 2
+ },
+ "dex": {
+  "forms": {
+   "pyrrox:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "puffcap:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "dewdrip:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "cindlet:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "shroomite:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "coralisk:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "monolord:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "shardling:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "geodon:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "pebblet:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "kestrix:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "chirrup:0": {
+    "seen": 1,
+    "owned": 1
+   },
+   "pyrrox:1": {
+    "seen": 1,
+    "owned": 1
+   }
+  },
+  "foes": {},
+  "claimed": 0
+ },
+ "npc": {
+  "brannoc": {
+   "q": 0,
+   "base": 0,
+   "met": false
+  }
+ },
+ "journalRead": 0,
+ "tutorialDone": true,
+ "introSeen": true,
+ "memorial": [
+  {
+   "name": "Ripple",
+   "form": "Dewdrip",
+   "species": "dewdrip",
+   "stage": 0,
+   "type": "tide",
+   "type2": null,
+   "level": 10,
+   "day": 1,
+   "how": "Fell on Floor 1"
+  },
+  {
+   "name": "Morel",
+   "form": "Puffcap",
+   "species": "puffcap",
+   "stage": 0,
+   "type": "fungal",
+   "type2": null,
+   "level": 10,
+   "day": 1,
+   "how": "Fell on Floor 1"
+  },
+  {
+   "name": "Cinder",
+   "form": "Pyrrovex",
+   "species": "pyrrox",
+   "stage": 1,
+   "type": "ember",
+   "type2": null,
+   "level": 12,
+   "day": 1,
+   "how": "Fell on Floor 1"
+  }
+ ],
+ "loadout": {
+  "guns": [
+   "pistol",
+   null
+  ],
+  "slots": [
+   null,
+   null,
+   null
+  ]
+ },
+ "stats": {
+  "raids": 1,
+  "extracts": 0,
+  "deaths": 1,
+  "lost": 3,
+  "captures": 0,
+  "hybrids": 0,
+  "bossKills": 0,
+  "weaponsHome": 0,
+  "scrapped": 0,
+  "meleeKills": 0,
+  "secrets": 0,
+  "reactions": 0,
+  "eggs": 0,
+  "evolutions": 1,
+  "hybridsHatched": 0,
+  "combos": 0
+ },
+ "log": [
+  {
+   "day": 2,
+   "msg": "Fixture save written by the v5 prototype."
+  },
+  {
+   "day": 2,
+   "msg": "Day 2. The Garden grew 3 food."
+  },
+  {
+   "day": 1,
+   "msg": "Raid: lost in the dungeon on floor 1. Lost: Cinder, Morel, Ripple, Revolver, Ironbrand, 3 cages."
+  },
+  {
+   "day": 1,
+   "msg": "Cinder evolved from Pyrrox into Pyrrovex!"
+  },
+  {
+   "day": 1,
+   "msg": "Research: Companions +10% max HP."
+  },
+  {
+   "day": 1,
+   "msg": "Research: +50% bond gain."
+  },
+  {
+   "day": 1,
+   "msg": "Research: Market prices 20% lower."
+  },
+  {
+   "day": 1,
+   "msg": "Research: +15% coin from raids."
+  },
+  {
+   "day": 1,
+   "msg": "Research: Eggs hatch 1 day sooner."
+  },
+  {
+   "day": 1,
+   "msg": "Research: +5% mutation chance."
+  },
+  {
+   "day": 1,
+   "msg": "Research: Cage ring 25% wider."
+  },
+  {
+   "day": 1,
+   "msg": "Research: Carry 1 more cage."
+  },
+  {
+   "day": 1,
+   "msg": "Research: +8% weapon damage."
+  },
+  {
+   "day": 1,
+   "msg": "Research: +15 max HP."
+  },
+  {
+   "day": 1,
+   "msg": "Test Lab: added 10 Lv 10 creatures."
+  },
+  {
+   "day": 1,
+   "msg": "You took over Ilsa Marrowâ€™s hideout. Kindle stokes the Forge, Puffin tends the Garden and Shoal keeps the Spring."
+  }
+ ],
+ "settings": {
+  "god": false,
+  "reveal": false,
+  "instant": false,
+  "noTimer": false,
+  "keepArena": true
+ },
+ "opts": {
+  "stick": "fixed",
+  "stickSize": "M",
+  "btnSize": "M",
+  "hand": "right",
+  "dmgNums": true,
+  "shake": true,
+  "hudAlpha": 0.82,
+  "autoFire": true,
+  "vol": 0.7,
+  "music": 0.5,
+  "sfx": 0.8,
+  "mute": false
+ },
+ "nextId": 17,
+ "points": {}
+}

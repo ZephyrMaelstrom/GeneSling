@@ -1,11 +1,15 @@
 /* ================= Sound: synthesized effects and generative music ================= */
+import {fxRand} from './rng.js';
+import {fxRi,fxRnd} from './util.js';
+import {S} from './state.js';
+import {R} from './raid.js';
 const AU={ctx:null,master:null,mus:null,fx:null,noise:null,last:{},track:null,timer:null,step:0,next:0,mel:[],bar:0};
 function auInit(){
   if(AU.ctx)return true;
   try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return false;
     AU.ctx=new C();AU.master=AU.ctx.createGain();AU.master.connect(AU.ctx.destination);
     AU.mus=AU.ctx.createGain();AU.mus.connect(AU.master);AU.fx=AU.ctx.createGain();AU.fx.connect(AU.master);
-    const b=AU.ctx.createBuffer(1,Math.floor(AU.ctx.sampleRate*.6),AU.ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;AU.noise=b;
+    const b=AU.ctx.createBuffer(1,Math.floor(AU.ctx.sampleRate*.6),AU.ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=fxRand()*2-1;AU.noise=b;
     auVol();AU.timer=setInterval(musicTick,25);return true}catch(e){AU.ctx=null;return false}
 }
 function auVol(){if(!AU.ctx||!S)return;const o=S.opts;AU.master.gain.value=o.mute?0:o.vol;AU.mus.gain.value=o.music*.32;AU.fx.gain.value=o.sfx*.5}
@@ -21,7 +25,7 @@ function noise(dur,vol=.3,fc=2000,q=1,when=0,type='bandpass',dest,abs){
   g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);s.connect(f);f.connect(g);g.connect(dest||AU.fx);s.start(t0);s.stop(t0+dur+.03);
 }
 const SFX={
-  shot:()=>tone(rnd(600,760),.07,'square',.1,.5),
+  shot:()=>tone(fxRnd(600,760),.07,'square',.1,.5),
   heavy:()=>{tone(180,.15,'sawtooth',.16,.4);noise(.1,.14,800)},
   swing:()=>noise(.12,.22,1800,.8,0,'highpass'),
   hit:()=>noise(.05,.16,2500,2),
@@ -51,7 +55,7 @@ const TRACKS={
   boss:{bpm:138,root:45,scale:[0,1,3,7,8],bass:[0,0,12,0,0,12,0,0,3,3,15,3,1,1,13,1],bw:'sawtooth',lw:'square',dens:.55,hat:true,pad:null},
 };
 const mtof=m=>440*Math.pow(2,(m-69)/12);
-function newMelody(T){AU.mel=Array.from({length:16},(_,i)=>Math.random()<T.dens*(i%2?.6:1.3)?T.scale[ri(0,T.scale.length-1)]+12*ri(1,2):null)}
+function newMelody(T){AU.mel=Array.from({length:16},(_,i)=>fxRand()<T.dens*(i%2?.6:1.3)?T.scale[fxRi(0,T.scale.length-1)]+12*fxRi(1,2):null)}
 function musicFor(){if(R&&!R.over){if(R.boss&&R.boss.hp>0)return'boss';return R.map&&R.map.floor>=4?'abyss':'depths'}return'hideout'}
 function musicTick(){
   if(!AU.ctx||!S)return;
@@ -71,3 +75,5 @@ function musicTick(){
   }
 }
 ['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{if(auInit()&&AU.ctx.state==='suspended')AU.ctx.resume()},{passive:true}));
+
+export {AU,auInit,auVol,tone,noise,SFX,sfx,TRACKS,mtof,newMelody,musicFor,musicTick};

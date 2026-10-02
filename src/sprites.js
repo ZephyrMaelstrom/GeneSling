@@ -1,4 +1,8 @@
 /* ================= Creature sprites: one body per species, evolution adornments per stage ================= */
+import {esc} from './util.js';
+import {BOSSES,FOES,LINES,NPCS,SPECIES,TYPES,typesOf} from './content.js';
+import {S,byId,formName,sexSym} from './state.js';
+import {drawBossBody,drawFoeBody} from './draw.js';
 const OL='#160f2c';
 function spriteKit(g,C){
   const fs=()=>{g.fill();g.stroke()};
@@ -218,3 +222,5 @@ const typeChip=t=>`<span class="chip type" style="--c:${TYPES[t].color}">${TYPES
 const typeChips=c=>typesOf(c).map(typeChip).join('')+(c.type2?'<span class="chip warn">Hybrid</span>':'');
 const sexChip=c=>`<span class="chip sex ${c.sex==='F'?'f':'m'}" title="${c.sex==='F'?'Female: passes on her species':'Male: passes on most of his stats'}">${sexSym(c.sex)}</span>`;
 const stars=n=>`<span class="stars" aria-label="${n} of 5 bond stars">${'★'.repeat(n)}<i>${'★'.repeat(5-n)}</i></span>`;
+
+export {OL,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};

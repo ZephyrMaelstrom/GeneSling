@@ -1,10 +1,16 @@
-const path=require('path');const puppeteer=require('puppeteer');const GAME='file://'+path.resolve(__dirname,'..','index.html');const LAUNCH={executablePath:process.env.CHROME_PATH||undefined,args:['--no-sandbox']};
-(async()=>{
- const b=await puppeteer.launch(LAUNCH);const p=await b.newPage();
- const errs=[];p.on('pageerror',e=>errs.push('PAGEERR '+e.message+' '+(e.stack||'').split('\n').slice(1,3).join(' ')));
- await p.setViewport({width:1200,height:820});
- await p.goto(GAME);await new Promise(r=>setTimeout(r,500));
- const out=await p.evaluate(async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms));const o=[];const step=async(name,f)=>{try{await f()}catch(err){o.push('ERR@'+name+': '+err.message+' '+err.stack.split('\n').slice(1,3).join(' '))}};
+// The v5 systems sweep: tabs, tutorial, evolution, research, NPC quests, every attack form,
+// combos, room mods, curses, bosses, a floor-1 raid with death, and a floor-3 boss with extraction.
+import {test, before, after} from 'node:test';
+import assert from 'node:assert/strict';
+import {startServer, launch, openGame} from './helpers.js';
+
+let srv, browser;
+before(async () => { srv = await startServer(); browser = await launch(); });
+after(async () => { await browser.close(); srv.server.close(); });
+
+test('every v5 system runs without errors', {timeout: 120000}, async () => {
+ const {page, errors} = await openGame(browser, srv.url);
+ const out=await page.evaluate(async()=>{const wait=ms=>new Promise(r=>setTimeout(r,ms));const o=[];const step=async(name,f)=>{try{await f()}catch(err){o.push('ERR@'+name+': '+err.message+' '+err.stack.split('\n').slice(1,3).join(' '))}};
   o.push('intro modal '+!$('#modal').hidden);closeModal();
   await step('tabs',async()=>{for(const t of TABS.map(x=>x[0])){ui.tab=t;renderAll();await wait(30)}
     for(const c of ['creatures','enemies','bosses','journal','reactions','story']){ui.tab='codex';ui.codex=c;renderAll();await wait(10)}
@@ -51,6 +57,23 @@ const path=require('path');const puppeteer=require('puppeteer');const GAME='file
     R.boss.hp=1;hurtEnemy(R.boss,5,false,'p');await wait(200);o.push('shards '+S.shards+' memories '+JSON.stringify(S.progress.bosses));R.enemies=[];R.p.x=br.cx-80;R.p.y=br.cy;await wait(2300);o.push('extract '+(!R||R.over));o.push($('#modalBox').innerText.slice(0,200).replace(/\n+/g,' / '));closeModal()});
   await step('final-tabs',async()=>{for(const t of TABS.map(x=>x[0])){ui.tab=t;renderAll();await wait(20)}ui.tab='codex';ui.codex='bosses';renderAll();o.push('dex '+dexScore()+'/'+DEX_TOTAL())});
   return o.join('\n')});
+ const lines=out.split('\n');const has=re=>lines.some(l=>re.test(l));
  console.log(out);
- console.log(errs.slice(0,10).join('\n')||'no errors');await b.close();if(errs.length)process.exit(1);
-})();
+ assert.ok(!has(/^ERR@/), 'a step threw:\n'+lines.filter(l=>l.startsWith('ERR@')).join('\n'));
+ assert.ok(has(/^intro modal true$/));
+ assert.ok(has(/^map raf true$/));
+ assert.ok(has(/^tut step 8$/), 'tutorial reaches its last step');
+ assert.ok(has(/^tutorial done true creatures \d+ modal Tutorial complete/));
+ assert.ok(has(/^evolved \S+ -> \S+ atk \w+/) && !has(/^evolved (\S+) -> \1 /), 'evolution changes the form');
+ assert.ok(has(/^research \{"combat":3,"capture":3,"breeding":3,"economy":3,"bond":3\}$/));
+ assert.ok(has(/^brannoc q 1 blueprint carbine true$/));
+ assert.ok(has(/^forms tested 91 /));
+ assert.ok(has(/^combos used 12 /));
+ assert.ok(has(/^curses 6 /));
+ assert.ok(has(/^bosses ok$/));
+ assert.ok(has(/^floor 2$/), 'took the stairs to floor 2');
+ assert.ok(has(/^death modal Lost in the dungeon/));
+ assert.ok(has(/^extract true$/), 'extracted after the floor-3 boss');
+ assert.ok(has(/^dex \d+\/\d+$/));
+ assert.deepEqual(errors, []);
+});
