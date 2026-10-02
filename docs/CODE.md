@@ -31,11 +31,15 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/main.js` | Entry point. Imports every module, exposes their top-level names on `window` (for tests and the console), and boots. `window.gameReady` resolves once the save is loaded. |
 | `src/data/*.json` | All content tables: `species` (types, species, hybrids, evolution lines, names), `attacks` (attacks, abilities, elements, reactions, combos), `creatures` (personalities, bond, genes, traits), `items` (guns, weapon costs, run buffs), `dungeon` (curses, room modifiers, modes), `enemies`, `bosses`, `hideout` (sections, armory, Keeper perks, research), `story` (intro, journal, NPCs and their quests). |
 | `src/data/genetics.json` | Every genetics number: loci, expression weights, inheritance and mutation odds, wild gene ranges by floor, stat effects of Grit, Focus and size, look names, tool unlocks, and the simulator's defaults. |
+| `src/data/jobs.json` | Every Phase 2 number: materials, station recipes, work rates, fatigue, chemistry and clashes, quality tiers, mastery, recipes, durability, prints, the bag, tonics, raid roles per species, the roster cap, expeditions, the death legacy and the supply sandbox. |
 | `src/content.js` | Loads the JSON tables and derives id lists and lookups (`SPECIES_IDS`, `LINES`, `comboFor`, `foePool`, ...). |
 | `src/rng.js` | The seeded random number generator. |
 | `src/util.js` | Small helpers: `$`, `rnd`, `ri`, `pick`, `clamp`, `shuffle`, and their visual-only `fx` versions. |
 | `src/genetics.js` | Genetics 2.0, all pure functions: rolling genomes, expression (`express(c)`), inheritance, mutation, lineage checks (inbreeding, pedigree), exact breeding odds, and the Test Lab simulator. |
 | `src/geneui.js` | Genetics screens: what the Keeper's eye, Sequencer and Gene Lens show on creature cards, the breeding preview, the family tree, and the simulator panel. |
+| `src/jobs.js` | Jobs and production: materials (`amt`, `give`, `pay`), items (weapons and satchels with quality, durability and maker's mark), station output and fatigue, foremen, chemistry, quality rolls and crafting, repairs, prints, the roster cap, raid roles, expeditions and the death legacy. |
+| `src/workui.js` | The Workshop, station production panels, expeditions, the Memorial wall, the raid gear picker and the supply sandbox panel. |
+| `src/supply.js` | The supply sandbox: a week of the real daily cycle on a throwaway copy of the save, for raid-only and craft-heavy play. |
 | `src/save.js` | Versioned IndexedDB saves and migrations. |
 | `src/state.js` | Save state `S`, creature creation and `stats()`, breeding and lineage records (`S.tree`), evolution, research, codex (dex), rewards, NPC quests, hideout sections, Keeper rank, day processing, hatching, breeding, deaths and the memorial. |
 | `src/sprites.js` | Procedural canvas sprites: a body drawer per species and hybrid, evolution dressing, eggs, NPCs, and the DOM sprite painter. |
@@ -63,6 +67,13 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 - What the player sees depends on `geneSight()`: `stars`, `grades` (Sequencer) or `alleles` (Gene Lens, or the Test Lab's "Reveal genomes" switch).
 - Run the simulator from the Test Lab, or call `simulate(options, seed)` from the console.
 
+## Jobs and production
+
+- Coin, ore, food and shards stay on `S` as in v5; every other material is in `S.mats`. Use `amt(id)`, `give(id, n)` and `pay(cost)` so code doesn't care where a material lives.
+- Weapons and satchels are items in `S.items` (`{uid, kind, id, q, dur, max, maker, fore, src}`). `S.loadout.guns` and `S.loadout.satchel` hold item uids; an empty first gun slot means the Scav Pistol. In a raid, `R.guns` keeps gun ids for combat and `R.gunItem` the matching items (null for the pistol or a find).
+- `stationReport(k)` is the single source for a station's numbers: what each creature adds, the foreman, chemistry, and what limits output. The day (`runStations`) and the screens both use it.
+- The raid bag lives in `R.bag` with `R.bagCap`; add loot through `bagAdd(mat, n)`, which refuses what won't fit.
+
 ## Randomness
 
 - All gameplay randomness goes through `rand()` in `rng.js` (and the helpers `rnd`, `ri`, `pick`, `wpick`, `shuffle` built on it). Never call `Math.random()` in gameplay code.
@@ -73,7 +84,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 ## Saves
 
 - The save lives in IndexedDB (database `genesling`, store `saves`, key `main`) as `{v, saved, data}`, with `data` the JSON of `S`. If IndexedDB isn't available, it falls back to `localStorage` under `genesling-save`.
-- `SAVE_VERSION` in `save.js` is the current format (7). Version 7 added genomes: v5 genes and traits became matching allele pairs. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
+- `SAVE_VERSION` in `save.js` is the current format (8). Version 7 added genomes: v5 genes and traits became matching allele pairs. Version 8 added materials, weapons as items (every owned weapon became a Fine item), pens, expeditions and fatigue. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
 - **Never reset saves.** Any change to the save format bumps `SAVE_VERSION` and adds a migration, plus a test that an old save loads.
 - A save that can't be read or migrated (corrupt, or from a newer build) is copied to a `backup-<time>` key before a new game starts.
 - On first load, the v5 save (`localStorage` key `genesling-save-v5`) is migrated into IndexedDB. The v5 copy stays where it is as a backup.
@@ -83,7 +94,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 
 - Tests drive the game through its globals (`startRaid`, `hurtEnemy`, `useCage`, `act(...)`, `S`, `R`) and fail on any page error.
 - `tests/helpers.js` serves the repo over HTTP and gives each `openGame()` a fresh browser context with empty storage. Await `window.gameReady` before touching the game (the helper does).
-- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace.
+- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace; `jobs.test.js` checks stations, fatigue, foremen, chemistry, upkeep, the roster cap, crafting and quality, durability, the bag, raid roles, tonics, expeditions, the death legacy and the supply sandbox; `touch.test.js` checks the joysticks never move the page.
 
 ## What v5 has
 

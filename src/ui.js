@@ -1,18 +1,20 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {ABILITIES,ARMORY_TH,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,WEAPON_COST,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
 import {save} from './save.js';
-import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canCraft,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,priceMul,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,priceMul,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
 import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
 import {startRaid} from './raid.js';
 import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
 import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
-const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Armory'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']];
+import {amt,buildPen,craft,craftWeapon,expAway,fatigueMul,give,itemByUid,itemName,makerText,mouths,newItem,overCap,repair,rosterCap,rosterCount,scrapItem,sellMat,startExpedition,usable} from './jobs.js';
+import {candidateOption,expeditionPanel,fatBar,gearPanel,memberRow,memorialView,roleChip,rosterBar,runSupply,stationPanel,supplyPanel,workshopView} from './workui.js';
+const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']];
 function renderAll(){renderHeader();renderTabs();renderMain()}
 function renderHeader(){
-  const n=S.creatures.length+S.sections.training.ids.length;
+  const n=mouths();
   $('#res').innerHTML=`<span class="pill">Keeper <b>${S.keeper.level}</b> <small>${S.keeper.xp}/${keeperNeed()}</small></span><span class="pill">Day <b>${S.day}</b></span><span class="pill">Coin <b>${S.coin}</b></span><span class="pill">Food <b>${S.food}</b> <small>−${n}/day</small></span><span class="pill">Ore <b>${S.ore}</b></span><span class="pill">Shards <b>${S.shards}</b></span><span class="pill">Cages <b>${S.cages.basic}</b>${S.cages.gilded?` <small>+${S.cages.gilded} gilded</small>`:''}</span>`;
 }
 function renderTabs(){
@@ -30,13 +32,16 @@ function statusText(c){
   const w=whereIs(c);
   if(w.kind==='section')return`In the ${SECTIONS[w.key].name}`;
   if(w.kind==='loadout')return w.slot<2?`In loadout, combat slot ${w.slot+1}`:'In loadout, slot 3';
+  if(w.kind==='expedition')return`Away on the ${JOBS.EXPEDITIONS[w.dest].name.toLowerCase()}`;
   return'Idle in the pens';
 }
+// Drops gear the loadout can no longer use (lost, scrapped or broken). An empty first slot means the pistol.
 function validGuns(){
-  const L=S.loadout.guns;const have=(id,need)=>id==='pistol'||(S.guns[id]||0)>=need;
-  if(!L[0]||!have(L[0],1))L[0]='pistol';
-  if(L[1]&&!have(L[1],L[1]===L[0]?2:1))L[1]=null;
-  if(L[1]==='pistol'&&L[0]==='pistol')L[1]=null;
+  const L=S.loadout,ok=(uid,kind)=>{const it=itemByUid(uid);return it&&it.kind===kind&&usable(it)};
+  L.guns=[0,1].map(i=>L.guns[i]&&ok(L.guns[i],'gun')?L.guns[i]:null);
+  if(L.guns[0]&&L.guns[0]===L.guns[1])L.guns[1]=null;
+  if(L.satchel&&!ok(L.satchel,'satchel'))L.satchel=null;
+  L.tonics=Math.max(0,Math.min(L.tonics||0,JOBS.TONIC.carry,amt('tonic')));
 }
 function weaponLine(g){
   const el=g.elem?` · ${ELEM[g.elem].name.toLowerCase()}`:'';
@@ -61,19 +66,14 @@ function viewRaid(){
     return`<div class="slot ${sup?'support':''}"><div class="slot-label">${labels[i]}</div>
       <div class="slot-body">${spr(c,56)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
       <div class="status">${sexSym(c.sex)} ${esc(formName(c))} · ${ATTACKS[st.atkId].name}</div>
-      <div class="row" style="gap:4px">${typeChips(c)}${stars(st.star)}${c.origin==='wild'&&!c.proven?'<span class="chip warn">Unproven</span>':''}</div></div></div>
+      <div class="row" style="gap:4px">${typeChips(c)}${roleChip(c)}${stars(st.star)}${c.origin==='wild'&&!c.proven?'<span class="chip warn">Unproven</span>':''}</div></div></div>
       ${hpBar(c)}
       <p class="status">${sup?'Passive: '+supportText(c):(i===0?'Q':'E')+': '+A.name+'. '+A.desc+'.'}</p>
       <div class="row"><button class="btn small" data-act="choose" data-slot="${i}">Change</button><button class="btn small" data-act="clearslot" data-slot="${i}">${sup?'Leave free':'Remove'}</button></div></div>`;
   }).join('');
   let combo='';
   if(slots[0]&&slots[1]){const cb=comboFor(slots[0].type,slots[1].type),special=!!COMBOS[comboKey(slots[0].type,slots[1].type)];combo=`<div class="combo ${special?'special':''}"><b>Combo · ${cb.name}</b><span>${cb.desc} Press C, or the Combo button, when it charges.</span></div>`}
-  const owned=GUN_IDS.filter(k=>k==='pistol'||(S.guns[k]||0)>0);
-  const opts=(cur,slot)=>`<select id="gun-${slot}" data-act="gunsel" data-slot="${slot}" aria-label="${slot?'Second':'First'} weapon">${slot?`<option value="" ${!cur?'selected':''}>None</option>`:''}
-    <optgroup label="Guns">${owned.filter(k=>!GUNS[k].melee).map(k=>`<option value="${k}" ${cur===k?'selected':''}>${GUNS[k].name}${k==='pistol'?'':' (own '+S.guns[k]+')'}</option>`).join('')}</optgroup>
-    <optgroup label="Melee">${owned.filter(k=>GUNS[k].melee).map(k=>`<option value="${k}" ${cur===k?'selected':''}>${GUNS[k].name} (own ${S.guns[k]})</option>`).join('')}</optgroup></select>`;
-  const wCard=(k,slot)=>{const g=k?GUNS[k]:null;return`<div class="gunslot"><span class="slot-label">${slot?'Second weapon · R swaps':'First weapon'}</span>${opts(k,slot)}${g?`<small>${g.desc} ${weaponLine(g)}</small>`:'<small>Room for a weapon you find.</small>'}</div>`};
-  const risk=slots.filter(Boolean).map(c=>esc(c.name));L.guns.forEach(g=>{if(g&&g!=='pistol')risk.push(GUNS[g].name)});
+  const risk=slots.filter(Boolean).map(c=>esc(c.name));[...L.guns,L.satchel].forEach(uid=>{const it=itemByUid(uid);if(it)risk.push(esc(itemName(it)))});if(L.tonics)risk.push(`${L.tonics} tonic${L.tonics>1?'s':''}`);
   const vt=secTier('vault');const keeps=[vt>=1&&'slot 3 creature',vt>=2&&'held weapons',vt>=4&&'slot 1 companion',vt>=5?'60% of coin and all ore':vt>=3&&'30% of coin',armoryTier()>=4&&vt<2&&'primary weapon'].filter(Boolean);
   const modes=Object.entries(MODES).map(([k,m])=>{const un=modeUnlocked(k);return`<label class="toggle ${un?'':'locked'}"><input type="checkbox" id="mode-${k}" data-act="mode" data-k="${k}" ${S.modes[k]&&un?'checked':''} ${un?'':'disabled'}> <span><b style="font-family:var(--display)">${m.name}</b>${un?'':' · locked'}<br><small class="status">${un?m.desc:`Reach War Room tier ${m.need[1]} to unlock.`}</small></span></label>`}).join('');
   const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.set?'Floor 6':'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
@@ -83,11 +83,12 @@ function viewRaid(){
     ${S.tutorialDone?'':`<div class="combo special"><b>New here?</b><span>A short guided raid teaches moving, fighting, catching and extracting. Nothing is at risk.</span><div class="row"><button class="btn small primary" data-act="tutorial">Play the tutorial</button></div></div>`}
     <p class="hint">Two companions fight beside you. Slot 3 holds a support creature for its passive, or stays free so a caged catch has somewhere to go.</p>
     <div class="slots">${slotHtml}</div>${combo}
-    <h3>Weapons</h3><div class="guns">${wCard(L.guns[0],0)}${wCard(L.guns[1],1)}</div>
+    <h3>Gear</h3>${gearPanel()}
     <p class="hint">You'll carry ${Math.min(cageCap(),S.cages.basic+S.cages.gilded)} of up to ${cageCap()} cages. Unused cages come home if you extract.</p>
     <div class="risk"><b>Lost if you die:</b> ${risk.length?risk.join(', '):'nothing of yours'}, plus cages, buffs and loot.${keeps.length?' Your hideout keeps: '+keeps.join(', ')+'.':''}</div>
     ${modes?`<h3>Raid modes</h3><div class="modes">${modes}</div>`:''}
-    <div class="row"><button class="btn primary" data-act="deploy">Deploy raid</button><button class="btn" data-act="scav">Scav run (no risk)</button></div>
+    ${overCap()?`<div class="risk"><b>Pens over capacity.</b> ${rosterCount()}/${rosterCap()} creatures. Sell some or build a pen in the Roster tab before raiding.</div>`:''}
+    <div class="row"><button class="btn primary" data-act="deploy" ${overCap()?'disabled':''}>Deploy raid</button><button class="btn" data-act="scav">Scav run (no risk)</button></div>
   </section>
   <section class="card"><h2>Keeper rank ${S.keeper.level}</h2>
     <div class="bar"><i style="width:${S.keeper.xp/kn*100}%;background:var(--gold)"></i></div>
@@ -112,14 +113,15 @@ function meterHtml(score,th,tier){
   return`<div class="meter"><i style="width:${pct}%"></i>${th.map((t,i)=>`<b class="${tier>i?'on':''}" style="left:${t/max*100}%"><span>T${i+1}</span></b>`).join('')}</div>`;
 }
 function viewHideout(){
-  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'T'+secTier(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button>`;
+  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'T'+secTier(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button><button class="tab" aria-selected="${ui.section==='memorial'}" data-act="section" data-k="memorial">Memorial</button>`;
   const npcs=NPC_IDS.filter(id=>S.npc[id]).map(id=>`<button class="tab" data-act="npc" data-k="${id}">${NPCS[id].name}${npcAttention(id)?' <i class="dot"></i>':''}</button>`).join('');
   return`<section class="card mapcard"><div class="mapwrap"><canvas id="hmap" aria-label="Hideout map. Select a building to manage it."></canvas></div>
     <p class="status">Tap a building to manage it, a person to talk, the cave mouth to raid, or the board to open the Codex. Buildings grow as their tier rises.</p>
     <div class="filters">${chips}</div>${npcs?`<div class="filters" style="margin-top:6px"><span class="status" style="align-self:center">Talk to:</span>${npcs}</div>`:''}</section>
-    <section class="card secdetail" id="secPanel">${ui.section==='log'?logView():sectionDetail(ui.section)}</section>`;
+    <section class="card secdetail" id="secPanel">${secBody()}</section>`;
 }
-function renderSecPanel(){const p=$('#secPanel');if(!p)return;p.innerHTML=ui.section==='log'?logView():sectionDetail(ui.section);paintSprites(p);
+const secBody=()=>ui.section==='log'?logView():ui.section==='memorial'?memorialView():sectionDetail(ui.section);
+function renderSecPanel(){const p=$('#secPanel');if(!p)return;p.innerHTML=secBody();paintSprites(p);
   document.querySelectorAll('.mapcard .filters [data-act="section"]').forEach(b=>b.setAttribute('aria-selected',b.dataset.k===ui.section))}
 function logView(){
   return`<h2>Hideout log</h2><p class="hint">Each raid moves time forward one day. Every creature eats 1 food a day, trainees eat 2.</p>
@@ -130,9 +132,9 @@ function sectionDetail(k){
   if(!sectionUnlocked(k))return`<h2>${sec.name}</h2><p class="hint">${sec.blurb}</p><div class="risk"><b>Locked.</b> Reach Keeper rank ${sec.unlock} to build the ${sec.name}. Keeper XP comes from every raid, won or lost.</div>`;
   const ids=S.sections[k].ids,cap=secCap(k),t=secTier(k),sc=secScore(k),next=SEC_TH[t];
   const tiers=sec.tiers.map((d,i)=>`<li class="${t>i?'on':''}"><b>T${i+1}</b> <span>${d}</span> <small>${SEC_TH[i]} pts</small></li>`).join('');
-  const members=ids.map(byId).filter(Boolean).map(c=>`<div class="member">${spr(c,40)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}</div><small>${esc(formName(c))} Lv ${c.level} · +${Math.round(secContribution(c,k))} pts</small>${k==='training'?`<div class="bar"><i style="width:${c.xp/xpNeed(c)*100}%;background:var(--sky)"></i></div>`:''}</div><button class="btn small" data-act="unassign" data-id="${c.id}" aria-label="Remove ${esc(c.name)}">×</button></div>`).join('');
-  const cand=S.creatures.filter(c=>!ids.includes(c.id)).sort((a,b)=>secContribution(b,k)-secContribution(a,k));
-  const add=ids.length<cap&&cand.length?`<div class="row"><select id="addsel" aria-label="Add a creature">${cand.map(c=>{const w=whereIs(c);return`<option value="${c.id}">${esc(c.name)} · ${esc(formName(c))} Lv ${c.level} · +${Math.round(secContribution(c,k))} pts${w.kind==='loadout'?' (loadout)':w.kind==='section'?' ('+SECTIONS[w.key].name+')':''}</option>`}).join('')}</select><button class="btn small primary" data-act="assign" data-k="${k}">Add</button></div>`:'';
+  const members=ids.map(byId).filter(Boolean).map(c=>memberRow(c,k)).join('');
+  const cand=S.creatures.filter(c=>!ids.includes(c.id)&&!expAway(c)).sort((a,b)=>secContribution(b,k)-secContribution(a,k));
+  const add=ids.length<cap&&cand.length?`<div class="row"><select id="addsel" aria-label="Add a creature">${cand.map(c=>candidateOption(c,k)).join('')}</select><button class="btn small primary" data-act="assign" data-k="${k}">Add</button></div>`:'';
   const ec=expandCost(k),canExp=S.sections[k].cap<10;
   let extra='';
   if(k==='training'){
@@ -160,6 +162,7 @@ function sectionDetail(k){
     <div class="members">${members||'<p class="empty">Nobody is assigned yet.</p>'}</div>
     ${add}
     ${canExp?`<div class="row"><button class="btn small" data-act="expand" data-k="${k}" ${S.coin>=ec.coin&&S.ore>=ec.ore?'':'disabled'}>Build a slot · ${ec.coin}c ${ec.ore} ore</button><span class="status">Up to 10 slots${slotBonus()?` (+${slotBonus()} from Keeper rank)`:''}</span></div>`:''}
+    ${stationPanel(k)}${k==='roost'?expeditionPanel(ui):''}
     ${extra}`;
 }
 
@@ -175,7 +178,7 @@ function creCard(c){
   return`<article class="cre">${spr(c,72)}<div class="cre-main">
     <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
     <div class="status">${esc(formName(c))} · ${sp.blurb}</div>
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
+    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
     ${hpBar(c)}
     <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
     <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
@@ -183,6 +186,7 @@ function creCard(c){
     <div class="row" style="gap:6px">${stars(bs)}<small class="status">${nextB!=null?`${c.bondXp}/${nextB} bond`:'Max bond'}${bs>=3?` · ${bp.name}: ${bp.desc}`:` · ★3 unlocks ${bp.name}`}</small></div>
     ${genomeBlock(c)}
     <div class="bar" title="XP"><i style="width:${c.xp/xpNeed(c)*100}%;background:var(--sky)"></i></div>
+    <p class="status"><b class="lbl">Fatigue</b> ${Math.round(c.fat||0)}%${c.fat>0?` · working at ${Math.round(fatigueMul(c)*100)}%`:''}</p>${fatBar(c)}
     <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
     <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
     <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button></div>
@@ -202,6 +206,7 @@ function viewRoster(){
   list.sort((a,b)=>b.level-a.level||typeTier(b)-typeTier(a));
   return`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Roster · ${S.creatures.length} creatures</h2>
     <div class="filters">${F.map(([k,l])=>`<button class="tab" aria-selected="${ui.filter===k}" data-act="filter" data-k="${k}">${l}</button>`).join('')}</div></div>
+    ${rosterBar()}
     <p class="hint">Every species has its own evolution line. Each evolution changes its attack and ability and raises its stats. Bond grows from raids, feeding and training; stars unlock bonuses up to Last Stand at ★5.</p></section>
     <div class="grid">${list.map(creCard).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
 }
@@ -238,38 +243,7 @@ function viewResearch(){
     <p class="status">You have ${S.coin} coin, ${S.ore} ore and ${S.shards} shards.</p></section><div class="resgrid">${cols}</div>`;
 }
 
-function viewArmory(){
-  const ft=secTier('forge'),at=armoryTier(),un=sectionUnlockedArmory(),need=[0,1,2,4,5],pm=priceMul();
-  const recipes=GUN_IDS.filter(k=>GUNS[k].tier>=1).map(k=>{
-    const g=GUNS[k],known=!!S.blueprints[k],cost=WEAPON_COST[g.tier],ok=canCraft(k),afford=S.coin>=cost.coin&&S.ore>=cost.ore;
-    return`<div class="recipe ${known?'':'unknown'}"><div class="row" style="justify-content:space-between"><b>${known?g.name:'Unknown blueprint'}</b>${tierTag(g.tier)}</div>
-      <small>${known?`${g.melee?'Melee · ':''}${weaponLine(g)}`:'Bring this weapon home from a raid, or donate one, to learn it.'}</small>
-      ${known?`<button class="btn small" data-act="craft" data-k="${k}" ${ok&&afford?'':'disabled'}>${ok?`Forge · ${cost.coin}c ${cost.ore} ore`:`Needs Forge T${need[g.tier]}`}</button>`:''}</div>`;
-  }).join('');
-  const owned=GUN_IDS.filter(k=>k!=='pistol'&&(S.guns[k]||0)>0);
-  const scrapMul=ft>=3?1.5:1;
-  const inv=owned.map(k=>{const g=GUNS[k],arm=ui.scrapArm===k;return`<div class="invrow"><span><b>${g.name}</b> ×${S.guns[k]} ${tierTag(g.tier)}</span>
-    <span class="row" style="gap:6px"><button class="btn small ${arm?'danger':''}" data-act="scrap" data-k="${k}">${arm?'Confirm scrap':'Scrap · +'+Math.round(SCRAP_ORE[g.tier]*scrapMul)+' ore'}</button>
-    <button class="btn small" data-act="donate" data-k="${k}" ${un?'':'disabled'}>Donate · +${DONATE_PTS[g.tier]} pts</button></span></div>`}).join('');
-  const P=n=>Math.round(n*pm);
-  return`<div class="cols"><section class="card"><h2>Forge</h2>
-    <p class="hint">Learn a blueprint by bringing a weapon home or donating it. Higher tiers need a stronger Forge (now tier ${ft}).</p>
-    <div class="recipes">${recipes}</div>
-    <div class="row"><button class="btn small" data-act="gilded" ${ft>=3&&S.coin>=25&&S.ore>=2?'':'disabled'}>${ft>=3?'Gilded cage · 25c 2 ore':'Gilded cages need Forge T3'}</button></div>
-  </section>
-  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-  <section class="card"><h2>Armory ${un?tierTag(at):''}</h2>
-    ${un?`<p class="hint">Donate spare weapons to fill the Armory. Each tier is a permanent bonus.</p>
-    ${meterHtml(S.armory,ARMORY_TH,at)}
-    <p class="status">${S.armory} points${ARMORY_TH[at]?` · ${ARMORY_TH[at]-S.armory} more for tier ${at+1}`:' · maxed'}</p>
-    <ul class="tierlist">${ARMORY_TIERS.map((d,i)=>`<li class="${at>i?'on':''}"><b>T${i+1}</b> <span>${d}</span> <small>${ARMORY_TH[i]} pts</small></li>`).join('')}</ul>`:'<div class="risk"><b>Locked.</b> Reach Keeper rank 3 to open the Armory.</div>'}
-    <h3>Your weapons</h3>
-    ${inv||'<p class="empty">Only the Scav Pistol. Find more in raids.</p>'}
-  </section>
-  <section class="card"><h2>Market</h2>
-    <div class="row"><button class="btn small" data-act="buy" data-k="food1" ${S.coin>=P(5)?'':'disabled'}>1 food · ${P(5)}c</button><button class="btn small" data-act="buy" data-k="food10" ${S.coin>=P(42)?'':'disabled'}>10 food · ${P(42)}c</button><button class="btn small" data-act="buy" data-k="cage" ${S.coin>=P(15)?'':'disabled'}>Cage · ${P(15)}c</button><button class="btn small" data-act="buy" data-k="ore" ${S.coin>=P(18)?'':'disabled'}>1 ore · ${P(18)}c</button><button class="btn small" data-act="sell-ore" ${S.ore>0?'':'disabled'}>Sell 1 ore · 8c</button></div>
-    <p class="hint">Ore builds section slots, forges weapons, evolves creatures and pays for research, the Gene Lab and the Trait Tutor.</p></section></div></div>`;
-}
+function viewArmory(){return workshopView(ui)}
 
 /* ---------- Codex ---------- */
 const journalNew=()=>JOURNAL.filter(j=>j.rank<=S.keeper.level).length>S.journalRead;
@@ -329,6 +303,7 @@ function viewLab(){
     <div class="row"><label class="toggle"><input type="checkbox" id="lab-max" data-act="lab" data-k="max" ${L.max?'checked':''}> Max genes</label><label class="toggle"><input type="checkbox" id="lab-proven" data-act="lab" data-k="proven" ${L.proven?'checked':''}> Already proven</label></div>
     <div class="row"><button class="btn primary" data-act="lab-spawn">Add to roster</button><button class="btn" data-act="lab-squad">Add 10 random Lv 10 creatures</button></div>
     ${simPanel(ui.sim)}
+    ${supplyPanel()}
     <h3>Evolution and bond</h3>
     <div class="row"><button class="btn" data-act="lab-evoready">Make loadout ready to evolve</button><button class="btn" data-act="lab-evomax">Fully evolve loadout</button><button class="btn" data-act="lab-bond">Max bond for loadout</button></div>
     <h3>Jump into a raid</h3>
@@ -337,7 +312,7 @@ function viewLab(){
     <p class="hint">One room with your loadout and endless cages. Spawn any enemy, boss, wild species, weapon, buff, curse or room twist. Nothing dies for real.</p>
     <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
     <h3>Resources</h3>
-    <div class="row"><button class="btn" data-act="lab-res" data-k="coin">+500 coin</button><button class="btn" data-act="lab-res" data-k="food">+50 food</button><button class="btn" data-act="lab-res" data-k="ore">+50 ore</button><button class="btn" data-act="lab-res" data-k="shard">+5 shards</button><button class="btn" data-act="lab-res" data-k="cage">+5 cages</button><button class="btn" data-act="lab-res" data-k="guns">One of every weapon</button><button class="btn" data-act="lab-res" data-k="bp">Learn all blueprints</button><button class="btn" data-act="lab-res" data-k="keeper">+1 Keeper rank</button><button class="btn" data-act="lab-res" data-k="dex">Reveal the Codex</button></div>
+    <div class="row"><button class="btn" data-act="lab-res" data-k="mats">+30 of every material</button><button class="btn" data-act="lab-res" data-k="coin">+500 coin</button><button class="btn" data-act="lab-res" data-k="food">+50 food</button><button class="btn" data-act="lab-res" data-k="ore">+50 ore</button><button class="btn" data-act="lab-res" data-k="shard">+5 shards</button><button class="btn" data-act="lab-res" data-k="cage">+5 cages</button><button class="btn" data-act="lab-res" data-k="guns">One of every weapon</button><button class="btn" data-act="lab-res" data-k="bp">Learn all blueprints</button><button class="btn" data-act="lab-res" data-k="keeper">+1 Keeper rank</button><button class="btn" data-act="lab-res" data-k="dex">Reveal the Codex</button></div>
     <div class="row"><button class="btn" data-act="wait">Advance a day</button><button class="btn" data-act="lab-heal">Heal everyone</button><button class="btn" data-act="lab-prove">Prove everyone</button><button class="btn" data-act="lab-xp">+5 levels to loadout</button><button class="btn" data-act="lab-hatch">Hatch eggs now</button></div>
   </section>
   <section class="card"><h2>Raid switches</h2>
@@ -356,7 +331,10 @@ function viewSettings(){
   const seg=(k,vals,label)=>`<div class="field"><span>${label}</span><div class="seg">${vals.map(([v,l])=>`<button class="tab" aria-selected="${o[k]===v}" data-act="opt" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div></div>`;
   const tg=(k,l,d)=>`<label class="toggle"><input type="checkbox" id="opt-${k}" data-act="optc" data-k="${k}" ${o[k]?'checked':''}> <span><b style="font-family:var(--display)">${l}</b><br><small class="status">${d}</small></span></label>`;
   const sl=(k,l)=>`<label class="field">${l} <small class="status" id="v-${k}">${Math.round(o[k]*100)}%</small><input id="opt-${k}" type="range" min="0" max="1" step="0.05" value="${o[k]}" data-act="optr" data-k="${k}"></label>`;
-  return`<div class="cols"><section class="card"><h2>Touch controls</h2>
+  return`<div class="cols"><section class="card"><h2>Keeper</h2>
+    <label class="field">Your name, for the maker’s mark<input id="keeper-name" type="text" maxlength="24" value="${esc(S.keeperName||'')}" placeholder="the Keeper" data-act="keepername"></label>
+    <p class="status">Everything you craft at Superior quality or better carries your name and its foreman’s, like “Masterwork Ember Carbine, made by ${esc(S.keeperName||'the Keeper')} with Pyrrovex”.</p></section>
+  <section class="card"><h2>Touch controls</h2>
     ${seg('stick',[['fixed','Fixed'],['float','Floating']],'Joysticks')}
     <p class="status">Fixed sticks stay in the bottom corners. Floating sticks appear wherever your thumb lands.</p>
     ${seg('stickSize',[['S','Small'],['M','Medium'],['L','Large']],'Joystick size')}
@@ -382,7 +360,7 @@ function openModal(html){$('#modal').hidden=false;$('#modalBox').innerHTML=html;
 function closeModal(){$('#modal').hidden=true}
 function openChooser(slot){
   const cur=S.loadout.slots[slot];
-  const list=S.creatures.filter(c=>c.id!==cur).sort((a,b)=>b.level-a.level);
+  const list=S.creatures.filter(c=>c.id!==cur&&!expAway(c)).sort((a,b)=>b.level-a.level);
   const items=list.map(c=>{const w=whereIs(c);const note=w.kind==='section'?`Leaves the ${SECTIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';const st=stats(c);
     return`<button class="choice" data-act="pickslot" data-slot="${slot}" data-id="${c.id}">${spr(c,44)}<span style="min-width:0;flex:1"><span class="nm">${esc(c.name)} · ${sexSym(c.sex)} ${esc(formName(c))} Lv ${c.level} ${'★'.repeat(st.star)}</span><small>${c.hp}/${st.hp} HP · ${slot===2?'Passive: '+supportText(c):ABILITIES[st.abilId].name+' · '+ATTACKS[st.atkId].name}${c.proven?'':' · Unproven'}</small>${note?`<small style="color:var(--gold)">${note}</small>`:''}</span></button>`}).join('');
   openModal(`<h2>${slot===2?'Slot 3: support or free':'Combat slot '+(slot+1)}</h2>
@@ -426,7 +404,17 @@ function act(a,d){
     case'choose':openChooser(+d.slot);break;
     case'pickslot':{const c=byId(+d.id);unplace(c);S.loadout.slots[+d.slot]=c.id;closeModal();save();renderAll();break}
     case'clearslot':S.loadout.slots[+d.slot]=null;closeModal();save();renderAll();break;
-    case'deploy':startRaid('raid');break;
+    case'deploy':if(overCap()){renderAll();break}startRaid('raid');break;
+    case'make':{const got=craft(d.k);if(got){addLog(`Workshop: made ${got}.`);sfx('heavy');save();renderAll()}break}
+    case'forge':case'forgeprint':{const id=a==='forge'?d.k:S.prints[+d.i];const it=craftWeapon(id,a==='forgeprint'?+d.i:null);if(it){addLog(`The Forge made a ${itemName(it)}. ${makerText(it)}.`);sfx('heavy');save();renderAll()}break}
+    case'repair':if(repair(+d.uid)){sfx('heavy');save();renderAll()}break;
+    case'scrapitem':{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun')break;if(ui.scrapArm!==it.uid){ui.scrapArm=it.uid;renderMain();break}ui.scrapArm=null;
+      const ore=Math.round(SCRAP_ORE[GUNS[it.id].tier]*(secTier('forge')>=3?1.5:1));scrapItem(it);S.ore+=ore;S.blueprints[it.id]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${itemName(it)} for ${ore} ore.`);sfx('heavy');save();renderAll();break}
+    case'donateitem':{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun'||!sectionUnlockedArmory())break;const before=armoryTier(),pts=DONATE_PTS[GUNS[it.id].tier];scrapItem(it);S.armory+=pts;S.blueprints[it.id]=1;validGuns();
+      addLog(`Donated a ${itemName(it)} to the Armory (+${pts} pts).${armoryTier()>before?' Armory tier '+armoryTier()+' reached: '+ARMORY_TIERS[armoryTier()-1]+'.':''}`);save();renderAll();break}
+    case'sellmat':if(sellMat(d.k,+d.n||1)){sfx('coin');save();renderAll()}break;
+    case'buildpen':if(buildPen()){sfx('level');save();renderAll()}break;
+    case'expgo':{const ids=ui.exp.team.map(Number);if(startExpedition(ui.exp.dest,ids)){ui.exp={dest:'',team:['','','']};sfx('ui');save();renderAll()}break}
     case'scav':startRaid('scav');break;
     case'arena':startRaid('arena');break;
     case'tutorial':closeModal();startRaid('tutorial');break;
@@ -441,18 +429,12 @@ function act(a,d){
       addLog(`Trait Tutor: ${c.name} ${old?`swapped ${TRAITS[old].name} for`:'learned'} ${TRAITS[nt].name}.`);save();renderAll();break}
     case'tree':{const c=byId(+d.id);if(c)openModal(treeHtml(c));break}
     case'lab-sim':{runSim(ui.sim);renderMain();break}
+    case'lab-supply':{runSupply(1);renderMain();break}
     case'feed':{const c=byId(+d.id);if(S.food<1)break;S.food--;addBond(c,10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));sfx('pickup');save();renderAll();break}
-    case'sell':{const c=byId(+d.id);if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
+    case'sell':{const c=byId(+d.id);if(!c||expAway(c))break;if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
       S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);sfx('coin');save();renderAll();break}
     case'breed':breed();break;
-    case'craft':{const g=GUNS[d.k],cost=WEAPON_COST[g.tier];if(!canCraft(d.k)||S.coin<cost.coin||S.ore<cost.ore)break;S.coin-=cost.coin;S.ore-=cost.ore;S.guns[d.k]=(S.guns[d.k]||0)+1;addLog(`The Forge made a ${g.name}.`);sfx('heavy');save();renderAll();break}
-    case'scrap':{const g=GUNS[d.k];if(!(S.guns[d.k]>0))break;if(ui.scrapArm!==d.k){ui.scrapArm=d.k;renderMain();break}ui.scrapArm=null;
-      const ore=Math.round(SCRAP_ORE[g.tier]*(secTier('forge')>=3?1.5:1));S.guns[d.k]--;S.ore+=ore;S.blueprints[d.k]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${g.name} for ${ore} ore.`);sfx('heavy');save();renderAll();break}
-    case'donate':{const g=GUNS[d.k];if(!(S.guns[d.k]>0)||!sectionUnlockedArmory())break;const before=armoryTier();S.guns[d.k]--;S.armory+=DONATE_PTS[g.tier];S.blueprints[d.k]=1;validGuns();
-      addLog(`Donated a ${g.name} to the Armory (+${DONATE_PTS[g.tier]} pts).${armoryTier()>before?' Armory tier '+armoryTier()+' reached: '+ARMORY_TIERS[armoryTier()-1]+'.':''}`);save();renderAll();break}
-    case'gilded':if(secTier('forge')>=3&&S.coin>=25&&S.ore>=2){S.coin-=25;S.ore-=2;S.cages.gilded++;save();renderAll()}break;
     case'buy':{const pm=priceMul(),P={food1:[5,()=>S.food++],food10:[42,()=>S.food+=10],cage:[15,()=>S.cages.basic++],ore:[18,()=>S.ore++]}[d.k];const c=Math.round(P[0]*pm);if(S.coin>=c){S.coin-=c;P[1]();sfx('coin');save();renderAll()}break}
-    case'sell-ore':if(S.ore>0){S.ore--;S.coin+=8;save();renderAll()}break;
     case'opt':S.opts[d.k]=d.v;save();renderMain();break;
     case'lab-spawn':{const L=ui.lab;const lv=clamp(+L.level||1,1,40);
       let traits=null;if(L.t1||L.t2||L.t3){traits=[L.t1,L.t2,L.t3].map(t=>t||null)}
@@ -464,7 +446,8 @@ function act(a,d){
     case'lab-bond':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.bondXp=BOND_TH[4];c.hp=stats(c).hp});save();renderAll();break;
     case'lab-floor':startRaid('raid',+d.k);break;
     case'lab-res':{const k=d.k;if(k==='coin')S.coin+=500;if(k==='food')S.food+=50;if(k==='ore')S.ore+=50;if(k==='shard')S.shards+=5;if(k==='cage')S.cages.basic+=5;
-      if(k==='guns')GUN_IDS.forEach(g=>{if(g!=='pistol')S.guns[g]=Math.max(1,S.guns[g]||0)});if(k==='bp')GUN_IDS.forEach(g=>S.blueprints[g]=1);
+      if(k==='guns')GUN_IDS.forEach(g=>{if(g!=='pistol'&&!S.items.some(i=>i.kind==='gun'&&i.id===g))newItem('gun',g,1,{src:'legacy'})});
+      if(k==='mats')Object.keys(JOBS.MATERIALS).forEach(m=>give(m,30));if(k==='bp')GUN_IDS.forEach(g=>S.blueprints[g]=1);
       if(k==='keeper')addKeeperXp(keeperNeed()-S.keeper.xp);
       if(k==='dex'){for(const sp in LINES)LINES[sp].forEach((f,i)=>dexForm(sp,i,'seen'));FOE_IDS.forEach(f=>dexFoe(f,true));BOSS_IDS.forEach(b=>{S.progress.bosses[b]=S.progress.bosses[b]||1})}
       save();renderAll();break}
@@ -484,7 +467,12 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const el=e.target,a=el.dataset.act;if(!a)return;
-  if(a==='gunsel'){S.loadout.guns[+el.dataset.slot]=el.value||null;validGuns();save();renderMain()}
+  if(a==='gunsel'){S.loadout.guns[+el.dataset.slot]=el.value?+el.value:null;validGuns();save();renderMain()}
+  else if(a==='keepername'){S.keeperName=el.value.trim().slice(0,24);save()}
+  else if(a==='satchelsel'){S.loadout.satchel=el.value?+el.value:null;validGuns();save();renderMain()}
+  else if(a==='tonicsel'){S.loadout.tonics=+el.value||0;validGuns();save();renderMain()}
+  else if(a==='expsel'){ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()}
+  else if(a==='expdest'){ui.exp.dest=el.dataset.k;renderSecPanel()}
   else if(a==='mom'){ui.mom=el.value;renderMain()}
   else if(a==='dad'){ui.dad=el.value;renderMain()}
   else if(a==='glc'){ui.gl.id=el.value;renderSecPanel()}

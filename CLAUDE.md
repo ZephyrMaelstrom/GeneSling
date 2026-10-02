@@ -8,14 +8,15 @@ A browser creature-capture extraction roguelite: "Enter the Gungeon meets Palwor
 - `docs/ROADMAP.md`: the ten phases with checklists. **Tick boxes here as work lands.**
 - `docs/DEVELOPMENT_PHASES.md`: the reasoning, build list and exit test for each phase, plus risks.
 - `docs/CODE.md`: how the code is built, file by file, plus the rules for randomness, saves and tests.
-- `src/`: the game as ES modules; content tables are in `src/data/*.json`, genetics numbers in `src/data/genetics.json`. `npm run build` bundles it into `dist/index.html` (generated, not committed).
+- `src/`: the game as ES modules; content tables are in `src/data/*.json`, genetics numbers in `src/data/genetics.json`, jobs and production numbers in `src/data/jobs.json`. `npm run build` bundles it into `dist/index.html` (generated, not committed).
 - `tests/`: the headless test suite. `prototype/archive/`: the old single-file builds, v1 to v5.
 
 ## Current status
 
 - v5 prototype is complete and playable (floors 1 to 6, 8 bosses, evolutions, combos, hideout map, research, codex, tutorial, sound).
 - **Phase 0 (Foundation)**: code done; its exit test still needs Conner's hand test on his phone.
-- **Now: Phase 1 (Genetics 2.0)** in `docs/ROADMAP.md`. Built: genomes, inheritance, mutation, lineage, looks, 20 traits, Sequencer, Gene Lens, breeding odds, family tree and the simulator (median 13 generations to Apex). Waiting on Conner's hand test. Update these lines when a phase's exit test passes.
+- **Phase 1 (Genetics 2.0)**: built; simulator median 13 generations to Apex. Waiting on Conner's hand test.
+- **Now: Phase 2 (Jobs and production)** in `docs/ROADMAP.md`. Built: raid roles, the 12-slot bag, stations with exact numbers, foremen, chemistry, fatigue, the roster cap, production chains, quality, maker's marks, mastery, durability, prints, expeditions, the death legacy and the Memorial wall; the supply sandbox passes. Waiting on playtests for the hard-choices half of the exit test. Update these lines when a phase's exit test passes.
 
 ## Commands
 

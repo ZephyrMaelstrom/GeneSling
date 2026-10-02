@@ -14,6 +14,11 @@ const PHASE1 = {
     t.nursery.tiers[3] = '+0.5% mutation chance per gene, hybrid odds 15%'; return t; },
   RESEARCH: t => { t.breeding.nodes[0] = '+0.5% mutation chance per gene'; return t; },
 };
+// Phase 2 (jobs and production): every station's contribution now grows with Yield, the Garden's
+// tiers boost its production instead of adding flat food, and five blurbs mention what they make.
+const PHASE2 = {
+  SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } t.garden.tiers = now.garden.tiers; return t; },
+};
 const CHANGED = ['GENES', 'GENE_HINT', 'TRAITS', 'NEG_TRAITS'];   // compared separately below
 const TABLES = ['TYPES', 'TIER', 'SPECIES', 'HYBRIDS', 'LINES', 'ATTACKS', 'ABILITIES', 'TYPE_ABIL', 'ELEM', 'REACTIONS', 'COMBOS',
   'PERS', 'BOND_TH', 'BOND_PASSIVE', 'BOND_PERKS', 'GENES', 'GENE_HINT', 'TRAITS', 'NEG_TRAITS', 'GUNS', 'WEAPON_COST',
@@ -43,7 +48,8 @@ test('content and stats match the v5 build', async () => {
   const [a, b] = [await snapshot(v5.page), await snapshot(now.page)];
   for (const t of TABLES) {
     if (CHANGED.includes(t)) continue;
-    const want = PHASE1[t] ? PHASE1[t](structuredClone(a[t])) : a[t];
+    let want = PHASE1[t] ? PHASE1[t](structuredClone(a[t])) : a[t];
+    if (PHASE2[t]) want = PHASE2[t](structuredClone(want), b[t]);
     assert.deepEqual(b[t], want, `${t} differs from v5`);
   }
   // Every v5 trait is still there with the same name, effect and weight; it now also has a dominance flag.

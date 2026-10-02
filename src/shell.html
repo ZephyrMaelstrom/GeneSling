@@ -25,13 +25,15 @@ h2{font-size:1.25rem}
 h3{font-size:1.05rem}
 p{margin:0}
 .app{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--night);padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:2px solid var(--line)}
+/* The resource header and the tab rail stay pinned together at the top of every hideout screen */
+.topbar{position:sticky;top:0;z-index:10;background:var(--night);padding-top:env(safe-area-inset-top,0px);border-bottom:2px solid var(--line);margin-inline:-16px;padding-inline:16px}
+header.top{padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:1px solid var(--line)}
 .brand{font-family:var(--display);font-size:1.7rem;font-weight:700;color:var(--gold);text-shadow:2px 2px 0 var(--rose),4px 4px 0 var(--deep);letter-spacing:.04em}
 .res{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .pill{font-family:var(--display);font-size:.92rem;background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:3px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill b{color:var(--gold);font-weight:600}
 .pill small{color:var(--muted);font-family:var(--body);font-size:.78rem}
-nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:12px 4px;scrollbar-width:none}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:8px 8px;padding-inline:2px;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 .tab{font-family:var(--display);background:var(--panel);border:0;box-shadow:0 0 0 2px var(--line);padding:7px 14px;cursor:pointer;white-space:nowrap;color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--gold);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
@@ -40,6 +42,8 @@ main{padding-top:12px}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
 .cols{display:grid;gap:16px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
 @media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+/* Phones: one compact row of resources that scrolls sideways, so the pinned bar stays short */
+@media (max-width:700px){header.top{flex-wrap:nowrap;gap:10px;padding-block:8px 6px}.brand{font-size:1.15rem;flex:none}.res{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0;padding:2px}.res::-webkit-scrollbar{display:none}.pill{font-size:.82rem;padding:2px 8px}.tab{padding:6px 11px}}
 .card{background:var(--panel);box-shadow:0 0 0 2px var(--line),5px 5px 0 0 var(--deep);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .hint{color:var(--muted);font-size:.95rem;max-width:65ch}
 .btn{font-family:var(--display);background:var(--panel2);border:0;box-shadow:0 0 0 2px var(--line),0 3px 0 2px var(--deep);padding:7px 12px;cursor:pointer;transition:transform .05s}
@@ -67,6 +71,27 @@ canvas.spr{image-rendering:pixelated;background:var(--deep);box-shadow:0 0 0 2px
 .stats div{background:var(--deep);padding:3px 6px}
 .stats dt{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .stats dd{margin:0;font-family:var(--display)}
+/* Jobs and production: quality, durability, fatigue, stores, memorial, gear */
+.chip.q0{color:var(--muted)}.chip.q1{color:var(--ink)}.chip.q2{color:var(--mint);box-shadow:0 0 0 1.5px #1f7a62}.chip.q3{color:var(--sky);box-shadow:0 0 0 1.5px var(--sky)}.chip.q4{color:var(--gold);box-shadow:0 0 0 1.5px var(--gold-d)}
+.chip.role{color:var(--sky)}
+.qodds{display:flex;height:16px;margin:4px 0;box-shadow:0 0 0 1.5px var(--line);background:var(--deep);overflow:hidden}
+.qodds i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.66rem;white-space:nowrap;overflow:hidden;color:var(--deep);min-width:2px}
+.qodds .q0{background:#7d7398}.qodds .q1{background:var(--ink)}.qodds .q2{background:var(--mint)}.qodds .q3{background:var(--sky)}.qodds .q4{background:var(--gold)}
+.bar.fat{height:4px;margin-top:3px}.bar.fat i{background:var(--rose)}
+.bar.dur{height:4px;margin-top:3px}.bar.dur i{background:var(--mint)}
+span.short{color:var(--rose)}
+.status.over{color:var(--rose)}
+.mats{display:flex;flex-direction:column;gap:6px}
+.matrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.matrow small{display:block;color:var(--muted);font-size:.78rem}
+.matrow .num{font-family:var(--display);color:var(--gold);font-size:1.05rem;text-align:right}
+.matrow .row{grid-column:1/-1}
+.invrow.gear{align-items:flex-start}
+.gearrow{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.wall{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+.memorial{display:flex;gap:8px;align-items:flex-start;background:var(--deep);box-shadow:0 0 0 1.5px var(--line);padding:8px;font-size:.85rem}
+.memorial .nm{font-family:var(--display)}
+.memorial canvas{flex:none;filter:grayscale(.6)}
 /* Genetics: star ratings, allele pairs, family tree, simulator histogram */
 .gstars{color:var(--gold);letter-spacing:1px;font-size:.8rem;white-space:nowrap}
 .gstars i{color:var(--line);font-style:normal}
@@ -327,11 +352,13 @@ input[type=range]{accent-color:var(--gold);width:100%}
 </style>
 
 <div class="app" id="app">
-  <header class="top">
-    <div class="brand">GeneSling</div>
-    <div class="res" id="res"></div>
-  </header>
-  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <div class="topbar">
+    <header class="top">
+      <div class="brand">GeneSling</div>
+      <div class="res" id="res"></div>
+    </header>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </div>
   <main id="main"></main>
 </div>
 
