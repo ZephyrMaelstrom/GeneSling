@@ -5,11 +5,12 @@ import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,FOE_IDS,GENES,GENETICS,GUNS,JOUR
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
-import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,express,genomeFrom,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
+import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,cutFree,express,genomeFrom,hasPedigree,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
+import {expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
-  lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:'',t3:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'t1'},sim:{}};
+  exp:{dest:'',team:['','','']},lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:'',t3:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'t1'},sim:{}};
 
 const lineOf=c=>LINES[c.species];
 const formOf=c=>lineOf(c)[Math.min(c.stage||0,lineOf(c).length-1)];
@@ -85,12 +86,13 @@ function grantBonusSlot(c){
 function defaultOpts(){return{stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
-  S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},guns:{pistol:1,revolver:1,sword:1},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
+  S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
     creatures:[],eggs:[],sections:secs,armory:0,keeper:{level:1,xp:0},progress:{bosses:{},deepest:0,memories:{}},modes:{},research:{combat:0,capture:0,breeding:0,economy:0,bond:0},
     dex:{forms:{},foes:{},claimed:0},npc:{},journalRead:0,tutorialDone:false,introSeen:false,memorial:[],
-    loadout:{guns:['revolver','sword'],slots:[null,null,null]},
+    loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
-    settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},opts:defaultOpts(),nextId:1};
+    settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},
+    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',opts:defaultOpts(),nextId:1};
   const a=makeCreature('pyrrox','bred',4,{name:'Cinder',sex:'M',pers:'brave',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
   const b=makeCreature('puffcap','bred',4,{name:'Morel',sex:'F',pers:'calm',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
   const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',pers:'curious',proven:true,bondXp:70,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
@@ -100,6 +102,7 @@ function newGame(){
   S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
+  S.loadout.guns=[newItem('gun','revolver',1,{src:'legacy'}).uid,newItem('gun','sword',1,{src:'legacy'}).uid];
   syncNpcs();
   addLog('You took over Ilsa Marrow’s hideout. Kindle stokes the Forge, Puffin tends the Garden and Shoal keeps the Spring.');
 }
@@ -110,10 +113,12 @@ const byId=id=>S.creatures.find(c=>c.id===id);
 function whereIs(c){
   for(const k in S.sections){const i=S.sections[k].ids.indexOf(c.id);if(i>=0)return{kind:'section',key:k,slot:i}}
   const j=S.loadout.slots.indexOf(c.id);if(j>=0)return{kind:'loadout',slot:j};
+  const e=(S.expeditions||[]).find(x=>x.team.includes(c.id));if(e)return{kind:'expedition',dest:e.dest};
   return{kind:'idle'};
 }
 function unplace(c){for(const k in S.sections)S.sections[k].ids=S.sections[k].ids.filter(x=>x!==c.id);S.loadout.slots=S.loadout.slots.map(x=>x===c.id?null:x)}
-function killCreature(c,how){unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++;S.memorial.unshift({name:c.name,form:formName(c),species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,looks:c.looks,gen:c.gen,level:c.level,day:S.day,how:how||'Lost in the Bloom'});S.memorial=S.memorial.slice(0,40)}
+function killCreature(c,how){recordLineage(c);const leg=passLegacy(c);if(leg)addLog(`${leg.heir.name} carries on ${c.name}’s line and inherits ${leg.n} bond.`);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++;S.memorial.unshift({name:c.name,form:formName(c),species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,looks:c.looks,gen:c.gen,level:c.level,raids:c.raids||0,
+    titles:[cutFree(c)&&'Cut free',hasPedigree(c)&&'Pedigree',c.origin==='bred'&&'Gen '+(c.gen||0)].filter(Boolean),heir:leg?leg.heir.name:null,day:S.day,how:how||'Lost in the Bloom'});S.memorial=S.memorial.slice(0,200)}
 const typeTier=c=>Math.max(...typesOf(c).map(t=>TYPES[t].tier));
 function sellValue(c){return Math.round((12*typeTier(c)**2+c.level*5)*(c.type2?1.5:1)*(1+.4*(c.stage||0)))}
 const sexSym=s=>s==='F'?'♀':'♂';
@@ -141,7 +146,7 @@ function giveReward(r){
   if(r.gilded){S.cages.gilded+=r.gilded;out.push(`${r.gilded} gilded cage${r.gilded>1?'s':''}`)}
   if(r.shard){S.shards+=r.shard;out.push(`${r.shard} memory shard${r.shard>1?'s':''}`)}
   if(r.blueprint){S.blueprints[r.blueprint]=1;out.push(`${GUNS[r.blueprint].name} blueprint`)}
-  if(r.weapon){S.guns[r.weapon]=(S.guns[r.weapon]||0)+1;S.blueprints[r.weapon]=1;out.push(GUNS[r.weapon].name)}
+  if(r.weapon){const it=newItem('gun',r.weapon,1,{src:'crafted',maker:'Brannoc'});S.blueprints[r.weapon]=1;out.push(itemName(it))}
   if(r.egg){const sp=pick(BASE_SPECIES.filter(k=>SPECIES[k].w===1));const G=rollGenome(rand,'wild',6),T=genomeFrom({},rollTraits(2,[],true));TRAIT_LOCI.forEach(k=>G[k]=T[k]);const ch=makeCreature(sp,'bred',1,{genome:G});S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#ffcf4a'],parents:'Ilsa’s last nest',hybrid:true});out.push('a mysterious egg')}
   return out.join(', ');
 }
@@ -161,7 +166,7 @@ const secCap=k=>Math.min(10,S.sections[k].cap+slotBonus());
 function secContribution(c,k){
   const sec=SECTIONS[k];let aff=1;
   if(sec.type){aff=c.type===sec.type?2:c.type2===sec.type?1.6:.6}
-  return(5+c.level*1.6+c.genes[sec.gene]*1.5)*aff*(c.traits.includes('worker')?1.5:1)*(1+.1*(c.stage||0));
+  return(5+c.level*1.6+c.genes[sec.gene]*1.5)*aff*(c.traits.includes('worker')?1.5:1)*(1+.1*(c.stage||0))*fatigueMul(c);
 }
 const secScore=k=>S.sections[k].ids.map(byId).filter(Boolean).reduce((a,c)=>a+secContribution(c,k),0);
 const secTier=k=>{if(!S||!sectionUnlocked(k))return 0;const s=secScore(k);return SEC_TH.filter(t=>s>=t).length};
@@ -190,15 +195,24 @@ function addKeeperXp(n){
 }
 
 /* ---------- days ---------- */
+// An egg brought back by an expedition: a wild-blooded hatchling of one of the team's types.
+function expeditionEgg(team){
+  const types=[...new Set(team.flatMap(c=>typesOf(c)))],sps=BASE_SPECIES.filter(k=>types.includes(SPECIES[k].type));
+  const sp=sps[Math.floor(rand()*sps.length)]||pick(BASE_SPECIES);
+  const ch=makeCreature(sp,'bred',1,{genome:rollGenome(rand,'wild',5)});recordLineage(ch);
+  S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#9fe8ff'],parents:'an expedition nest',hybrid:false});
+}
 function hatchEgg(e){const c=e.child;if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
   S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;
-  const thrifty=S.creatures.filter(c=>c.traits.includes('thrifty')&&whereIs(c).kind==='section').length;
-  const n=S.creatures.length+trainees-thrifty;
+  const n=mouths();
   if(S.food>=n)S.food-=n;
   else{const short=n-S.food;S.food=0;S.creatures.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.9))});notes.push(`Food ran short by ${short}. Creatures went hungry.`)}
-  const gt=secTier('garden');let g=[0,3,6,10,15,22][gt]+(res('economy',3)?3:0);if(g){S.food+=g;notes.push(`The Garden grew ${g} food.`)}
+  if(res('economy',3))S.food+=3;
+  runStations(notes);
+  tickExpeditions(notes,expeditionEgg);
+  tickFatigue();
   const sp=secTier('spring');
   S.creatures.forEach(c=>{const m=stats(c).hp;c.hp=sp>=2?m:Math.min(m,Math.round(c.hp+m*(sp>=1?.5:.35)))});
   if(sp>=3)S.creatures.forEach(c=>addBond(c,5));
@@ -224,6 +238,8 @@ function breedBlock(mom,dad){
   if(!mom||!dad)return'Choose a mother and a father.';
   if(mom.sex!=='F'||dad.sex!=='M')return'Pair a female with a male.';
   if(!mom.proven||!dad.proven)return'Both parents must be proven.';
+  if(expAway(mom)||expAway(dad))return'One of them is away on an expedition.';
+  if(rosterCount()+S.eggs.length>=rosterCap())return`The pens are full (${rosterCount()}/${rosterCap()} with eggs). Build a pen or sell a creature first.`;
   if(!breedsLeft(mom)||!breedsLeft(dad))return`${!breedsLeft(mom)?mom.name:dad.name} is Short-lived and can't breed again.`;
   return'';
 }

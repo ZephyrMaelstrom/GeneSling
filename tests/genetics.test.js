@@ -127,7 +127,7 @@ test('breeding odds add up and match what hatches', async () => {
 
 test('in-game breeding: lineage, generations, pedigree runs, Twin Eggs and Short-lived', async () => {
   const r = await page.evaluate(() => {
-    S.coin = 1e6; S.food = 1e4;
+    S.coin = 1e6; S.food = 1e4; S.pens = 5;   // room for twins, so only Short-lived can stop the third clutch
     const wardens = [0, 1, 2, 3].map(() => { const w = makeCreature('bastion', 'bred', 30); S.creatures.push(w); return w; });
     S.sections.nursery.cap = 6; S.sections.nursery.ids = wardens.map(w => w.id);
     const F = makeCreature('dewdrip', 'wild', 10, {sex: 'F', proven: true, floor: 6});

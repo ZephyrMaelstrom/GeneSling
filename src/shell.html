@@ -71,6 +71,27 @@ canvas.spr{image-rendering:pixelated;background:var(--deep);box-shadow:0 0 0 2px
 .stats div{background:var(--deep);padding:3px 6px}
 .stats dt{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .stats dd{margin:0;font-family:var(--display)}
+/* Jobs and production: quality, durability, fatigue, stores, memorial, gear */
+.chip.q0{color:var(--muted)}.chip.q1{color:var(--ink)}.chip.q2{color:var(--mint);box-shadow:0 0 0 1.5px #1f7a62}.chip.q3{color:var(--sky);box-shadow:0 0 0 1.5px var(--sky)}.chip.q4{color:var(--gold);box-shadow:0 0 0 1.5px var(--gold-d)}
+.chip.role{color:var(--sky)}
+.qodds{display:flex;height:16px;margin:4px 0;box-shadow:0 0 0 1.5px var(--line);background:var(--deep);overflow:hidden}
+.qodds i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:.66rem;white-space:nowrap;overflow:hidden;color:var(--deep);min-width:2px}
+.qodds .q0{background:#7d7398}.qodds .q1{background:var(--ink)}.qodds .q2{background:var(--mint)}.qodds .q3{background:var(--sky)}.qodds .q4{background:var(--gold)}
+.bar.fat{height:4px;margin-top:3px}.bar.fat i{background:var(--rose)}
+.bar.dur{height:4px;margin-top:3px}.bar.dur i{background:var(--mint)}
+span.short{color:var(--rose)}
+.status.over{color:var(--rose)}
+.mats{display:flex;flex-direction:column;gap:6px}
+.matrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.matrow small{display:block;color:var(--muted);font-size:.78rem}
+.matrow .num{font-family:var(--display);color:var(--gold);font-size:1.05rem;text-align:right}
+.matrow .row{grid-column:1/-1}
+.invrow.gear{align-items:flex-start}
+.gearrow{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.wall{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))}
+.memorial{display:flex;gap:8px;align-items:flex-start;background:var(--deep);box-shadow:0 0 0 1.5px var(--line);padding:8px;font-size:.85rem}
+.memorial .nm{font-family:var(--display)}
+.memorial canvas{flex:none;filter:grayscale(.6)}
 /* Genetics: star ratings, allele pairs, family tree, simulator histogram */
 .gstars{color:var(--gold);letter-spacing:1px;font-size:.8rem;white-space:nowrap}
 .gstars i{color:var(--line);font-style:normal}

@@ -6,7 +6,7 @@ import {S,formName,newGame,secTier,setS,sexSym} from './state.js';
 import {OL,drawCreature} from './sprites.js';
 import {sfx} from './audio.js';
 import {openIntro,renderAll} from './ui.js';
-import {CU,R,RH,RW,TS,applyBuff,applyCurse,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
+import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -84,7 +84,7 @@ function draw(){
   if(cw>0&&ch>0)g.drawImage(R.mapCv,cx0,cy0,cw,ch,cx0,cy0,cw,ch);
   M.rooms.forEach(r=>{if(r.mod&&r.visited){g.strokeStyle=ROOM_MODS[r.mod].col;g.globalAlpha=.35+.15*Math.sin(t*2);g.lineWidth=4;g.strokeRect(r.ox*TS+2,r.oy*TS+2,RW*TS-4,RH*TS-4);g.globalAlpha=1}
     if(!r.locked)return;r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#5a1d33';g.fillRect(x,y,TS,TS);g.fillStyle='#ff6688';for(let k=4;k<TS;k+=9)g.fillRect(x+k,y,3,TS);g.fillRect(x,y,TS,3)})});
-  if(R.heardCrack||R.reveal&&secTier('roost')>=3){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
+  if(R.heardCrack||R.reveal&&(secTier('roost')>=3||R.scout)){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
   g.font='600 12px "Pixelify Sans", monospace';g.textAlign='center';
   M.rooms.forEach(r=>{
     if(r.kind==='stairs'){g.fillStyle='#120c24';g.fillRect(r.cx-26,r.cy-26,52,52);for(let k=0;k<4;k++){g.fillStyle=k%2?'#3a2e66':'#4b3d85';g.fillRect(r.cx-26+k*4,r.cy-26+k*13,52-k*8,11)}g.fillStyle='#ffcf4a';g.fillText('STAIRS DOWN',r.cx,r.cy-34)}
@@ -104,7 +104,7 @@ function draw(){
       if(G.melee){g.fillRect(-12,-2,22,4);g.strokeRect(-12,-2,22,4);g.fillStyle='#6b4a12';g.fillRect(-14,-5,4,10);g.strokeRect(-14,-5,4,10)}else{g.fillRect(-10,-3,20,6);g.strokeRect(-10,-3,20,6);g.fillRect(-10,-3,5,10);g.strokeRect(-10,-3,5,10)}
       g.restore();g.font='600 10px "Pixelify Sans", monospace';g.fillStyle=G.col;g.fillText(G.name.toUpperCase(),it.x,it.y-18)}
     else if(it.kind==='buff'){g.fillStyle='#5de8b0';g.strokeStyle=OL;g.lineWidth=2;g.beginPath();g.arc(it.x,it.y+b,8,0,7);g.fill();g.stroke();g.fillStyle='#fff';g.fillRect(it.x-1.5,it.y+b-5,3,10);g.fillRect(it.x-5,it.y+b-1.5,10,3)}
-    else{const col={cage:'#d8d0f0',food:'#7fd860',ore:'#c9b48a'}[it.id];g.fillStyle=col;g.strokeStyle=OL;g.lineWidth=2;g.fillRect(it.x-6,it.y+b-6,12,12);g.strokeRect(it.x-6,it.y+b-6,12,12)}
+    else{const col={cage:'#d8d0f0',food:'#7fd860',ore:'#c9b48a',hide:'#b07a4a',dust:'#ff8fe0',print:'#9fe8ff'}[it.id]||'#fff';g.fillStyle=col;g.strokeStyle=OL;g.lineWidth=2;g.fillRect(it.x-6,it.y+b-6,12,12);g.strokeRect(it.x-6,it.y+b-6,12,12)}
   });
   R.fields.forEach(f=>{g.globalAlpha=.2+.06*Math.sin(t*6);g.fillStyle=f.col||'#e0527a';g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill();g.globalAlpha=.6;
     if(f.spin){g.strokeStyle=f.col;g.lineWidth=2;for(let k=0;k<3;k++){g.beginPath();g.arc(f.x,f.y,f.r*(.35+k*.22),t*4+k*2,t*4+k*2+2.2);g.stroke()}}g.globalAlpha=1});
@@ -207,7 +207,7 @@ function drawMini(){
   const g=mctx,M=R.map,W=240;g.clearRect(0,0,W,W);
   if(CU('blind')){g.fillStyle='#ff6688';g.font='600 22px "Pixelify Sans", monospace';g.textAlign='center';g.textBaseline='middle';g.fillText('BLIND',W/2,W/2);g.textBaseline='alphabetic';return}
   const n=M.G,cell=Math.floor((W-16)/n),pad=(W-cell*n)/2,box=cell-14;
-  const showSecret=S.settings.reveal||secTier('roost')>=3;
+  const showSecret=S.settings.reveal||secTier('roost')>=3||R.scout;
   const show=r=>(r.visited||R.reveal)&&(!r.hidden||showSecret||r.visited);
   const pos=r=>[pad+r.gx*cell+7,pad+r.gy*cell+7];
   g.strokeStyle='#4b3e87';g.lineWidth=4;
@@ -221,7 +221,7 @@ function drawMini(){
     if(r.mod&&r.visited){g.fillStyle=ROOM_MODS[r.mod].col;g.fillRect(x+box-10,y+box-10,10,10)}
     if(r.locked){g.strokeStyle='#ff6688';g.lineWidth=3;g.strokeRect(x,y,box,box)}
     g.globalAlpha=1;g.fillStyle=OL;if(lab[r.kind])g.fillText(lab[r.kind],x+box/2,y+box/2+1);
-    if(secTier('roost')>=2&&r.plan&&!r.cleared&&r.plan.wilds.some(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3)){g.fillStyle='#fff';g.fillText('*',x+box-6,y+8)}
+    if((secTier('roost')>=2||R.scout)&&r.plan&&!r.cleared&&r.plan.wilds.some(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3)){g.fillStyle='#fff';g.fillText('*',x+box-6,y+8)}
     if(r===R.cur){g.strokeStyle='#fff';g.lineWidth=3;g.strokeRect(x-3,y-3,box+6,box+6)}
   });
   g.textBaseline='alphabetic';
@@ -229,7 +229,7 @@ function drawMini(){
 function updHud(){
   const p=R.p;
   $('#hudHp').style.width=clamp(p.hp/p.maxHp,0,1)*100+'%';$('#hudHpTxt').textContent=`${Math.ceil(Math.max(0,p.hp))}/${p.maxHp}`;
-  $('#hudGun').innerHTML=R.guns.map((g,i)=>g?`<span class="${i===R.active?'on':''}">${GUNS[g].name}</span>`:'').filter(Boolean).join(' / ')||'No weapon';
+  $('#hudGun').innerHTML=(R.guns.map((g,i)=>g?`<span class="${i===R.active?'on':''}">${GUNS[g].name}</span>`:'').filter(Boolean).join(' / ')||'No weapon')+` · Bag ${bagUsed()}/${R.bagCap}${R.tonics?` · ${R.tonics} tonic${R.tonics>1?'s':''}`:''}`;
   $('#hudFloor').textContent=R.mode==='arena'?'Arena':R.mode==='tutorial'?'Tutorial':`Floor ${R.map.floor}${R.mode==='scav'?' Scav':''}`;
   $('#hudCoin').textContent=R.bag.coin+'c';
   if(R.mode==='arena'||R.mode==='tutorial'||S.settings.noTimer)$('#hudTime').textContent='∞';
@@ -271,7 +271,7 @@ function setPause(on){
     <p class="hint">${safe?'Leaving restores your creatures. Nothing is lost.':'Abandoning counts as death: everything you brought is lost.'}</p>
     <button class="btn primary" data-p="resume">Resume</button>
     ${safe?`<button class="btn" data-p="leave">${R.mode==='tutorial'?'Leave the tutorial':'Leave the arena'}</button>`:`<button class="btn danger" data-p="abandon">${R.abandonArm?'Confirm: abandon and lose loadout':'Abandon raid'}</button>`}
-    ${safe?'':`<p class="status">Backpack: ${R.bag.coin} coin · ${R.bag.ore} ore · ${R.bag.food} food · ${R.cages.basic+R.cages.gilded} cages · Keeper XP so far ${R.kxp}</p>`}
+    ${safe?'':`<p class="status">Bag ${bagUsed()}/${R.bagCap} slots: ${R.bag.coin} coin · ${R.bag.ore} ore · ${R.bag.food} food · ${R.bag.hide} hide · ${R.bag.dust} crystal dust${R.prints.length?' · '+R.prints.length+' print'+(R.prints.length>1?'s':''):''} · ${R.cages.basic+R.cages.gilded} cages · ${R.tonics} tonics · Keeper XP so far ${R.kxp}</p>`}
     ${bl?`<h3>Buffs and pacts</h3><ul class="plain">${bl}</ul>`:''}
     <p class="status">${TOUCH?'Change stick and button layout in the Settings tab.':'WASD move · Mouse aim and attack · Space roll · Q/E abilities · C combo · 1/2 swap slot 3 · R switch weapon · F cage · G use'}</p>`);
 }

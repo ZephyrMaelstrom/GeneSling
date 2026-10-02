@@ -73,6 +73,8 @@
     "strongblood": {"name":"Strong Blood","desc":"Passes its better stat allele 75% of the time","w":1.2,"dom":false},
     "ricochet": {"name":"Ricochet","desc":"Its shots bounce off walls once","w":1.5,"dom":false},
     "thrifty": {"name":"Thrifty","desc":"Eats no food on days it works in the hideout","w":1.5,"dom":true},
+    "artisan": {"name":"Artisan","desc":"Crafting quality +1.5 at its station; as foreman, for the whole station","w":1.2,"dom":false},
+    "tireless": {"name":"Tireless","desc":"Tires half as fast while working","w":1.5,"dom":true},
     "brittle": {"name":"Brittle","desc":"Defect: takes 20% more damage","w":0,"dom":false,"defect":true},
     "shortlived": {"name":"Short-lived","desc":"Defect: can only breed twice","w":0,"dom":false,"defect":true}
   },

@@ -13,7 +13,7 @@
 import {S,defaultOpts} from './state.js';
 import {genomeFrom,express} from './genetics.js';
 
-const SAVE_VERSION=7;
+const SAVE_VERSION=8;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const FALLBACK_KEY='genesling-save';     // used only when IndexedDB is unavailable
 const DB_NAME='genesling',STORE='saves',SLOT='main';
@@ -30,6 +30,24 @@ const MIGRATIONS={
     const fix=c=>{if(!c||c.genome)return;c.genome=genomeFrom(c.genes||{},c.traits||[]);c.mom=c.mom??null;c.dad=c.dad??null;c.pure=c.pure||1;c.bred=c.bred||0};
     (d.creatures||[]).forEach(fix);(d.eggs||[]).forEach(e=>fix(e.child));
     d.tree=d.tree||{};d.settings=Object.assign({genes:false},d.settings||{});
+    return d;
+  },
+  // v8 (Jobs and production): materials, weapons as items with quality and durability, pens,
+  // expeditions and fatigue. Every weapon owned becomes a Fine item at full durability. Pens
+  // are pre-built so nobody starts over the new roster cap.
+  7:d=>{
+    d.mats=d.mats||{};d.items=d.items||[];d.nextUid=d.nextUid||1;d.prints=d.prints||[];d.mastery=d.mastery||{};
+    d.expeditions=d.expeditions||[];d.prod=d.prod||{};d.keeperName=d.keeperName||'';
+    const mk=id=>{const it={uid:d.nextUid++,kind:'gun',id,q:1,dur:8,max:8,maker:null,fore:null,src:'legacy'};d.items.push(it);return it};
+    const made={};
+    for(const [id,n] of Object.entries(d.guns||{})){if(id==='pistol')continue;made[id]=[];for(let i=0;i<n;i++)made[id].push(mk(id).uid)}
+    const L=d.loadout||(d.loadout={slots:[null,null,null]});
+    L.guns=(L.guns||[]).map(id=>id&&id!=='pistol'&&made[id]&&made[id].length?made[id].shift():null);
+    if(L.guns.length<2)L.guns.length=2;L.guns=[L.guns[0]??null,L.guns[1]??null];
+    L.satchel=L.satchel??null;L.tonics=L.tonics||0;
+    delete d.guns;
+    const n=(d.creatures||[]).length;d.pens=Math.max(d.pens||0,Math.ceil(Math.max(0,n-16)/4));
+    (d.creatures||[]).forEach(c=>{c.fat=c.fat||0});(d.eggs||[]).forEach(e=>{e.child.fat=0});
     return d;
   },
 };

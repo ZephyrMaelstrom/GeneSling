@@ -46,14 +46,14 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 2 · Jobs and production (weeks 7 to 10)
 
-- [ ] Add the six raid roles and the 12-slot raid bag
-- [ ] Rebuild the hideout sections as stations with exact contribution numbers
-- [ ] Add foremen, crew chemistry and fatigue
-- [ ] Add the roster cap and daily food upkeep
-- [ ] Build production chains, the five quality tiers, the maker's mark and recipe mastery
-- [ ] Add durability, repair, single-use prints and basic expeditions
-- [ ] Add the death legacy and the Memorial wall
-- [ ] Exit test: at least 3 hard posting choices per session
+- [x] Add the six raid roles and the 12-slot raid bag
+- [x] Rebuild the hideout sections as stations with exact contribution numbers
+- [x] Add foremen, crew chemistry and fatigue
+- [x] Add the roster cap and daily food upkeep
+- [x] Build production chains, the five quality tiers, the maker's mark and recipe mastery
+- [x] Add durability, repair, single-use prints and basic expeditions
+- [x] Add the death legacy and the Memorial wall
+- [ ] Exit test: at least 3 hard posting choices per session (supply check passes: raid-only and craft-heavy both stay supplied for a week; the hard-choices part needs playtesting)
 
 ### Phase 3 · The Exchange (weeks 11 to 14)
 

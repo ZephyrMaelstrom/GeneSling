@@ -1,13 +1,14 @@
 /* ================= Raid engine ================= */
 import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
-import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
+import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
 import {save} from './save.js';
 import {S,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
 import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
 import {lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
+import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -144,8 +145,24 @@ function damageCrack(i,dmg){
 /* ---------- raid setup ---------- */
 // Size from genes nudges the hitbox.
 const hitboxMul=c=>GENETICS.EFFECTS.sizeHitbox[c.looks?c.looks.size:1];
+/* ---------- raid roles ---------- */
+// Combat roles (Striker, Bulwark, Medic) work while that companion is standing; Scout, Hauler and
+// Catcher work from any loadout slot, slot 3 included.
+const partyCreatures=()=>[...R.comps.filter(m=>m&&!m.downed).map(m=>m.c),...(R.slot3?[R.slot3.c]:[])];
+const roleInParty=r=>!!R&&partyCreatures().some(c=>roleOf(c)===r);
+const roleComp=(m,r)=>!!m&&!m.downed&&roleOf(m.c)===r;
+/* ---------- the bag ---------- */
+// Each slot holds BAG.stack of one material, or one print. Coin needs no room.
+const BAG_MATS=['ore','food','hide','dust'];
+function bagUsed(){return BAG_MATS.reduce((a,m)=>a+Math.ceil((R.bag[m]||0)/JOBS.BAG.stack),0)+R.prints.length}
+function bagAdd(mat,n,x,y){
+  const st=JOBS.BAG.stack,have=R.bag[mat]||0,room=(st-have%st)%st+Math.max(0,R.bagCap-bagUsed())*st,add=Math.min(n,room);
+  R.bag[mat]=have+add;
+  if(add<n&&x!=null){float(x,y-28,'Bag full','#ff6688',true);if(!R.bagWarned){R.bagWarned=true;msg('Your bag is full. Extract to bank it, or bring a Hauler or a satchel next time.')}}
+  return add;
+}
 function makeComp(c){
-  const st=stats(c),mh=Math.round(st.hp*(secTier('spring')>=4?1.1:1)*(res('bond',1)?1.1:1));
+  const st=stats(c),mh=Math.round(st.hp*(secTier('spring')>=4?1.1:1)*(res('bond',1)?1.1:1)*(roleOf(c)==='bulwark'?1+JOBS.ROLES.bulwark.hp:1));
   return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
     cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:rand()*9,lastStand:st.star>=5};
 }
@@ -161,7 +178,7 @@ function startRaid(mode,startFloor,seed){
   R={mode,seed,id:mode==='arena'||tut?mode:S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'||tut?0:600+(f0>=4?360:0),
     p:{x:M.start.cx,y:M.start.cy+40,r:11,hp:100,maxHp:100,roll:0,rollCd:0,rvx:0,rvy:0,vx:0,vy:0,inv:0,hurt:0,slow:0,fireCd:0},
     comps:[null,null],slot3:null,enemies:[],bullets:[],fields:[],floats:[],fx:[],items:[],trail:[],swings:[],timers:[],bolts:[],
-    bag:{coin:0,ore:0,food:0},cages:{basic:0,gilded:0},guns:['pistol',null],active:0,spin:0,burst:[],
+    bag:{coin:0,ore:0,food:0,hide:0,dust:0},prints:[],tonics:0,satchel:null,bagCap:JOBS.BAG.slots,cages:{basic:0,gilded:0},guns:['pistol',null],gunItem:[null,null],active:0,spin:0,burst:[],
     buffs:{},curses:new Set(),leechAcc:0,aim:0,firing:false,mouse:null,shield:0,prism:0,taunt:0,tauntEnt:null,fortress:0,rally:null,
     combo:{cd:10,max:20*(res('bond',2)?.75:1)},kxp:0,kills:0,caught:0,autoRev:secTier('spring')>=5?1:0,
     msg:'',msgT:0,prompt:'',ext:0,stairT:0,cur:M.start,paused:false,over:false,last:0,saved:{},shops:{},taken:[],
@@ -173,13 +190,19 @@ function startRaid(mode,startFloor,seed){
   else{
     validGuns();
     const sl=S.loadout.slots.map(byId);
-    if(mode==='arena'||tut){sl.forEach(c=>{if(c)R.saved[c.id]=c.hp});R.cages={basic:tut?3:99,gilded:0};R.guns=[...S.loadout.guns]}
+    // Weapons: R.guns holds gun ids for combat, R.gunItem the matching owned item (null for the
+    // pistol or a gun found this raid). Broken weapons stay home.
+    const its=S.loadout.guns.map(uid=>{const it=itemByUid(uid);return it&&usable(it)?it:null});
+    R.gunItem=[its[0],its[1]];R.guns=its.map(it=>it?it.id:null);if(!R.guns[0]){R.guns[0]='pistol';R.gunItem[0]=null}
+    if(mode==='arena'||tut){sl.forEach(c=>{if(c)R.saved[c.id]=c.hp});R.cages={basic:tut?3:99,gilded:0}}
     else{
+      const sat=itemByUid(S.loadout.satchel);R.satchel=sat&&usable(sat)?sat:null;R.tonics=Math.min(S.loadout.tonics||0,amt('tonic'));give('tonic',-R.tonics);
       let n=cageCap();const g=Math.min(n,S.cages.gilded);S.cages.gilded-=g;n-=g;const b=Math.min(n,S.cages.basic);S.cages.basic-=b;R.cages={basic:b,gilded:g};
-      R.guns=[...S.loadout.guns];R.guns.forEach(k=>{if(k&&k!=='pistol'){S.guns[k]--;R.taken.push(k)}});
+      R.taken=R.gunItem.filter(Boolean);
       S.stats.raids++;
     }
     R.comps=[sl[0]?makeComp(sl[0]):null,sl[1]?makeComp(sl[1]):null];
+    R.bagCap=JOBS.BAG.slots+sl.filter(Boolean).reduce((a,c)=>a+((roleInfo(c)||{}).bag||0),0)+satchelSlots(R.satchel);
     R.slot3=sl[2]&&!tut?{c:sl[2]}:null;
     if(!tut)msg(mode==='arena'?'Arena: spawn foes from the panel. Leave from the pause menu.':`Floor ${f0}. Find the ${isBossFloor(f0)?'boss, rift or cliff':'stairs or the gate'}.`);
   }
@@ -207,7 +230,8 @@ function refreshSupport(){
   const c=R.slot3&&R.slot3.c.captureRaid!==R.id?R.slot3.c:null;
   R.sup=new Set(c?typesOf(c):[]);
   const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.max(30,Math.round((100+25*B('hp')+(secTier('warroom')>=1?10:0)+(res('combat',0)?15:0)-(CU('glass')?30:0))*(R.sup.has('warden')?1.15:1)));R.p.hp=Math.max(1,Math.min(R.p.maxHp,Math.round(R.p.maxHp*ratio)));
-  R.reveal=S.settings.reveal||secTier('roost')>=1||R.sup.has('echo');
+  R.scout=roleInParty('scout');
+  R.reveal=S.settings.reveal||secTier('roost')>=1||R.sup.has('echo')||R.scout;
 }
 function applyBuff(k,silent){
   R.buffs[k]=(R.buffs[k]||0)+1;
@@ -222,8 +246,8 @@ function float(x,y,text,col,force){if(!force&&!S.opts.dmgNums&&/^\d+$/.test(Stri
 function partyHas(type){return R.comps.some(m=>m&&!m.downed&&typesOf(m.c).includes(type))||(R.slot3&&typesOf(R.slot3.c).includes(type))}
 function partyTrait(tr){return R.comps.some(m=>m&&m.c.traits.includes(tr))||(R.slot3&&R.slot3.c.traits.includes(tr))}
 const bondComp=(type,star=3)=>R.comps.some(m=>m&&!m.downed&&m.c.type===type&&m.st.star>=star);
-const capRadius=()=>95*(1+.4*B('cage'))*(res('capture',1)?1.25:1);
-const playerDmgMul=()=>weaponDmgMul()*(1+.15*B('dmg'))*(R.sup.has('ember')?1.1:1)*(CU('glass')?1.4:1)*(CU('blind')?1.2:1);
+const capRadius=()=>95*(1+.4*B('cage'))*(res('capture',1)?1.25:1)*(roleInParty('catcher')?1+JOBS.ROLES.catcher.radius:1);
+const playerDmgMul=()=>weaponDmgMul()*gunDmgMul(R.gunItem&&R.gunItem[R.active])*(1+.15*B('dmg'))*(R.sup.has('ember')?1.1:1)*(CU('glass')?1.4:1)*(CU('blind')?1.2:1);
 const modOn=(kind)=>{const r=R.cur;if(!r||r.mod!==kind)return false;if(kind==='dark'||kind==='slick')return true;return R.enemies.some(e=>e.room===r)};
 
 /* ---------- spawning ---------- */
@@ -343,7 +367,10 @@ function hurtPlayer(d,slow){
   const p=R.p;if(S.settings.god||R.god||p.roll>0||R.shield>0||p.inv>0)return;
   if((R.sup.has('crystal')&&rand()<.2)||(bondComp('crystal')&&rand()<.1)){float(p.x,p.y-24,'Blocked','#ff8fe0',true);p.inv=.2;return}
   if(R.fortress>0)d*=.5;
-  p.hp-=d;p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;if(S.opts.shake)R.shake=.18;sfx('hurt');
+  const BW=JOBS.ROLES.bulwark;if(R.comps.some(m=>roleComp(m,'bulwark')&&dist(m,p)<BW.range))d*=1-BW.shield;
+  p.hp-=d;
+  // Tonics are drunk automatically when HP runs low.
+  if(p.hp>0&&R.tonics>0&&p.hp<p.maxHp*JOBS.TONIC.at){R.tonics--;p.hp=Math.min(p.maxHp,p.hp+p.maxHp*JOBS.TONIC.heal);float(p.x,p.y-34,'Tonic!','#5de8b0',true)}p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;if(S.opts.shake)R.shake=.18;sfx('hurt');
   if(p.hp<=0)playerDown();
 }
 function hurtComp(m,d){
@@ -389,7 +416,7 @@ const later=(t,f)=>R.timers.push({t,f});
 const roomFoes=(r=R.cur)=>R.enemies.filter(e=>e.hp>0&&(e.room===r||dist(e,R.p)<420));
 
 /* ---------- abilities ---------- */
-function compAtk(m){return m.atk*(1+.2*B('pdmg'))*(CU('feral')?1.4:1)*(R.rally?R.rally.dmg:1)}
+function compAtk(m){return m.atk*(roleOf(m.c)==='striker'?1+JOBS.ROLES.striker.dmg:1)*(1+.2*B('pdmg'))*(CU('feral')?1.4:1)*(R.rally?R.rally.dmg:1)}
 function doAbility(m,id){
   const atk=compAtk(m),col=SPECIES[m.c.species].col,p=R.p;
   const tg=nearestEnemy(m,460);sfx('ability');
@@ -426,7 +453,7 @@ function useAbility(i){
   if(modOn('silence')){msg('Silence: abilities are sealed until the room is clear.');return}
   const max=ABILITIES[m.st.abilId].cd*m.st.abil*Math.max(.4,1-.25*B('abil'))*(CU('feral')?1.5:1);
   if(!R.tut&&rand()>m.obey){m.abil=max*.5;float(m.x,m.y-26,'Ignores you','#ff6688',true);return}
-  m.abil=max;m.abilMax=max;doAbility(m,m.st.abilId);
+  m.abil=max;m.abilMax=max;doAbility(m,m.st.abilId);if(roleOf(m.c)==='medic')m.medicT=JOBS.ROLES.medic.burstTime;
   if(R.tut)R.tut.abil=true;
 }
 function comboReady(){const[a,b]=R.comps;return!!(a&&b&&!a.downed&&!b.downed&&R.combo.cd<=0)}
@@ -435,7 +462,7 @@ function useCombo(){
   if(a.downed||b.downed){msg('Both companions must be standing.');return}
   if(R.combo.cd>0)return;
   if(modOn('silence')){msg('Silence: combos are sealed until the room is clear.');return}
-  const key=comboKey(a.c.type,b.c.type),cb=comboFor(a.c.type,b.c.type),p=R.p,atk=(compAtk(a)+compAtk(b))*.8;
+  const key=comboKey(a.c.type,b.c.type),cb=comboFor(a.c.type,b.c.type),p=R.p,atk=(compAtk(a)+compAtk(b))*.8*(roleComp(a,'striker')||roleComp(b,'striker')?1+JOBS.ROLES.striker.combo:1);
   R.combo.cd=R.combo.max;bump('combos');sfx('combo');float(p.x,p.y-40,cb.name+'!','#ffcf4a',true);msg(`${cb.name}! ${cb.desc}`);
   R.fx.push({x:p.x,y:p.y,r:120,t:.5,max:.5,col:'#ffcf4a'});
   const foes=roomFoes();
@@ -490,7 +517,7 @@ function switchGun(){
 }
 function tryCapture(e,kind){
   const hpf=e.hp/e.maxHp,tier=TYPES[e.c.type].tier,rare=SPECIES[e.c.species].w===1?.85:1;
-  let ch=(1-hpf)*1.15*(kind==='gilded'?1.7:1)*[1,1,.8,.6,.45][tier]*rare*(1-.12*(e.c.stage||0))+(partyTrait('lucky')?.1:0)+.1*B('cage')+(res('capture',2)?.1:0);
+  let ch=(1-hpf)*1.15*(kind==='gilded'?1.7:1)*[1,1,.8,.6,.45][tier]*rare*(1-.12*(e.c.stage||0))+(partyTrait('lucky')?.1:0)+(roleInParty('catcher')?JOBS.ROLES.catcher.catch:0)+.1*B('cage')+(res('capture',2)?.1:0);
   if(e.stun>0)ch+=.1;if(R.mode==='tutorial')ch=1;
   if(S.settings.instant||rand()<ch){
     const c=e.c;c.hp=stats(c).hp;c.captureRaid=R.id;c.bondXp=0;
@@ -507,8 +534,8 @@ function interact(){
   const it=nearestItem();
   if(it){
     R.items=R.items.filter(x=>x!==it);
-    if(!R.guns[1]&&R.guns[0]){R.guns[1]=it.id;R.active=1}
-    else{const old=R.guns[R.active];R.guns[R.active]=it.id;if(old)R.items.push({kind:'gun',id:old,x:R.p.x+rnd(-14,14),y:R.p.y+18})}
+    if(!R.guns[1]&&R.guns[0]){R.guns[1]=it.id;R.gunItem[1]=it.item||null;R.active=1}
+    else{const old=R.guns[R.active],oldIt=R.gunItem[R.active];R.guns[R.active]=it.id;R.gunItem[R.active]=it.item||null;if(old)R.items.push({kind:'gun',id:old,item:oldIt,x:R.p.x+rnd(-14,14),y:R.p.y+18})}
     R.burst=[];R.spin=0;float(R.p.x,R.p.y-26,GUNS[it.id].name,'#ffe38a',true);sfx('pickup');return;
   }
   const r=nearNpc();if(!r)return;
@@ -641,6 +668,8 @@ function update(dt){
   else if(R.mouse){const s=R.scale;const wx=(R.mouse.x-R.vw/2)/s+R.camx,wy=(R.mouse.y-R.vh/2)/s+R.camy;R.aim=Math.atan2(wy-p.y,wx-p.x)}
   p.rollCd-=dt;p.inv=Math.max(0,p.inv-dt);p.hurt=Math.max(0,p.hurt-dt);p.slow=Math.max(0,p.slow-dt);p.fireCd-=dt;
   if(R.sup.has('tide'))healPlayer(dt);
+  for(const m of R.comps){if(!roleComp(m,'medic'))continue;const M=JOBS.ROLES.medic,rate=(m.medicT>0?M.burst:M.regen)*dt;m.medicT=Math.max(0,(m.medicT||0)-dt);
+    if(p.hp>0)p.hp=Math.min(p.maxHp,p.hp+p.maxHp*rate);R.comps.forEach(o=>{if(o&&!o.downed)o.hp=Math.min(o.maxHp,o.hp+o.maxHp*rate)})}
   if(p.roll>0){p.roll-=dt;moveEnt(p,p.rvx*dt,p.rvy*dt);p.vx=p.rvx*.3;p.vy=p.rvy*.3}
   else{const{mx,my}=moveVec();const sp=200*(R.sup.has('gale')?1.1:1)*(bondComp('gale')?1.08:1)*(1+.12*B('speed'))*(CU('doom')?1.25:1)*(p.slow>0?.6:1);
     if(modOn('slick')){p.vx+=(mx*sp-p.vx)*Math.min(1,dt*2);p.vy+=(my*sp-p.vy)*Math.min(1,dt*2)}else{p.vx=mx*sp;p.vy=my*sp}
@@ -850,7 +879,8 @@ function onBossDeath(b){
   const d=b.def,set=d.set,r=b.room;
   R.boss=null;$('#bossBar').hidden=true;sfx('evolve');
   R.bossDown=d;R.kxp+=set?600:250;
-  const coin=Math.round((set?520:180)*R.mods.coin);R.bag.coin+=coin;R.bag.ore+=set?30:10;
+  const coin=Math.round((set?520:180)*R.mods.coin);R.bag.coin+=coin;bagAdd('ore',set?30:10,b.x,b.y);bagAdd(set?'dust':'hide',set?8:5,b.x,b.y);
+  if(rand()<JOBS.PRINTS.boss)dropPrint(r.cx,r.cy+120);
   for(let i=0;i<2;i++)R.items.push({kind:'gun',id:gunOfTier(set?pick([3,4]):pick([2,3,3,4])),x:r.cx+(i?50:-50),y:r.cy+60});
   R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time')),x:r.cx,y:r.cy+90});
   r.kind='portal';r.deep=!set;r.locked=false;r.cleared=true;
@@ -909,15 +939,15 @@ function onEnemyDeath(e){
     R.kills++;R.kxp+=e.kind==='wild'?4:2;sfx('kill');
     if(e.lastHit==='melee')bump('meleeKills');
     if(e.lastHit&&e.lastHit.c)e.lastHit.kills=(e.lastHit.kills||0)+1;
-    if(e.kind==='wild'){const coin=Math.round(10*f*gm);R.bag.coin+=coin;R.bag.ore+=1;float(e.x,e.y,`+${coin} coin +1 ore`,'#ffcf4a',true);float(e.x,e.y+14,`Wild ${formName(e.c)} fainted`,'#b4a9d8',true)}
+    if(e.kind==='wild'){const coin=Math.round(10*f*gm),mat=e.c.type==='crystal'||e.c.type2==='crystal'?'dust':'hide',got=bagAdd(mat,1,e.x,e.y);R.bag.coin+=coin;float(e.x,e.y,`+${coin} coin${got?` +1 ${matName(mat).toLowerCase()}`:''}`,'#ffcf4a',true);float(e.x,e.y+14,`Wild ${formName(e.c)} fainted`,'#b4a9d8',true)}
     else if(e.id!=='dummy'){
       dexFoe(e.id,true);
       const coin=Math.round((ri(3,7)*f+(e.def.body==='brute'?20:0)+(e.elite?30:0))*gm);R.bag.coin+=coin;float(e.x,e.y,`+${coin}`,'#ffcf4a');
-      if(e.def.body==='brute'||e.elite)R.bag.ore+=2;
+      if(e.def.body==='brute'||e.elite)bagAdd('ore',2,e.x,e.y);
       if(e.def.split&&R.enemies.length<16)for(let i=0;i<e.def.split.n;i++)spawnFoe({x:e.x+rnd(-14,14),y:e.y+rnd(-14,14)},e.def.split.id,f,e.room);
       const roll=rand();
       if(roll<.04*R.mods.buff)R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena')),x:e.x,y:e.y});
-      else if(roll<.16)R.items.push({kind:'loot',id:pick(['cage','food','ore']),x:e.x,y:e.y});
+      else if(roll<.16)R.items.push({kind:'loot',id:pick(['cage','food','ore','hide']),x:e.x,y:e.y});
     }
   }
   const xp=(e.kind==='wild'?14:(e.elite?40:(e.def.body==='brute'?30:6+4*localFloor(f)))*(f>=4?2:1))*(e.room&&e.room.mod==='frenzy'?1.5:1);
@@ -926,13 +956,17 @@ function onEnemyDeath(e){
 function takeLoot(it){
   sfx('pickup');
   if(it.id==='cage'){R.cages.basic++;float(it.x,it.y-12,'+1 cage','#5de8b0',true)}
-  if(it.id==='food'){R.bag.food+=2;float(it.x,it.y-12,'+2 food','#5de8b0',true)}
-  if(it.id==='ore'){R.bag.ore+=2;float(it.x,it.y-12,'+2 ore','#5de8b0',true)}
+  if(['food','ore','hide','dust'].includes(it.id)){const n=bagAdd(it.id,2,it.x,it.y);if(n)float(it.x,it.y-12,`+${n} ${matName(it.id).toLowerCase()}`,'#5de8b0',true)}
+  if(it.id==='print'){if(bagUsed()<R.bagCap){R.prints.push(it.gun);float(it.x,it.y-12,`Print: ${GUNS[it.gun].name}`,'#ffcf4a',true);msg(`A single-use print for the ${GUNS[it.gun].name}. Bank it to forge one without the blueprint.`)}else float(it.x,it.y-28,'Bag full','#ff6688',true)}
 }
+// A single-use print for a gun of at least PRINTS.minTier.
+function dropPrint(x,y){const ids=GUN_IDS.filter(k=>GUNS[k].tier>=JOBS.PRINTS.minTier);R.items.push({kind:'loot',id:'print',gun:pick(ids),x,y})}
 function openChest(r){
   r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1),rich=r.chest.rich;
-  const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3);R.bag.coin+=coin;R.bag.ore+=ore;R.bag.food+=food;
-  float(r.chest.x,r.chest.y-20,`+${coin} coin +${ore} ore +${food} food`,'#ffcf4a',true);
+  const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3),xm=rand()<.5?'hide':'dust',xn=ri(1,3)+(rich?2:0);R.bag.coin+=coin;
+  const go=bagAdd('ore',ore,r.chest.x,r.chest.y),gf=bagAdd('food',food,r.chest.x,r.chest.y),gx=bagAdd(xm,xn,r.chest.x,r.chest.y);
+  float(r.chest.x,r.chest.y-20,`+${coin} coin${go?` +${go} ore`:''}${gf?` +${gf} food`:''}${gx?` +${gx} ${matName(xm).toLowerCase()}`:''}`,'#ffcf4a',true);
+  if(rand()<JOBS.PRINTS.chest)dropPrint(r.chest.x,r.chest.y+40);
   const gunP=rich?1:r.kind==='lair'?.9:.45;
   if(rand()<.25){R.cages.basic++;float(r.chest.x,r.chest.y-36,'+1 cage','#5de8b0',true)}
   if(rand()<gunP){const g=gunOfTier(Math.min(4,gunTierRoll(f)+(rich?1:0)));R.items.push({kind:'gun',id:g,x:r.chest.x+rnd(-30,30),y:r.chest.y+30});msg(`The chest held a ${GUNS[g].name}. Stand on it and press Use to take it.`)}
@@ -1010,20 +1044,27 @@ function endRaid(outcome,via){
   const party=R.comps.filter(Boolean);
   const scav=R.mode==='scav',vt=scav?0:secTier('vault'),at=scav?0:armoryTier();
   const isNew=c=>!S.creatures.includes(c);
-  const held=R.guns.filter(g=>g&&g!=='pistol');
+  // Guns in hand at the end: [id, owned item or null for a find].
+  const held=[0,1].filter(i=>R.guns[i]&&R.guns[i]!=='pistol').map(i=>[R.guns[i],R.gunItem[i]]);
+  const takenHome=it=>held.some(([,x])=>x===it);
+  const wear=it=>{it.dur=Math.max(0,it.dur-JOBS.DURABILITY.perRaid);if(!it.dur)L.notes.push(`Your ${itemName(it)} broke. Repair it in the Workshop.`)};
+  const bringHome=([id,it])=>{if(it){wear(it);return it}const f=foundGun(id);bump('weaponsHome');if(!S.blueprints[id]){S.blueprints[id]=1;L.notes.push(`New blueprint: ${GUNS[id].name}.`)}return f};
+  const loseItem=it=>{scrapItem(it)};
+  const satchel=R.satchel||null;
   const deepest=Math.max(...R.floorsSeen);S.progress.deepest=Math.max(S.progress.deepest||0,deepest);
   const fell=`Fell on Floor ${R.map.floor}`;
   if(outcome==='extract'){
     S.stats.extracts++;
     const coinMul=1+.15*party.filter(m=>!m.downed&&m.c.traits.includes('hoard')).length;
     const coin=Math.round(R.bag.coin*coinMul),food=R.bag.food+(R.sup.has('fungal')?2:0);
-    S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;
-    const found=held.filter(g=>!R.taken.includes(g));bump('weaponsHome',found.length);
-    held.forEach(g=>{S.guns[g]=(S.guns[g]||0)+1;if(!S.blueprints[g]){S.blueprints[g]=1;L.notes.push(`New blueprint: ${GUNS[g].name}.`)}});
+    S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;give('hide',R.bag.hide);give('dust',R.bag.dust);S.prints.push(...R.prints);give('tonic',R.tonics);
+    const home=held.map(bringHome);
     S.cages.basic+=scav?0:R.cages.basic;S.cages.gilded+=R.cages.gilded;
-    L.loot.push(`+${coin} coin`,`+${R.bag.ore} ore`,`+${food} food`);
-    held.forEach(g=>L.loot.push(`${GUNS[g].name}${R.taken.includes(g)?'':' (new)'}`));
-    R.taken.forEach(g=>{if(!held.includes(g))L.lost.push(`${GUNS[g].name} (left in the dungeon)`)});
+    L.loot.push(`+${coin} coin`,`+${R.bag.ore} ore`,`+${food} food`);if(R.bag.hide)L.loot.push(`+${R.bag.hide} hide`);if(R.bag.dust)L.loot.push(`+${R.bag.dust} crystal dust`);
+    R.prints.forEach(id=>L.loot.push(`Print: ${GUNS[id].name}`));if(R.tonics)L.loot.push(`${R.tonics} unused tonic${R.tonics>1?'s':''} back to stores`);
+    home.forEach(it=>L.loot.push(`${itemName(it)}${R.taken.includes(it)?'':' (new)'}`));
+    R.taken.forEach(it=>{if(!takenHome(it)){L.lost.push(`${itemName(it)} (left in the dungeon)`);loseItem(it)}});
+    if(satchel)wear(satchel);
     const handle=(c,downed,xp,m)=>{
       if(downed){if(isNew(c))L.lost.push(`${c.name} (new catch, never revived)`);else{L.lost.push(`${c.name} (never revived)`);killCreature(c,fell)}return}
       if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name}, a wild ${sexSym(c.sex)} ${formName(c)} (Lv ${c.level})`);return}
@@ -1046,13 +1087,15 @@ function endRaid(outcome,via){
       if(vt>=1){if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name} (saved by the Vault)`)}else L.home.push(`${c.name} (saved by the Vault)`)}
       else{if(isNew(c))L.lost.push(`${c.name} (new catch)`);else{L.lost.push(c.name);killCreature(c,fell)}}
     }
-    const keepG=vt>=2?held:(at>=4&&R.guns[0]&&R.guns[0]!=='pistol'?[R.guns[0]]:[]);
-    keepG.forEach(g=>{S.guns[g]=(S.guns[g]||0)+1;L.home.push(`${GUNS[g].name} (saved)`)});
-    held.filter(g=>!keepG.includes(g)).forEach(g=>L.lost.push(GUNS[g].name));
-    R.taken.forEach(g=>{if(!held.includes(g))L.lost.push(GUNS[g].name)});
+    const keepG=vt>=2?held:(at>=4&&R.guns[0]&&R.guns[0]!=='pistol'?[[R.guns[0],R.gunItem[0]]]:[]);
+    keepG.forEach(h=>{const it=bringHome(h);L.home.push(`${itemName(it)} (saved)`)});
+    held.filter(h=>!keepG.includes(h)).forEach(([id,it])=>{L.lost.push(it?itemName(it):GUNS[id].name);if(it)loseItem(it)});
+    R.taken.forEach(it=>{if(!held.some(([,x])=>x===it)){L.lost.push(itemName(it));loseItem(it)}});
+    if(satchel){L.lost.push(itemName(satchel));loseItem(satchel)}
     const keepCoin=Math.round(R.bag.coin*(vt>=5?.6:vt>=3?.3:0)),keepOre=vt>=5?R.bag.ore:0;
-    if(keepCoin||keepOre){S.coin+=keepCoin;S.ore+=keepOre;L.home.push(`Vault saved ${keepCoin} coin${keepOre?' and '+keepOre+' ore':''}`)}
-    const lostLoot=[R.bag.coin-keepCoin&&(R.bag.coin-keepCoin)+' coin',R.bag.ore-keepOre&&(R.bag.ore-keepOre)+' ore',R.bag.food&&R.bag.food+' food'].filter(Boolean);
+    const keepMats=vt>=5;if(keepMats){give('hide',R.bag.hide);give('dust',R.bag.dust)}
+    if(keepCoin||keepOre){S.coin+=keepCoin;S.ore+=keepOre;L.home.push(`Vault saved ${keepCoin} coin${keepOre?', '+keepOre+' ore, '+R.bag.hide+' hide and '+R.bag.dust+' crystal dust':''}`)}
+    const lostLoot=[R.bag.coin-keepCoin&&(R.bag.coin-keepCoin)+' coin',R.bag.ore-keepOre&&(R.bag.ore-keepOre)+' ore',R.bag.food&&R.bag.food+' food',!keepMats&&R.bag.hide&&R.bag.hide+' hide',!keepMats&&R.bag.dust&&R.bag.dust+' crystal dust',...R.prints.map(id=>'print: '+GUNS[id].name),R.tonics&&R.tonics+' tonics'].filter(Boolean);
     if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
     const cg=scav?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
   }
@@ -1078,4 +1121,4 @@ function exitRaid(){
   setTimeout(()=>{if(R===done){R=null;if(ui.tab==='hideout')startHideoutMap()}},0);
 }
 
-export {TS,RW,RH,CW,CH,R,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};
+export {TS,RW,RH,CW,CH,R,bagUsed,bagAdd,roleInParty,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};
