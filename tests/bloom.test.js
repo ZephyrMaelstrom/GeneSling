@@ -143,8 +143,13 @@ test('layouts: gauntlet seals, sinkholes collapse, nests, caravans and mirrors',
     out.sealed = chain[0].sealed && chain[0].locked;
     endQuiet();
     // Sinkhole: a room you left falls in after a while.
-    out.sinkhole = await go('sinkhole');
-    const a = R.map.rooms.find(x => x.kind === 'fight'); await goTo(a); R.enemies = []; await sleep(60);
+    // A room off to the side (a sinkhole never swallows the only way on): find a sinkhole floor that has one.
+    const others = x => R.map.rooms.filter(y => y !== x && y.kind !== 'secret');
+    const side = () => R.map.rooms.find(x => ['fight', 'chest', 'lair'].includes(x.kind) && x !== R.map.start && others(x).every(y => openFrom(R.map.start, x).has(y)));
+    let a = null;
+    for (let s = 1; s < 400 && !a; s++) { if (floorPlan(s, 2, 'rootworks').layout !== 'sinkhole') continue; startRaid('raid', 2, s); await sleep(60); a = side(); if (!a) endQuiet(); }
+    out.sinkhole = R.map.plan.layout;
+    await goTo(a); R.enemies = []; await sleep(60);
     await goTo(R.map.start); a.left = BLOOM.LAYOUT_RULES.sinkhole.after + 1; await sleep(80);
     out.collapsed = a.sealed === true;
     endQuiet();
@@ -276,7 +281,7 @@ test('a v10 save loads into the current version with the Apothecary on the map',
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, sec: !!S.sections.apothecary, placed: S.layout.some(i => i.key === 'apothecary'), bloom: !!S.bloom && Array.isArray(S.bloom.maps), map: S.loadout.map}));
-  assert.deepEqual(s, {v: 13, sec: true, placed: true, bloom: true, map: null});
+  assert.deepEqual(s, {v: 14, sec: true, placed: true, bloom: true, map: null});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

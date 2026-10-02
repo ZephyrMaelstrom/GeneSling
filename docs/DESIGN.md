@@ -54,7 +54,37 @@ Each gate needs a boss, a rank and a creature or hideout goal, so skill, time an
 - **Generations are the real speed limit.** An egg hatches in 2 to 4 hideout days, and a creature can breed at Lv 10. One generation takes about 8 raids. An apex genome needs about 10 to 14 selected generations, and that is where the 90 days go.
 - **Daily and weekly beats keep people returning without punishing absence.** Contracts refresh daily, the Exchange restocks daily and the Deepening challenge changes weekly. Missed contracts bank up to 3 days.
 - **Keeper rank curve.** Ranks 1 to 10 come in the first week. Each later rank costs more, so rank 40 lands around day 60 and rank 50 around day 90 for a dedicated player.
-- **Catch-up.** A player who falls behind earns double Keeper XP until they're within 5 ranks of the week's expected rank.
+- **Catch-up.** A player who falls well behind earns double Keeper XP from raids until they're within 5 ranks of the expected rank for their calendar day. The expected rank is a gentle floor (rank 15 on day 30, 25 on day 60, 32 on day 90, 50 on day 180), so it rescues someone who stopped for a while without erasing the gap between a casual and a dedicated player.
+
+### Balance as built (Phase 8)
+
+Every number below is in `src/data/balance.json`, tuned with the Journey Simulator (Test Lab).
+
+- **The act gates are real.** Each portal down checks its gate and says what is still missing; the Raid tab shows the next gate as a checklist.
+  - **The veins (Floor 3's portal):** beat a Rootworks boss, Keeper rank 10 and 3 stations at tier 2.
+  - **The Underheart (Floor 6's portal):** beat a vein boss, rank 25, bosses beaten in 2 veins and a Gen 3 cut-free creature (and, as before, every creature in the party cut free).
+  - **The Heart (Floor 9's portal):** free Ilsa, rank 40 and a cut-free party of three.
+- **Unbound tiers need rank too.** Tier *t* needs rank 40 + 0.3 × *t*, so tier 20 needs rank 46. Tiers already cleared can always be replayed.
+- **Keeper rank curve.** The next rank costs 390 × rank XP (it was 120 × rank). Raids paid far more XP than the old curve expected: a bot playing an hour and a half a day reached rank 117 by day 90.
+- **Boss XP.** A boss pays its full Keeper XP (250, or 600 below the Rootworks) the first time and 40% after that, so farming one boss can't outrun the journey.
+- **The Journey Simulator.** Bot players play the whole journey on a throwaway save through the game's own systems: Keeper rank, catch-up, levels, evolution, breeding and hatching, stations and fatigue, research, pens, the gates, Ilsa, the endings and the Unbound tiers. Only fighting is modelled. A party's strength is worked out from its two combat companions' real stats (with gear and the player's skill) and compared with an average wild creature of the floor's level; the gap sets the odds of clearing the floor, and a failed floor is a real death.
+  - **Who plays:** a raider (6 raids a day), a crafter and a breeder (5 raids a day plus hideout time), all about an hour and a half; and a casual player (2 raids a day, about 30 minutes).
+  - **The market:** it isn't simulated (the Economy Sandbox tests it). Bots buy pen materials at Exchange reference prices.
+- **What the tuned runs show (seeds 1 to 3):**
+
+| | Act II | Act III | Act IV (the Heart's gate) | Rank on day 60 / 90 | Unbound tier on day 90 |
+| --- | --- | --- | --- | --- | --- |
+| Raider | day 9 | day 28 | day 50 | 41 / 49 | 20 (from day 79) |
+| Crafter | day 10 to 11 | day 33 | day 60 | 40 / 45 | 16 |
+| Breeder | day 10 to 11 | day 32 | day 58 to 59 | 40 / 46 | 20 (from day 88) |
+| Casual | day 27 to 31 | day 83 to 84 | day 149 | 20 / 27, rank 42 on day 180 | Heart on day 150 |
+
+- **Accessibility (Settings).**
+  - **Colorblind palettes:** two red-green palettes and one blue-yellow palette recolor good and bad, both teams' bullets and every type. Enemy bullets keep their white ring and gain a dark core, so they also read by shape.
+  - **Aim assist:** on touch, the aim stick bends toward the nearest enemy within a narrow cone.
+  - **Slower enemy bullets:** they move at 75% speed.
+- **Mid-range phones.** Raids now draw at up to 2.5 pixels per screen pixel instead of the full device ratio (3 on an S23). Auto quality starts at 2 and steps down by 0.25 when frames average over 22 ms (and back up under 13 ms). Battery saver draws at 1. On an S23-sized screen with the CPU slowed 4× and 14 enemies, a frame took 42.7 ms at 2.5, 22.8 ms on Auto and 16.7 ms at 1. The hideout map draws at most 2 pixels per screen pixel.
+- **Closed playtest support.** A save remembers when each act opened and how long each gate held the player back. A link with `?playtest` marks the save, and the full game then asks for play stats too. With stats on, `act`, `gate_blocked` and `gate_passed` events go to Firebase. The plan is in `docs/PLAYTEST.md`.
 
 ## The core loop
 
@@ -181,7 +211,7 @@ Each evolution line has a raid role on top of its type. Three companion slots an
 | Striker | Highest damage; its combo hits hardest |
 | Bulwark | Taunts, blocks shots, and shields the player |
 | Medic | Heals the player and companions |
-| Scout | Reveals the map, secret rooms and rare spawns |
+| Scout | Reveals the map, hidden doors to secret rooms and rare spawns |
 | Hauler | +4 bag slots per Hauler. The base bag is 12 slots, so loot space is a real choice. |
 | Catcher | Wider cage radius and better catch odds on weakened wilds |
 
@@ -390,7 +420,14 @@ Decisions made while building, so the design and the code agree. Every number li
 
 - **Veins.** Floors 1 to 3 are the Rootworks. Beating the Floor 3 boss opens a portal to the five veins; the player picks one for floors 4 to 6. The Drowned Galleries need a Tide, the Hollow Choir an Echo and the Glasswind Spires a Gale in the party (slot 3 counts). Each vein has its own palette, enemies (four new ones each, plus a few deep-dwellers borrowed from the Ember Abyss), wild-type weighting, materials and three rotating bosses. The Rootworks keeps its four.
 - **Twists.** The **Ember Abyss**: lava vents in every fight room flash a warning ring, then erupt on a 3.2 s beat for 16 damage and leave burning ground. The **Drowned Galleries**: water rises in every room you've entered; deep water slows you and drowns you (5 HP a second) unless a Tide is standing in your party. The **Hollow Choir**: darkness with a small circle of sight (wider with an Echo), and enemies sleep until they hear you shoot within 430 px or you come within 110 px. The **Glasswind Spires**: each room has a wind lane that pushes you, your companions and every bullet (a Gale cuts the push to a third), and every floor has a cliff extract. **The Sump**: poison pools (7 HP a second; the Apothecary at tier 5 makes you immune), Sump foes drop bog sap, and every creature caught there carries an extra mutation.
-- **Layouts.** Warrens (the prototype grid), Labyrinth (four more rooms, fewer foes each, up to two secret rooms), Gauntlet (one chain of rooms; rooms behind you lock once cleared), Sinkhole (rooms you've left collapse after 22 s, never the exits), Flood (the Drowned twist on any vein), Nest (one room holds a colony of 6 to 8 of one species and the floor gives 3 extra cages), Caravan (a trader follows you and pays 220 to 500 coin per floor number if you extract with it alive) and Mirror (some rooms hold uncatchable shadow copies of your companions). Boss floors only use layouts that can hold a boss room. A floor never repeats the layout of the floor above.
+- **Layouts.** Warrens (the prototype grid), Labyrinth (four more rooms, fewer foes each, up to two secret rooms), Gauntlet (one chain of rooms; rooms behind you seal once cleared), Sinkhole (rooms you've left collapse after 22 s, never the exits), Flood (the Drowned twist on any vein), Nest (one room holds a colony of 6 to 8 of one species and the floor gives 3 extra cages), Caravan (a trader follows you and pays 220 to 500 coin per floor number if you extract with it alive) and Mirror (some rooms hold uncatchable shadow copies of your companions). Boss floors only use layouts that can hold a boss room. A floor never repeats the layout of the floor above.
+- **Doors that never trap you.**
+  - A room only seals for good (a gauntlet's way back, a sinkhole's collapse) if every exit and every room you haven't explored can still be reached from where you stand without it. Sealed doors show as rubble, not the red bars of a fight.
+  - A fight's doors open once nothing of that room is left standing. An enemy that ends up outside its room (pushed by wind or water, or split into a wall) is put back inside after a moment and a half.
+  - An automated walk through every zone and layout checks this: it explores dead ends first and lets sinkholes fall.
+- **Secret rooms stay hidden.**
+  - A secret room, its hallway and its chest aren't drawn at all until its hidden door is broken, and they don't show on the minimap. The Roost's tier 3 and Scout creatures make the hidden door sparkle instead.
+  - The hidden door looks like any wall until it's struck, then cracks a little more with each blow. When it gives way, the hallway and room appear as plain floor.
 - **Events.** One raid in four rolls an event on one of floors 1 to 5: Migration (a herd of 4 to 6 of one rare species), Surge (+30% enemy damage, double coin), Lost Keeper (a strong echo that drops a tier 3 weapon and 2 memory shards), Rival Raiders (three raiders who steal a quarter of your bag's coin if they touch you, and drop it back with their own when beaten) and Estate Cache (a chest with two prints and extra coin).
 - **Variety.** Everything about a raid comes from its seed, so a seed replays exactly. A new raid's seed is picked (from up to 400 candidates) so that its Rootworks layouts and event, and each vein's layouts, don't repeat any of the last 20 raids. A raid's combination is its three Rootworks layouts, its vein and that vein's layouts if it went down, and its event.
 - **Contracts.** Three offers a day from seven kinds: Haul (extract with coin), Specimen (catch a type), Breeder's order (catch a grade), Hunt (defeat a number of enemies), Warden hunt (beat a lair's elite), Survey (reach a floor) and Delivery (extract with ore). One at a time; it pays coin, Keeper XP and materials on a successful extraction and lapses on a death.

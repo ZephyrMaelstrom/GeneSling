@@ -12,6 +12,7 @@ import {startMarket} from './exchange/market.js';
 import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 import {runeWall} from './endgame.js';
+import {applyPalette,bulletCol,frameTime,renderScale} from './access.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -34,7 +35,8 @@ function goLandscape(){
 // Nothing in a raid scrolls: its menus are laid out to fit the screen at once (see fitOverlay).
 document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
 function resize(){
-  const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
+  // The render scale follows the Quality setting (auto steps down on slow phones; see access.js).
+  const dpr=renderScale();cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
 }
 function drawFoeBody(g,d,x,y,s,t,o){
@@ -100,10 +102,14 @@ function draw(){
   const cx0=Math.max(0,vx0),cy0=Math.max(0,vy0),cw=Math.min(R.mapCv.width-cx0,vw),ch=Math.min(R.mapCv.height-cy0,vh);
   if(cw>0&&ch>0)g.drawImage(R.mapCv,cx0,cy0,cw,ch,cx0,cy0,cw,ch);
   M.rooms.forEach(r=>{if(r.mod&&r.visited){g.strokeStyle=ROOM_MODS[r.mod].col;g.globalAlpha=.35+.15*Math.sin(t*2);g.lineWidth=4;g.strokeRect(r.ox*TS+2,r.oy*TS+2,RW*TS-4,RH*TS-4);g.globalAlpha=1}
-    if(!r.locked)return;r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#5a1d33';g.fillRect(x,y,TS,TS);g.fillStyle='#ff6688';for(let k=4;k<TS;k+=9)g.fillRect(x+k,y,3,TS);g.fillRect(x,y,TS,3)})});
-  if(R.heardCrack||R.reveal&&(secTier('roost')>=3||R.scout)){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
+    if(!r.locked)return;
+    // Sealed for good (a gauntlet's way back, a sinkhole): rubble, not the red bars of a fight.
+    if(r.sealed){r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#4a3e30';g.fillRect(x,y,TS,TS);g.fillStyle='#6e5c45';g.fillRect(x+3,y+4,12,10);g.fillRect(x+16,y+14,13,12);g.fillStyle='#2e261d';g.fillRect(x+6,y+20,8,7)});return}
+    r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#5a1d33';g.fillRect(x,y,TS,TS);g.fillStyle='#ff6688';for(let k=4;k<TS;k+=9)g.fillRect(x+k,y,3,TS);g.fillRect(x,y,TS,3)})});
+  if(R.heardCrack||S.settings.reveal||secTier('roost')>=3||R.scout){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
   g.font='600 12px "Pixelify Sans", monospace';g.textAlign='center';
   M.rooms.forEach(r=>{
+    if(r.hidden)return;   // a secret room shows nothing (not even its chest) until its wall is broken
     if(r.kind==='stairs'){g.fillStyle='#120c24';g.fillRect(r.cx-26,r.cy-26,52,52);for(let k=0;k<4;k++){g.fillStyle=k%2?'#3a2e66':'#4b3d85';g.fillRect(r.cx-26+k*4,r.cy-26+k*13,52-k*8,11)}g.fillStyle='#ffcf4a';g.fillText('STAIRS DOWN',r.cx,r.cy-34)}
     const zone=(x,y,col,label)=>{const pulse=4+Math.sin(t*3)*4;g.globalAlpha=.25;g.fillStyle=col;g.beginPath();g.arc(x,y,44+pulse,0,7);g.fill();g.globalAlpha=1;g.strokeStyle=col;g.lineWidth=3;g.setLineDash([8,6]);g.lineDashOffset=-t*20;g.beginPath();g.arc(x,y,44,0,7);g.stroke();g.setLineDash([]);g.fillStyle=col;g.fillText(label,x,y-56)};
     if(['gate','rift','cliff'].includes(r.kind)){
@@ -141,8 +147,9 @@ function draw(){
   R.swings.forEach(sw=>{const k=sw.t/sw.max;g.globalAlpha=.25+.5*k;g.fillStyle=sw.col;g.beginPath();g.moveTo(p.x,p.y);g.arc(p.x,p.y,sw.r,sw.a-sw.arc/2,sw.a+sw.arc/2);g.closePath();g.fill();g.globalAlpha=1;g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,sw.r,sw.a-sw.arc/2,sw.a+sw.arc/2);g.stroke()});
   R.bullets.forEach(b=>{
     if(b.lob){g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(b.x,b.y+4,b.r,b.r*.4,0,0,7);g.fill();g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y-b.h,b.r+2,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y-b.h,b.r,0,7);g.fill();return}
-    if(b.team==='e'){g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,b.r+2,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
-    else{g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r+1.5,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
+    const bc=bulletCol(b);
+    if(b.team==='e'){g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,b.r+2,0,7);g.fill();g.fillStyle=bc;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill();if(bc!==b.col){g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r*.4,0,7);g.fill()}}
+    else{g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r+1.5,0,7);g.fill();g.fillStyle=bc;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
   });
   R.bolts.forEach(b=>{g.globalAlpha=Math.min(1,b.t*5);lightning(g,b.a,b.b,b.col);g.globalAlpha=1});
   R.fx.forEach(f=>{const k=f.t/f.max;g.globalAlpha=k;if(f.fill){g.fillStyle=f.col;g.globalAlpha=k*.45;g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill()}else{g.strokeStyle=f.col;g.lineWidth=4;g.beginPath();g.arc(f.x,f.y,f.r*(1-k)+10,0,7);g.stroke()}g.globalAlpha=1});
@@ -241,8 +248,8 @@ function drawMini(){
   const g=mctx,M=R.map,W=240;g.clearRect(0,0,W,W);
   if(CU('blind')){g.fillStyle='#ff6688';g.font='600 22px "Pixelify Sans", monospace';g.textAlign='center';g.textBaseline='middle';g.fillText('BLIND',W/2,W/2);g.textBaseline='alphabetic';return}
   const n=M.G,cell=Math.floor((W-16)/n),pad=(W-cell*n)/2,box=cell-14;
-  const showSecret=S.settings.reveal||secTier('roost')>=3||R.scout;
-  const show=r=>(r.visited||R.reveal)&&(!r.hidden||showSecret||r.visited);
+  // Hidden rooms never show on the map until their wall is broken (scouting only makes the cracked wall sparkle).
+  const show=r=>(r.visited||R.reveal)&&!r.hidden;
   const pos=r=>[pad+r.gx*cell+7,pad+r.gy*cell+7];
   g.strokeStyle='#4b3e87';g.lineWidth=4;
   M.rooms.forEach(r=>r.links.forEach(o=>{if(r.idx<o.idx&&show(r)&&show(o)){const[a,b]=pos(r),[c,d]=pos(o);g.beginPath();g.moveTo(a+box/2,b+box/2);g.lineTo(c+box/2,d+box/2);g.stroke()}}));
@@ -297,7 +304,8 @@ function startLoop(){cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function stopLoop(){cancelAnimationFrame(raf)}
 function loop(ts){
   if(!R||R.over)return;
-  const dt=Math.min(.04,(ts-(R.last||ts))/1000);R.last=ts;
+  const raw=ts-(R.last||ts),dt=Math.min(.04,raw/1000);R.last=ts;
+  if(raw>0&&raw<250&&frameTime(raw))resize();
   if(!R.paused)update(dt);
   if(!R||R.over)return;
   draw();hudT+=dt;if(hudT>.1){hudT=0;updHud()}
@@ -424,7 +432,7 @@ async function start(data){
   let loaded=null;
   if(data&&data.S){try{loaded=migrate(data.S)}catch(e){}}
   if(!loaded)loaded=await loadSave();
-  setS(loaded);
+  setS(loaded);applyPalette();
   let fresh=false;if(!S){newGame();fresh=true}
   save();startMarket();renderAll();
   if(fresh||!S.introSeen){S.introSeen=true;save();openIntro(true)}

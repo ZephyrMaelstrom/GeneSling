@@ -124,7 +124,7 @@ test('a day the market missed is caught up on the next load', async () => {
 
 test('crafting and hatching earn Keeper XP', async () => {
   const r = await page.evaluate(() => {
-    const xp = () => S.keeper.xp + 120 * S.keeper.level * (S.keeper.level - 1) / 2;
+    const xp = () => { let t = S.keeper.xp; for (let l = 1; l < S.keeper.level; l++) t += keeperNeed(l); return t; };
     S.mats.ingot = 10; const a = xp(); craft('parts'); const b = xp();
     const c = makeCreature('pebblet', 'bred', 1, {}); hatchEgg({child: c}); const d = xp();
     return {craft: b - a, hatch: d - b};

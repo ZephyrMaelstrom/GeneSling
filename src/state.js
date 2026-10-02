@@ -1,7 +1,7 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
 import {clamp,pick} from './util.js';
-import {ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {BALANCE,ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
@@ -88,7 +88,7 @@ function grantBonusSlot(c){
   const t=GOOD_TRAITS.filter(x=>!c.traits.includes(x)),pick1=t[Math.floor(rand()*t.length)];
   G.t4=[pick1,pick1];return pick1;
 }
-function defaultOpts(){return{fullscreen:true,stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
+function defaultOpts(){return{fullscreen:true,stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false,palette:'normal',aimAssist:false,slowBullets:false,quality:'auto'}}
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
   S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
@@ -97,7 +97,7 @@ function newGame(){
     loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0,map:null},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
     settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},
-    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,opts:defaultOpts(),nextId:1};
+    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,opts:defaultOpts(),nextId:1,startedAt:Date.now()};
   const a=makeCreature('pyrrox','bred',4,{name:'Cinder',sex:'M',pers:'brave',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
   const b=makeCreature('puffcap','bred',4,{name:'Morel',sex:'F',pers:'calm',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
   const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',pers:'curious',proven:true,bondXp:70,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
@@ -105,7 +105,7 @@ function newGame(){
   const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
   const f=makeCreature('coralisk','bred',2,{name:'Shoal',sex:'M',traits:['worker','thick']});
   pridify(S);bloomify(S);endgamify(S);lorify(S);
-  S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
+  S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>{x.ribbons=x.ribbons||[]});S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
   S.loadout.guns=[newItem('gun','revolver',1,{src:'legacy'}).uid,newItem('gun','sword',1,{src:'legacy'}).uid];
@@ -189,7 +189,8 @@ const canCraft=id=>{const g=GUNS[id];return g.tier>=1&&!!S.blueprints[id]&&secTi
 const priceMul=()=>res('economy',1)?.8:1;
 
 /* ---------- keeper rank ---------- */
-const keeperNeed=()=>120*S.keeper.level;
+// XP for the next rank: base × rank^exp (src/data/balance.json).
+const keeperNeed=(L=S.keeper.level)=>Math.round(BALANCE.KEEPER_CURVE.base*Math.pow(L,BALANCE.KEEPER_CURVE.exp));
 function addKeeperXp(n){
   const out=[];S.keeper.xp+=Math.round(n);
   // The demo stops at Keeper rank 10, the end of Act I.
@@ -292,7 +293,12 @@ function hybridChance(mom,dad){
 }
 // Lays one clutch (one egg, two with Twin Eggs). Returns the eggs laid, or null.
 function breed(){
-  const mom=byId(+ui.mom),dad=byId(+ui.dad);
+  const laid=layEgg(byId(+ui.mom),byId(+ui.dad));if(!laid)return null;
+  sfx('pickup');ui.mom='';ui.dad='';save();renderAll();
+  return laid;
+}
+// The breeding itself, with no sound, saving or redraw (the Journey Simulator calls it directly).
+function layEgg(mom,dad){
   if(breedBlock(mom,dad))return null;
   const t=secTier('nursery');
   if(!t||S.coin<20||S.food<3||S.eggs.length>=eggCap())return null;
@@ -318,8 +324,7 @@ function breed(){
   mom.bred=(mom.bred||0)+1;dad.bred=(dad.bred||0)+1;
   const odd=laid.some(c=>c.type2);
   addLog(`${mom.name} and ${dad.name} produced ${twins?'twin eggs':'an egg'}.${odd?' Something unusual is inside.':''}${isIn?' They share close family, so a defect is possible.':''}`);
-  sfx('pickup');ui.mom='';ui.dad='';save();renderAll();
   return laid;
 }
 
-export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,breed};
+export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,breed,layEgg};

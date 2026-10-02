@@ -1,6 +1,6 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {LORE,BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {BALANCE,LORE,BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
 import {save} from './save.js';
 import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
 import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
@@ -8,7 +8,10 @@ import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
 import {R,startRaid} from './raid.js';
 import {DEMO} from './flags.js';
+import {calendarDay,catchupMul,expectedRank,gateNeeds,nextGate} from './balance.js';
 import {formLore,labLore,pagesFound,secretHybridKnown,whisper} from './lore.js';
+import {journeyPanel,runJourneyLab} from './journeyui.js';
+import {applyPalette,resetScale} from './access.js';
 import {journalView,labLorePanel,muralView,storyView} from './loreui.js';
 import {buyPlot,craftDecor,displayWeapon,retire,setSigil,storeItem,takeDownWeapon} from './hideout.js';
 import {bredBy,buildPanel,hallPanel,mapTools,openLegend,openTrophy,renderBuildPanel,sigilPanel,titleChips} from './prideui.js';
@@ -70,6 +73,14 @@ function weaponLine(g){
 const tierTag=t=>`<span class="chip tier t${t}">T${t}</span>`;
 const persChip=c=>`<span class="chip pers" title="${esc(PERS[c.pers].desc)}">${PERS[c.pers].name}</span>`;
 
+// The next act gate: what it needs, ticked off as it's met, and catch-up when it's on.
+function gatePanel(){
+  const k=nextGate(),cu=catchupMul()>1;
+  const catchup=cu?`<p class="status" style="color:var(--mint)">Catch-up: double Keeper XP from raids until you're within ${BALANCE.CATCHUP.within} ranks of rank ${expectedRank(calendarDay())}, where most Keepers are on day ${calendarDay()}.</p>`:'';
+  if(!k)return catchup;
+  const G=BALANCE.GATES[k],needs=gateNeeds(k);
+  return`<h3>Next gate: ${G.name}</h3><ul class="tierlist">${[{text:G.floor===3?'Beat a Rootworks boss on Floor 3':G.floor===6?'Beat a vein boss on Floor 6':'Free Ilsa on Floor 9',ok:(S.progress.deepest||0)>G.floor||(G.floor===9&&!!(S.story&&S.story.ilsa))},...needs].map(n=>`<li class="${n.ok?'on':''}"><b>${n.ok?'✓':'·'}</b> <span>${esc(n.text)}</span></li>`).join('')}</ul>${catchup}`;
+}
 function viewRaid(){
   validGuns();
   const L=S.loadout,slots=L.slots.map(byId);
@@ -111,6 +122,7 @@ function viewRaid(){
   <section class="card"><h2>Keeper rank ${S.keeper.level}</h2>
     <div class="bar"><i style="width:${S.keeper.xp/kn*100}%;background:var(--gold)"></i></div>
     <p class="status">${S.keeper.xp}/${kn} XP. Every raid earns Keeper XP, even ones you lose. Each rank pays coin and a cage, unlocks a page of Ilsa's journal, and some open new sections.</p>
+    ${gatePanel()}
     <h3>Bosses</h3><div class="trophies">${bossRow}</div>
     ${bloomBelow()}
     <p class="status">One of four bosses waits at the end of Floor 3 (best faced with companions around Lv 10). Beating it opens the five veins below: the Ember Abyss, the Drowned Galleries, the Hollow Choir, the Glasswind Spires and the Sump, each with its own twist and three bosses (around Lv 25). First victories give memory shards.</p>
@@ -338,6 +350,7 @@ function viewLab(){
     ${labBloom(ui)}
     ${labEndgamePanel()}
     ${labLorePanel()}
+    ${journeyPanel()}
     <h3>Arena</h3>
     <p class="hint">One room with your loadout and endless cages. Spawn any enemy, boss, wild species, weapon, buff, curse or room twist. Nothing dies for real.</p>
     <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
@@ -383,6 +396,13 @@ function viewSettings(){
     ${tg('dmgNums','Damage numbers','Show floating numbers when you hit things.')}
     ${tg('shake','Screen shake','Shake the screen when you take damage.')}
     <label class="field">HUD opacity<input id="opt-hud" type="range" min="0.4" max="1" step="0.05" value="${o.hudAlpha}" data-act="opthud"></label></section>
+  <section class="card"><h2>Accessibility and performance</h2>
+    ${seg('palette',[['normal','Standard'],...Object.entries(BALANCE.ACCESS.palettes).map(([k,p])=>[k,p.name])],'Colors')}
+    <p class="status">Colorblind palettes recolor good and bad, both sides' bullets and every type. Enemy bullets also keep a white ring and gain a dark core.</p>
+    ${tg('aimAssist','Aim assist','On touch, the aim stick bends toward the nearest enemy in a narrow cone.')}
+    ${tg('slowBullets','Slower enemy bullets',`Enemy bullets move at ${Math.round(BALANCE.ACCESS.slowBullets*100)}% speed.`)}
+    ${seg('quality',[['auto','Auto'],['high','High'],['low','Battery saver']],'Raid graphics')}
+    <p class="status">Auto draws raids sharp and steps the detail down if your phone slows, so it stays smooth.</p></section>
   <section class="card"><h2>Story and help</h2>
     <div class="row"><button class="btn" data-act="tutorial">Replay the tutorial</button><button class="btn" data-act="intro">Read the opening story</button></div></section>
   <section class="card"><h2>Feedback</h2>${statsPanel()}</section></div></div>`;
@@ -487,7 +507,7 @@ function act(a,d){
     case'sell':{const c=byId(+d.id);if(!c||expAway(c))break;if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
       S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);sfx('coin');save();renderAll();break}
     case'breed':breed();break;
-    case'opt':S.opts[d.k]=d.v;save();renderMain();break;
+    case'opt':S.opts[d.k]=d.v;if(d.k==='palette')applyPalette();if(d.k==='quality')resetScale();save();renderAll();break;
     case'lab-spawn':{const L=ui.lab;const lv=clamp(+L.level||1,1,40);
       let traits=null;if(L.t1||L.t2||L.t3){traits=[L.t1,L.t2,L.t3].map(t=>t||null)}
       const c=makeCreature(L.species,L.origin,lv,{proven:L.proven,sex:L.sex==='R'?null:L.sex,traits,genes:L.max?Object.fromEntries(GRADE_LOCI.map(k=>[k,10])):undefined,captureRaid:L.origin==='wild'&&!L.proven?S.stats.raids:-1});
@@ -538,6 +558,7 @@ function act(a,d){
     case'splice':{const dn=byId(+ui.spDonor);if(!dn)break;if(ui.spArm!==dn.id){ui.spArm=dn.id;renderMain();break}ui.spArm=null;if(splice(+ui.spDonor,+ui.spRecip,ui.spLocus||'pow')){ui.spDonor='';sfx('evolve');save();renderAll()}break}
     case'bloomscar':{const c=byId(+d.id);if(c&&amt('bloomscar')>0){give('bloomscar',-1);c.genome.shine[c.genome.shine[0]<=c.genome.shine[1]?0:1]=2;express(c);addLog(`A Bloomscar serum scarred ${c.name}'s shine gene.`);sfx('evolve');save();renderAll()}break}
     case'lab-endgame':labEndgame();save();renderAll();break;
+    case'lab-journey':runJourneyLab();renderAll();break;
     case'lab-lore':labLore(d.k==='all');save();renderAll();break;
     case'lab-whisper':{const w=whisper();addLog(w?'Whisper: '+w.text:'No whisper is left to hear in this act.');save();renderAll();break}
     case'lab-deep':startRaid('raid',+d.k,null,'ember');break;

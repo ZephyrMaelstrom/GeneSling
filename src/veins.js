@@ -19,6 +19,8 @@ import {chooseEnding,rulesFor,tethered,unboundMods} from './endgame.js';
 import {OL,drawCreature} from './sprites.js';
 import {drawPeddler,showOverlay,setPause} from './draw.js';
 import {onEnding} from './lore.js';
+import {gateBlockText} from './balance.js';
+import {gateBlocked} from './playtest.js';
 import {mutateGenome} from './genetics.js';
 import {sfx} from './audio.js';
 
@@ -77,6 +79,8 @@ function chooseVein(v){
 function enterUnderheart(){
   const bad=tethered(partyCreatures());
   if(bad.length){setPause(false);msg(`The Underheart won't let ${bad.map(c=>c.name).join(' and ')} pass: still tethered to the Bloom. Only cut-free creatures (Gen 3 and later) can go down.`);R.stairT=-3;return false}
+  const why=gateBlockText('underheart');
+  if(why){setPause(false);msg(why);gateBlocked('underheart');R.stairT=-4;return false}
   descend(7);return true;
 }
 // A Bloomlord that copies your party sends shadows first.
@@ -129,20 +133,33 @@ function twistUpdate(dt){
   }else R.windMove=null;
   // The dark: sleeping enemies notice you up close.
   if(isDark())for(const e of R.enemies)if(e.dormant&&dist(e,p)<TW.dark.notice)wake(e);
-  // Gauntlet: the rooms behind you lock once you've moved on.
-  if(P.layout==='gauntlet'&&r&&r.chain!=null)for(const rm of R.map.rooms)if(rm.chain!=null&&rm.chain<r.chain&&rm.visited&&rm.cleared&&!rm.sealed){rm.sealed=true;rm.locked=true;rm.tutLock=true}
+  // Gauntlet: the rooms behind you seal once you've moved on (only if the way ahead stays open).
+  if(P.layout==='gauntlet'&&r&&r.chain!=null)for(const rm of R.map.rooms)if(rm.chain!=null&&rm.chain<r.chain&&rm.visited&&rm.cleared&&!rm.sealed&&safeToSeal(rm)){seal(rm);if(!R.sealSaid){R.sealSaid=true;msg('The way back has sealed. This floor only goes forward.')}}
   // Sinkhole: rooms you've left fall in (never the way out).
   if(P.layout==='sinkhole')for(const rm of R.map.rooms){
     if(rm===r||!rm.visited||rm.sealed||EXITS.includes(rm.kind))continue;
     rm.left=(rm.left||0)+dt;
     if(rm.left>LR.sinkhole.after-LR.sinkhole.warn&&!rm.warned){rm.warned=true;msg('The floor behind you is giving way.')}
-    if(rm.left>LR.sinkhole.after&&!inRoom(rm,p.x,p.y)){rm.sealed=true;rm.locked=true;rm.tutLock=true;R.fx.push({x:rm.cx,y:rm.cy,r:140,t:.6,max:.6,col:'#8a6a4a'})}
+    if(rm.left>LR.sinkhole.after&&!inRoom(rm,p.x,p.y)&&safeToSeal(rm)){seal(rm);R.fx.push({x:rm.cx,y:rm.cy,r:140,t:.6,max:.6,col:'#8a6a4a'})}
   }
   if(r)r.left=0;
   updCaravan(dt);
   // Rival raiders rob you if they reach you.
   for(const e of R.enemies)if(e.rival&&!e.robbed&&e.hp>0&&dist(e,p)<e.r+p.r+6){e.robbed=true;const n=Math.floor(R.bag.coin*EV.rivals.steal);R.bag.coin-=n;e.loot=(e.loot||0)+n;float(p.x,p.y-30,`Robbed: -${n} coin`,'#ff6688',true);msg('A rival raider lifted coin from your bag. Take it back.')}
 }
+// Sealing a room (the gauntlet's way back, a sinkhole's collapse) must never trap the Keeper: a room
+// seals only if, without it, every exit and every room not yet explored can still be reached from here.
+function openFrom(start,without){
+  const seen=new Set([start]),q=[start];
+  while(q.length){const a=q.shift();for(const b of a.links)if(b!==without&&!b.sealed&&!b.hidden&&!seen.has(b)){seen.add(b);q.push(b)}}
+  return seen;
+}
+function safeToSeal(rm){
+  const here=R.cur;if(!here||rm===here||inRoom(rm,R.p.x,R.p.y))return false;
+  const reach=openFrom(here,rm);
+  return R.map.rooms.every(x=>x===rm||x.sealed||x.hidden||x.kind==='secret'||!(EXITS.includes(x.kind)||!x.visited)||reach.has(x));
+}
+function seal(rm){rm.sealed=true;rm.locked=true;rm.tutLock=true}
 function wake(e){if(!e.dormant)return;e.dormant=false;e.cd=Math.max(e.cd||0,.6);float(e.x,e.y-e.r-12,'!','#ff6688',true)}
 // Firing in the dark wakes everything that can hear it.
 function makeNoise(x,y){if(!isDark())return;for(const e of R.enemies)if(e.dormant&&Math.hypot(e.x-x,e.y-y)<TW.dark.hear)wake(e)}
@@ -215,4 +232,4 @@ const drawShadow=(g,e,t)=>drawCreature(g,e.c,e.x,e.y,.9,t,{face:e.face,stone:tru
 /* ---------- the Test Lab ---------- */
 function labVein(v){if(!R)return;R.vein=v;descend(4)}
 
-export {enterUnderheart,lordShadows,openEndingChoice,pickEnding,hasTwist,plan,twist,flooding,isDark,keyActive,floorStart,openVeinChoice,chooseVein,moveMul,twistUpdate,wake,makeNoise,seeRadius,enterExtras,deathExtras,caughtExtras,catchable,updCaravan,caravanPay,drawTwists,drawDark,drawShadow,labVein};
+export {safeToSeal,openFrom,enterUnderheart,lordShadows,openEndingChoice,pickEnding,hasTwist,plan,twist,flooding,isDark,keyActive,floorStart,openVeinChoice,chooseVein,moveMul,twistUpdate,wake,makeNoise,seeRadius,enterExtras,deathExtras,caughtExtras,catchable,updCaravan,caravanPay,drawTwists,drawDark,drawShadow,labVein};

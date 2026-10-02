@@ -60,7 +60,7 @@ function post(collection,obj){
 }
 function track(ev,data={}){
   if(!statsOn())return null;
-  const e={ev,id:S.telemetry.id,demo:DEMO,day:S.day,rank:S.keeper.level,t:Date.now(),...data};
+  const e={ev,id:S.telemetry.id,demo:DEMO,playtest:!!S.telemetry.playtest,day:S.day,rank:S.keeper.level,t:Date.now(),...data};
   sent.unshift(e);sent.length=Math.min(sent.length,30);
   post(P.STATS.collection,e);
   return e;
@@ -78,15 +78,17 @@ function sessionStart(){
   const returning=!!T.last&&now-T.last>=P.STATS.returnHours*3600e3;
   T.last=now;T.sessions=(T.sessions||0)+1;save();
   track('session_start',{returning,sessions:T.sessions,tutorial:!!S.tutorialDone});
-  if(DEMO&&S.tutorialDone&&!T.asked)askStats();
+  // A closed-playtest link (…/GeneSling/?playtest) marks the save, and the full game then asks too.
+  if(/[?&]playtest\b/.test(location.search||''))T.playtest=true;
+  if((DEMO||T.playtest)&&S.tutorialDone&&!T.asked)askStats();
 }
 const statsAskHtml=()=>`<h2>Help shape GeneSling?</h2>
-  <p>May the demo send anonymous play stats? They're a random id for this device, the day and Keeper rank, and when you finish the tutorial, end a raid or finish the demo. No names, no creatures, nothing else.</p>
+  <p>May ${DEMO?'the demo':'GeneSling'} send anonymous play stats? They're a random id for this device, the day and Keeper rank, and when you finish the tutorial, end a raid, open a new act, reach a gate you can't pass yet${DEMO?' or finish the demo':''}. No names, no creatures, nothing else.</p>
   <p class="hint">You can change this any time in Settings.</p>
   <div class="row"><button class="btn primary" data-act="stats" data-k="1">Yes, send stats</button><button class="btn" data-act="stats" data-k="0">No thanks</button></div>`;
 const askStats=()=>queueModal(statsAskHtml());
 // After the tutorial, the demo asks once.
-function tutorialDone(){track('tutorial_done',{});if(DEMO&&!(S.telemetry&&S.telemetry.asked))askStats()}
+function tutorialDone(){track('tutorial_done',{});const T=S.telemetry||{};if((DEMO||T.playtest)&&!T.asked)askStats()}
 
 /* ---------- feedback ---------- */
 const feedbackHtml=()=>`<h2>Feedback</h2><p class="hint">What did you enjoy, what confused you, what broke? ${configured()?'This goes straight to the developer.':'This opens a prefilled GitHub issue.'}</p>

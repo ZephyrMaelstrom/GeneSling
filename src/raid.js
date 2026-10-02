@@ -19,7 +19,10 @@ import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,vein
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
 import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
 import {loreEnd,lorePick,loreRoom,placeLore,restChest} from './lore.js';
-import {LORE} from './content.js';
+import {BALANCE,LORE} from './content.js';
+import {catchupMul,gateBlockText} from './balance.js';
+import {assistAim,enemyBulletMul,resetScale} from './access.js';
+import {gateBlocked,paceTick} from './playtest.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -122,13 +125,15 @@ function buildMap(rooms,grid,Gx,Gy,floor,arena,start){
     const k=Math.min(a.idx,b.idx)+'-'+Math.max(a.idx,b.idx);if(done.has(k))continue;done.add(k);
     const[p,q2]=(a.gx<b.gx||a.gy<b.gy)?[a,b]:[b,a];
     const sec=p.kind==='secret'?p:q2.kind==='secret'?q2:null,host=sec?(sec===p?q2:p):null;
-    const crack=sec?{hp:60+floor*20,tiles:[],room:sec,broken:false}:null;
-    const door=(i,r)=>{if(sec){if(r===host){tiles[i]=4;crack.tiles.push(i);cracks.set(i,crack)}else tiles[i]=1;return}tiles[i]=3;doorOwner.set(i,r);r.doors.push(i)};
+    const crack=sec?{hp:60+floor*20,max:60+floor*20,tiles:[],room:sec,broken:false,area:new Set()}:null;
+    // A secret room's hallway and the room itself stay hidden (unpainted) until its cracked wall is broken.
+    const floorT=i=>{tiles[i]=1;if(crack)crack.area.add(i)};
+    const door=(i,r)=>{if(sec){if(r===host){tiles[i]=4;crack.tiles.push(i);cracks.set(i,crack)}else floorT(i);return}tiles[i]=3;doorOwner.set(i,r);r.doors.push(i)};
     if(p.gy===q2.gy){const cy=p.oy+(RH>>1);
-      for(let x=p.ox+RW;x<q2.ox;x++)for(let y=cy-1;y<=cy+1;y++)tiles[y*W+x]=1;
+      for(let x=p.ox+RW;x<q2.ox;x++)for(let y=cy-1;y<=cy+1;y++)floorT(y*W+x);
       for(let y=cy-1;y<=cy+1;y++){door(y*W+p.ox+RW,p);door(y*W+q2.ox-1,q2)}
     }else{const cx=p.ox+(RW>>1);
-      for(let y=p.oy+RH;y<q2.oy;y++)for(let x=cx-1;x<=cx+1;x++)tiles[y*W+x]=1;
+      for(let y=p.oy+RH;y<q2.oy;y++)for(let x=cx-1;x<=cx+1;x++)floorT(y*W+x);
       for(let x=cx-1;x<=cx+1;x++){door((p.oy+RH)*W+x,p);door((q2.oy-1)*W+x,q2)}
     }
   }
@@ -143,7 +148,10 @@ function buildMap(rooms,grid,Gx,Gy,floor,arena,start){
     if(r.kind==='chest'||r.kind==='lair')r.chest={x:r.cx,y:r.cy,open:false};
     if(r.kind==='secret'){r.chest.x=r.cx;r.chest.y=r.cy}
   }
-  return{G:Math.max(Gx,Gy),Gx,Gy,W,H,tiles,doorOwner,cracks,rooms,grid,start,floor,arena:!!arena};
+  const hidden=new Set();
+  // (The cracked wall itself is never hidden: it's drawn as an ordinary wall.)
+  for(const cr of new Set(cracks.values())){for(let j=0;j<RH;j++)for(let i=0;i<RW;i++)cr.area.add((cr.room.oy+j)*W+cr.room.ox+i);cr.tiles.forEach(t=>cr.area.delete(t));cr.area.forEach(t=>hidden.add(t))}
+  return{G:Math.max(Gx,Gy),Gx,Gy,W,H,tiles,doorOwner,cracks,hidden,rooms,grid,start,floor,arena:!!arena};
 }
 function solidAt(M,tx,ty){if(tx<0||ty<0||tx>=M.W||ty>=M.H)return true;const i=ty*M.W+tx,t=M.tiles[i];if(t===1)return false;if(t===3)return M.doorOwner.get(i).locked;return true}
 function hitsWall(x,y,r){const M=R.map;const x0=Math.floor((x-r)/TS),x1=Math.floor((x+r)/TS),y0=Math.floor((y-r)/TS),y1=Math.floor((y+r)/TS);
@@ -157,7 +165,9 @@ const PALS={1:{a:'#2c4a55',b:'#284450',fl:'#3a6070',wall:'#336b66',top:'#5fb3a0'
   4:{a:'#4a2a2a',b:'#432626',fl:'#5e3434',wall:'#8a3a3a',top:'#ff8a5c',edge:'#240f0f'},5:{a:'#3a1f2f',b:'#341b2a',fl:'#4f2a3f',wall:'#7a2a4f',top:'#ff5ca8',edge:'#1f0a14'},6:{a:'#1f1f2f',b:'#1b1b2a',fl:'#2f2f45',wall:'#3a3a5a',top:'#ffa04f',edge:'#0a0a14'},
   arena:{a:'#4a2f3f',b:'#43293a',fl:'#5e3c50',wall:'#7a3f5a',top:'#ff8fb1',edge:'#24101c'}};
 function paintTile(g,M,x,y,pal){
-  const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const t=M.tiles[y*M.W+x];return t===1||t===3};
+  const hid=i=>M.hidden&&M.hidden.has(i);
+  const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const i=y*M.W+x,t=M.tiles[i];return(t===1||t===3)&&!hid(i)};
+  if(hid(y*M.W+x))return;
   if(walk(x,y)){g.fillStyle=(x+y)%2?pal.a:pal.b;g.fillRect(x*TS,y*TS,TS,TS);if(fxRand()<.18){g.fillStyle=pal.fl;g.fillRect(x*TS+fxRi(4,24),y*TS+fxRi(4,24),fxRi(2,5),fxRi(2,4))}return}
   let near=false;for(let dy=-1;dy<=1&&!near;dy++)for(let dx=-1;dx<=1;dx++)if(walk(x+dx,y+dy)){near=true;break}
   if(!near&&M.tiles[y*M.W+x]!==4)return;
@@ -166,7 +176,9 @@ function paintTile(g,M,x,y,pal){
   g.fillStyle=pal.edge;g.fillRect(x*TS,y*TS+TS-4,TS,4);
   if(walk(x,y+1)){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x*TS,(y+1)*TS,TS,6)}
   g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x*TS+(y%2?4:18),y*TS+12,10,2);
-  if(M.tiles[y*M.W+x]===4){g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1.5;g.beginPath();g.moveTo(x*TS+8,y*TS+8);g.lineTo(x*TS+15,y*TS+16);g.lineTo(x*TS+11,y*TS+24);g.moveTo(x*TS+15,y*TS+16);g.lineTo(x*TS+24,y*TS+19);g.stroke()}
+  // A hidden door looks like any wall until it's struck; then it cracks a little more with each blow.
+  const cr=M.tiles[y*M.W+x]===4&&M.cracks.get(y*M.W+x);
+  if(cr&&cr.hp<cr.max){const k=1-cr.hp/cr.max;g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.5;g.beginPath();g.moveTo(x*TS+8,y*TS+8);g.lineTo(x*TS+15,y*TS+16);if(k>.3){g.lineTo(x*TS+11,y*TS+24)}if(k>.6){g.moveTo(x*TS+15,y*TS+16);g.lineTo(x*TS+24,y*TS+19)}g.stroke()}
 }
 // Each vein has a palette per floor (in bloom.json); the arena keeps its own.
 const palFor=M=>M.arena?PALS.arena:BLOOM.VEINS[(M.plan&&M.plan.vein)||veinOfFloor(M.floor)].pals[localFloor(M.floor)-1];
@@ -179,11 +191,14 @@ function renderMapCanvas(M){
 }
 function damageCrack(i,dmg){
   const M=R.map,cr=M.cracks.get(i);if(!cr||cr.broken)return;
+  const g=R.mapCv.getContext('2d'),pal=palFor(M),stage=k=>Math.floor(3*(1-k/cr.max)),was=stage(cr.hp);
   cr.hp-=dmg;R.fx.push({x:(i%M.W+.5)*TS,y:(Math.floor(i/M.W)+.5)*TS,r:10,t:.2,max:.2,col:'#c9b48a'});
-  if(cr.hp>0)return;
-  cr.broken=true;const g=R.mapCv.getContext('2d'),pal=palFor(M);
-  cr.tiles.forEach(t=>{M.tiles[t]=1;M.cracks.delete(t)});
-  cr.tiles.forEach(t=>{const x=t%M.W,y=Math.floor(t/M.W);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)paintTile(g,M,x+dx,y+dy,pal)});
+  if(cr.hp>0){if(stage(cr.hp)!==was||was===0)cr.tiles.forEach(t=>paintTile(g,M,t%M.W,Math.floor(t/M.W),pal));return}
+  cr.broken=true;
+  // The wall gives way: the hallway and the room behind it appear, as plain floor.
+  cr.tiles.forEach(t=>{M.tiles[t]=1;M.cracks.delete(t);M.hidden.delete(t)});
+  const near=new Set();for(const t of [...cr.area,...cr.tiles]){M.hidden.delete(t);const x=t%M.W,y=Math.floor(t/M.W);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)near.add((y+dy)*M.W+x+dx)}
+  near.forEach(t=>{const x=t%M.W,y=Math.floor(t/M.W);g.fillStyle='#0d0a1c';g.fillRect(x*TS,y*TS,TS,TS);paintTile(g,M,x,y,pal)});
   cr.room.hidden=false;R.fx.push({x:(cr.tiles[1]%M.W+.5)*TS,y:(Math.floor(cr.tiles[1]/M.W)+.5)*TS,r:60,t:.5,max:.5,col:'#ffcf4a'});
   msg('The wall crumbles. A secret room!');sfx('door');R.kxp+=20;
 }
@@ -272,7 +287,7 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
   $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
   $('#pause').hidden=true;$('#bossBar').hidden=true;$('#tutBox').hidden=!tut;$('#roomMod').hidden=true;
   applyOpts();
-  resize();startLoop();
+  resetScale();resize();startLoop();
 }
 function applyOpts(){
   const o=S.opts,raid=$('#raid');
@@ -321,7 +336,7 @@ function spawnPos(r,minD=180){
 function baseEnemy(pos,room){return{x:pos.x,y:pos.y,room,stun:0,slow:0,face:1,flash:0,hitCd:0,wind:0,rot:rand()*6,phase:0,queue:[],chargeT:0,strafe:pick([-1,1]),seed:rand()*9,shots:0,status:{},burn:null,lastHit:null}}
 const hpMods=()=>R.mods.hp*(CU('toll')?1.25:1);
 function spawnWild(pos,species,room,level){
-  const f=R.map.floor;const lv=level||[0,ri(2,4),ri(4,6),ri(6,9),ri(10,14),ri(14,18),ri(18,24),ri(24,28),ri(27,32),ri(30,35),ri(34,38)][Math.min(f,10)];
+  const f=R.map.floor,W=BALANCE.WILD_LEVELS[Math.min(f,10)];const lv=level||(f?ri(W[0],W[1]):0);
   const stage=R.mode==='arena'?wildStageFor(species,lv,6):wildStageFor(species,lv,f);
   const c=makeCreature(species,'wild',lv,{floor:f,stage});
   dexForm(species,stage,'seen');
@@ -464,6 +479,7 @@ function playerDown(){
 }
 function shoot(team,x,y,ang,speed,dmg,o={}){
   if(team==='e'&&R&&ruleOn(R.tier,'quickened'))speed*=1.2;
+  if(team==='e')speed*=enemyBulletMul();
   const b={team,x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:o.r||5,dmg,life:o.life||2.6,age:0,col:o.col||'#ff5c7a',slow:o.slow||0,
     pierce:o.pierce||0,hit:o.pierce?new Set():null,bounce:o.bounce||0,explode:o.explode||0,split:o.split||0,homing:o.homing||0,src:o.src||null,elem:o.elem||null,lob:o.lob||null,orbit:o.orbit||null,cloud:o.cloud||0};
   // Ricochet trait: a companion's shots bounce off a wall once.
@@ -756,6 +772,7 @@ function tutUpdate(){
 }
 
 /* ---------- update ---------- */
+const STRAY_T=1.5;
 function update(dt){
   R.t+=dt;const p=R.p;
   if(R.mode!=='arena'&&R.mode!=='tutorial'&&!S.settings.noTimer){R.time-=dt;if(R.time<=0){endRaid('collapse');return}}
@@ -763,7 +780,7 @@ function update(dt){
   R.combo.cd=Math.max(0,R.combo.cd-dt);if(R.rally){R.rally.t-=dt;if(R.rally.t<=0)R.rally=null}
   if(R.msgT>0)R.msgT-=dt;
   for(let i=R.timers.length-1;i>=0;i--){R.timers[i].t-=dt;if(R.timers[i].t<=0){const f=R.timers[i].f;R.timers.splice(i,1);f()}}
-  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=Math.atan2(dy,dx);R.firing=S.opts.autoFire||l>stickR()*.6}else R.firing=false}
+  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=assistAim(Math.atan2(dy,dx),p,R.enemies);R.firing=S.opts.autoFire||l>stickR()*.6}else R.firing=false}
   else if(R.mouse){const s=R.scale;const wx=(R.mouse.x-R.vw/2)/s+R.camx,wy=(R.mouse.y-R.vh/2)/s+R.camy;R.aim=Math.atan2(wy-p.y,wx-p.x)}
   p.rollCd-=dt;p.inv=Math.max(0,p.inv-dt);p.hurt=Math.max(0,p.hurt-dt);p.slow=Math.max(0,p.slow-dt);p.fireCd-=dt;
   if(R.sup.has('tide'))healPlayer(dt);
@@ -796,7 +813,13 @@ function update(dt){
   const r=roomAt(p.x,p.y,22);
   if(r){if(r!==R.cur&&r.mod&&r.spawned&&!R.enemies.some(e=>e.room===r))0;R.cur=r;if(!r.spawned)enterRoom(r);r.visited=true;if(r.hidden){r.hidden=false}}
   else{const r2=roomAt(p.x,p.y,0);if(r2)R.cur=r2}
-  R.map.rooms.forEach(rm=>{if(rm.tutLock)return;if(rm.locked&&!R.enemies.some(e=>e.room===rm)){rm.locked=false;rm.cleared=true;sfx('door');if(rm.kind!=='boss')msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
+  // A locked room's enemy that ends up outside it (pushed by wind or water, split into a wall) is put back
+  // inside after a moment, so it can always be fought and the doors can always open.
+  for(const e of R.enemies){if(!e.room||e.hp<=0||e.kind==='boss'||e.rival)continue;const rm=e.room;
+    const inside=e.x>rm.ox*TS&&e.x<(rm.ox+RW)*TS&&e.y>rm.oy*TS&&e.y<(rm.oy+RH)*TS&&!hitsWall(e.x,e.y,Math.max(4,e.r-4));
+    if(inside){e.stray=0;continue}e.stray=(e.stray||0)+dt;
+    if(e.stray>STRAY_T){const q=spawnPos(rm);e.x=q.x;e.y=q.y;e.stray=0}}
+  R.map.rooms.forEach(rm=>{if(rm.tutLock)return;if(rm.locked&&!R.enemies.some(e=>e.room===rm&&e.hp>0)){rm.locked=false;rm.cleared=true;sfx('door');if(rm.kind!=='boss')msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
   R.map.rooms.forEach(rm=>{if(rm.chest&&!rm.chest.open&&!rm.locked&&dist(p,rm.chest)<34)openChest(rm)});
   lorePick();
   for(let i=R.items.length-1;i>=0;i--){const it=R.items[i];if((it.kind==='buff'||it.kind==='loot')&&dist(it,p)<26){R.items.splice(i,1);if(it.kind==='buff')applyBuff(it.id);else takeLoot(it)}}
@@ -983,7 +1006,8 @@ function updBoss(b,dt){
 function onBossDeath(b){
   const d=b.def,set=d.set,r=b.room;
   R.boss=null;$('#bossBar').hidden=true;sfx('evolve');
-  R.bossDown=d;R.kxp+=set?600:250;
+  // A boss pays full Keeper XP the first time, and a share after that, so farming one boss can't outrun the journey.
+  R.bossDown=d;R.kxp+=Math.round((set?600:250)*(S.progress.bosses[b.id]?BALANCE.BOSS_XP.repeat:1));
   const coin=Math.round((set?520:180)*R.mods.coin);R.bag.coin+=coin;bagAdd('ore',set?30:10,b.x,b.y);bagAdd(set?'dust':'hide',set?8:5,b.x,b.y);
   if(rand()<JOBS.PRINTS.boss)dropPrint(r.cx,r.cy+120);
   for(let i=0;i<2;i++)R.items.push({kind:'gun',id:gunOfTier(set?pick([3,4]):pick([2,3,3,4])),x:r.cx+(i?50:-50),y:r.cy+60});
@@ -1107,7 +1131,7 @@ function objectives(dt){
     const home={x:r.cx-80,y:r.cy},deep={x:r.cx+80,y:r.cy};
     if(dist(p,home)<44){R.ext+=dt;R.prompt=`Going home… ${Math.max(0,2-R.ext).toFixed(1)}s`;if(R.ext>=2){endRaid('extract','rift');return}}
     else if(r.deep&&dist(p,deep)<44){const fl=R.map.floor;R.stairT+=dt;R.prompt=`${fl===3?'The veins below':fl===6?'The Underheart below':'The Heart below'}… ${Math.max(0,1.2-R.stairT).toFixed(1)}s`;
-      if(R.stairT>=1.2){R.stairT=-2;if(fl===3)openVeinChoice();else if(fl===6)enterUnderheart();else descend(10)}}
+      if(R.stairT>=1.2){R.stairT=-2;if(fl===3){const why=gateBlockText('veins');if(why){msg(why);gateBlocked('veins');R.stairT=-4}else openVeinChoice()}else if(fl===6)enterUnderheart();else{const why=gateBlockText('heart',partyCreatures());if(why){msg(why);gateBlocked('heart');R.stairT=-4}else descend(10)}}}
     else{R.ext=0;R.stairT=0;R.prompt=r.deep?`Left circle: home · Right circle: ${R.map.floor===3?'choose a vein':R.map.floor===6?'the Underheart (cut-free creatures only)':'the Heart'}`:'Step into the rift to go home'}
     return;
   }
@@ -1233,12 +1257,13 @@ function endRaid(outcome,via){
   validGuns();
   if(R.deepening!=null){const d=recordDeepening(R.deepening,deepeningScore({deepest,kills:R.kills,coin:R.bag.coin,extracted:outcome==='extract',caught:caughtC.length}));L.notes.push(`Deepening, week ${R.deepening}: ${d.score} points, rank ${d.rank} of 100. Your best this week: ${d.best}.`)}
   if(R.mode==='raid'||scav){const cr=settleContract({extracted:outcome==='extract',bagCoin:R.bag.coin,bagOre:R.bag.ore,kills:R.kills,eliteKills:R.eliteKills||0,deepest,caught:caughtC});if(cr)L.notes.push(cr.text)}
-  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1));
+  // Catch-up: a Keeper well behind the expected rank for their calendar day earns double.
+  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1)*catchupMul());
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
   track('raid_end',{outcome,floor:R.map.floor,deepest,mode:R.mode});
-  processDay();save();marketDay();exitRaid();demoProgress();
+  processDay();paceTick();save();marketDay();exitRaid();demoProgress();
   sfx(outcome==='extract'?'level':'fail');
   const sec=(h,arr,col)=>arr.length?`<div class="rsec"><h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);

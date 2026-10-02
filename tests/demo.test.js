@@ -58,13 +58,13 @@ test('meeting Act I’s goals shows the end of the demo once', async () => {
       for (let i = 0; i < 2; i++) { const c = makeCreature(sp, 'bred', 30); S.creatures.push(c); S.sections[k].ids.push(c.id); }
     }
     S.pens = 10;
-    const goals = demoGoals().map(g => g.v >= g.n);
+    const goals = demoGoals().map(g => g.v >= g.n), detail = demoGoals();
     const shown = demoProgress(), text = $('#modalBox').innerText, again = demoProgress();
     closeModal();
-    return {before, goals, shown, text, again, done: S.demo.done};
+    return {before, goals, detail, shown, text, again, done: S.demo.done};
   });
   assert.equal(r.before, false);
-  assert.deepEqual(r.goals, [true, true, true]);
+  assert.deepEqual(r.goals, [true, true, true], JSON.stringify(r.detail));
   assert.equal(r.shown, true);
   assert.match(r.text, /You finished Act I/);
   assert.match(r.text, /carries into the full game/);
@@ -86,7 +86,7 @@ test('play stats are opt-in: nothing is recorded until the player says yes', asy
   assert.equal(r.asked, true, 'the demo asks once the tutorial is done');
   assert.deepEqual(r.on, ['raid_end', 'opt_in']);
   assert.match(r.id, /^[0-9a-f]{24}$/);
-  assert.deepEqual(r.keys, ['day', 'demo', 'ev', 'id', 'outcome', 'rank', 't'], 'no names or creatures in an event');
+  assert.deepEqual(r.keys, ['day', 'demo', 'ev', 'id', 'outcome', 'playtest', 'rank', 't'], 'no names or creatures in an event');
   assert.equal(r.after, null);
   assert.equal(r.cleared, 0);
   assert.equal(r.configured, false, 'no Firebase project in the repo, so nothing is sent');
