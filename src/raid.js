@@ -3,11 +3,11 @@ import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
 import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
 import {save} from './save.js';
-import {S,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
+import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
 import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
-import {lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
+import {goLandscape,lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
 import {marketDay} from './exchange/market.js';
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
@@ -213,6 +213,7 @@ function startRaid(mode,startFloor,seed){
   if(mode==='raid'&&(secTier('warroom')>=5||res('combat',4)))applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true);
   if(tut)tutEnter(0);
   save();
+  if(TOUCH)goLandscape();
   lockPage(true);$('#app').hidden=true;$('#raid').hidden=false;$('#actCol').hidden=!TOUCH;$('#hudKeys').hidden=TOUCH;
   $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
   $('#pause').hidden=true;$('#bossBar').hidden=true;$('#tutBox').hidden=!tut;$('#roomMod').hidden=true;
@@ -224,9 +225,14 @@ function applyOpts(){
   raid.style.setProperty('--tb',{S:'46px',M:'54px',L:'64px'}[o.btnSize]||'54px');
   raid.style.setProperty('--hud-a',o.hudAlpha);
   raid.classList.toggle('lefty',o.hand==='left');
+  // The touch buttons sit around the aim stick, so they move with its size.
+  const r=stickR(),{m,b}=stickInset(r);
+  raid.style.setProperty('--sr',r+'px');raid.style.setProperty('--sm',m+'px');raid.style.setProperty('--sb',b+'px');
 }
 const stickR=()=>({S:42,M:52,L:64}[S.opts.stickSize]||52);
-function stickBases(){const r=stickR(),m=r+26,b=r+44;const L={x:m,y:R.vh-b},Rr={x:R.vw-m,y:R.vh-b};return S.opts.hand==='left'?{move:Rr,aim:L}:{move:L,aim:Rr}}
+// Stick centres: m from the side edge, b from the bottom (kept low so the buttons fit above in landscape).
+const stickInset=r=>({m:r+28,b:r+26});
+function stickBases(){const r=stickR(),{m,b}=stickInset(r);const L={x:m,y:R.vh-b},Rr={x:R.vw-m,y:R.vh-b};return S.opts.hand==='left'?{move:Rr,aim:L}:{move:L,aim:Rr}}
 const B=k=>R.buffs[k]||0;
 const CU=k=>R.curses.has(k);
 function refreshSupport(){
@@ -263,9 +269,13 @@ const hpMods=()=>R.mods.hp*(CU('toll')?1.25:1);
 function spawnWild(pos,species,room,level){
   const f=R.map.floor;const lv=level||[0,ri(2,4),ri(4,6),ri(6,9),ri(10,14),ri(14,18),ri(18,24)][f];
   const stage=R.mode==='arena'?wildStageFor(species,lv,6):wildStageFor(species,lv,f);
-  const c=makeCreature(species,'wild',lv,{floor:f,stage});const st=stats(c);
-  const fire=WILD_FIRE[c.type];const hp=Math.round(st.hp*.7*hpMods());
+  const c=makeCreature(species,'wild',lv,{floor:f,stage});
   dexForm(species,stage,'seen');
+  return wildEnemy(pos,c,room);
+}
+// A wild creature as an enemy: one rolled for the room, or one of yours set loose.
+function wildEnemy(pos,c,room){
+  const st=stats(c),fire=WILD_FIRE[c.type],hp=Math.round(st.hp*.7*hpMods());
   R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:Math.round(14*hitboxMul(c)),hp,maxHp:hp,dmg:st.atk*.6*R.mods.dmg,spd:st.spd*.65,
     fire,every:fire.every/Math.max(.6,st.rate),cd:rnd(.8,1.8),melee:fire.kind==='charge'||c.type==='warden',bcol:SPECIES[c.species].col}));
   return R.enemies[R.enemies.length-1];
@@ -491,7 +501,7 @@ function doRoll(){
 }
 function cageReady(){const rad=capRadius();return!R.slot3&&R.enemies.some(e=>e.kind==='wild'&&e.hp>0&&(S.settings.instant||isWeak(e))&&dist(e,R.p)<rad+e.r)}
 function useCage(){
-  if(R.slot3){msg('Slot 3 is full. A caught creature needs a free slot 3.');return}
+  if(R.slot3){msg(`Slot 3 is full. Release a creature from the menu${TOUCH?' (⚙)':' (Esc)'} to make room.`);return}
   const kind=R.cages.gilded>0?'gilded':R.cages.basic>0?'basic':null;
   if(!kind){msg('No cages left.');return}
   const rad=capRadius();
@@ -502,6 +512,30 @@ function useCage(){
   if(R.mode!=='arena')R.cages[kind]--;
   R.fx.push({x:R.p.x,y:R.p.y,r:rad,t:.45,max:.45,col:'#ffcf4a'});
   tryCapture(weak[0],kind);
+}
+// Releasing sets a creature loose in the room you're in, to free a slot for a better catch. It turns
+// wild and attacks, and can be weakened and caught again. One from your roster that isn't caught
+// again is gone for good when the raid ends.
+function canRelease(slot){
+  if(!R||R.over||R.mode==='tutorial')return false;
+  const m=slot===2?R.slot3:R.comps[slot];if(!m)return false;
+  if(slot<2&&m.downed)return false;
+  if(R.mode==='arena'&&S.creatures.includes(m.c))return false;   // the arena gives your creatures back afterwards
+  return true;
+}
+function releaseCreature(slot){
+  if(!canRelease(slot)){msg('That creature can’t be released here.');return null}
+  const m=slot===2?R.slot3:R.comps[slot],c=m.c,owned=S.creatures.includes(c);
+  if(slot===2)R.slot3=null;else{c.hp=Math.round(m.hp/m.maxHp*stats(c).hp);R.comps[slot]=null}
+  if(owned){unplace(c);S.creatures=S.creatures.filter(x=>x!==c);addLog(`${c.name} was released in the Bloom on floor ${R.map.floor}.`)}
+  c.captureRaid=-1;
+  const room=roomAt(R.p.x,R.p.y,0)||R.cur;let pos={x:R.p.x,y:R.p.y};
+  for(let i=0;i<24;i++){const a=rnd(0,Math.PI*2),d=rnd(70,110),x=R.p.x+Math.cos(a)*d,y=R.p.y+Math.sin(a)*d;if(!hitsWall(x,y,18)&&roomAt(x,y,0)===room){pos={x,y};break}}
+  const e=wildEnemy(pos,c,room);e.released=true;e.cd=1.2;
+  refreshSupport();sfx('fail');
+  float(pos.x,pos.y-30,'Released!','#ff9bbf',true);
+  msg(`${c.name} runs wild and turns on you.${owned?' Catch it again or it’s gone for good.':''}`);
+  return e;
 }
 function swapSlot3(i){
   if(!R.slot3){msg('Slot 3 is empty.');return}
@@ -525,7 +559,7 @@ function tryCapture(e,kind){
   if(S.settings.instant||rand()<ch){
     const c=e.c;c.hp=stats(c).hp;c.captureRaid=R.id;c.bondXp=0;
     e.hp=0;e.captured=true;R.slot3={c};refreshSupport();R.caught++;R.kxp+=15;dexForm(c.species,c.stage||0,'caught');sfx('capture');
-    float(e.x,e.y-e.r-12,'Caught!','#ffcf4a',true);msg(`Caught ${c.name}, a ${sexSym(c.sex)} ${formName(c)}! ${TOUCH?'Tap ⇄1 or ⇄2':'Press 1 or 2'} to test it.`);
+    float(e.x,e.y-e.r-12,'Caught!','#ffcf4a',true);msg(`Caught ${c.name}, a ${sexSym(c.sex)} ${formName(c)}! ${TOUCH?'Open the menu (⚙) to swap it in':'Press 1 or 2'} to test it.`);
     R.fx.push({x:e.x,y:e.y,r:60,t:.5,max:.5,col:'#ffcf4a'});
     return true;
   }
@@ -1130,4 +1164,4 @@ function exitRaid(){
   setTimeout(()=>{if(R===done){R=null;if(ui.tab==='hideout')startHideoutMap()}},0);
 }
 
-export {TS,RW,RH,CW,CH,R,bagUsed,bagAdd,roleInParty,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};
+export {stickInset,wildEnemy,canRelease,releaseCreature,TS,RW,RH,CW,CH,R,bagUsed,bagAdd,roleInParty,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};

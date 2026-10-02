@@ -22,7 +22,8 @@ const stripCreature = c => { const {genome, genes, traits, looks, mom, dad, pure
 // as are Phase 4's hideout layout and pride fields (tests/pride.test.js).
 const P2 = ['mats', 'items', 'nextUid', 'prints', 'mastery', 'pens', 'expeditions', 'prod', 'keeperName', 'guns', 'loadout', 'market', 'marketSync', 'marketSeed',
   'layout', 'plots', 'decor', 'friends', 'legends', 'sigil', 'demo', 'telemetry', 'trophies'];
-const strip = s => ({...Object.fromEntries(Object.entries(s).filter(([k]) => !P2.includes(k))), v: 0, tree: undefined, settings: {...s.settings, genes: undefined},
+// Options added later (fullscreen) take their defaults, which are checked by the tests that use them.
+const strip = s => ({...Object.fromEntries(Object.entries(s).filter(([k]) => !P2.includes(k))), v: 0, tree: undefined, settings: {...s.settings, genes: undefined}, opts: {...s.opts, fullscreen: undefined},
   creatures: s.creatures.map(stripCreature), eggs: s.eggs.map(e => ({...e, child: stripCreature(e.child)}))});
 function assertSameSave(loaded, v5) {
   assert.equal(loaded.v, 10);

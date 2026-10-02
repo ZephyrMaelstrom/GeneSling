@@ -356,6 +356,7 @@ function viewSettings(){
     ${seg('btnSize',[['S','Small'],['M','Medium'],['L','Large']],'Button size')}
     ${seg('hand',[['right','Right-handed'],['left','Left-handed']],'Layout')}
     ${tg('autoFire','Fire while aiming','Pushing the aim stick also fires. Turn off to fire only past half tilt.')}
+    ${tg('fullscreen','Full screen in raids','On phones, raids go full screen and turn the screen sideways where the browser allows it.')}
   </section>
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
   <section class="card"><h2>Sound</h2>

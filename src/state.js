@@ -85,7 +85,7 @@ function grantBonusSlot(c){
   const t=GOOD_TRAITS.filter(x=>!c.traits.includes(x)),pick1=t[Math.floor(rand()*t.length)];
   G.t4=[pick1,pick1];return pick1;
 }
-function defaultOpts(){return{stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
+function defaultOpts(){return{fullscreen:true,stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
   S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
