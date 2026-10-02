@@ -1,0 +1,453 @@
+{
+  "FEES": {
+    "post": 0.02,
+    "tax": 0.05
+  },
+  "COMMODITIES": {
+    "ore": {
+      "ref": 10
+    },
+    "hide": {
+      "ref": 8
+    },
+    "dust": {
+      "ref": 10
+    },
+    "food": {
+      "ref": 4
+    },
+    "herbs": {
+      "ref": 6
+    },
+    "silk": {
+      "ref": 7
+    },
+    "ingot": {
+      "ref": 26
+    },
+    "cloth": {
+      "ref": 22
+    },
+    "glass": {
+      "ref": 24
+    },
+    "tonic": {
+      "ref": 30
+    },
+    "parts": {
+      "ref": 60
+    },
+    "core": {
+      "ref": 55
+    },
+    "frame": {
+      "ref": 55
+    },
+    "lens": {
+      "ref": 55
+    },
+    "cage": {
+      "ref": 15
+    },
+    "gilded": {
+      "ref": 45
+    }
+  },
+  "UNIQUES": {
+    "creature": {
+      "name": "Creatures",
+      "ref": 220
+    },
+    "egg": {
+      "name": "Eggs",
+      "ref": 120
+    },
+    "gun": {
+      "name": "Weapons",
+      "ref": 160
+    },
+    "print": {
+      "name": "Prints",
+      "ref": 140
+    }
+  },
+  "BASKET": [
+    "ore",
+    "hide",
+    "dust",
+    "food",
+    "herbs",
+    "silk",
+    "ingot",
+    "cloth",
+    "glass",
+    "tonic",
+    "parts",
+    "core",
+    "frame",
+    "lens",
+    "cage",
+    "gilded",
+    "creature",
+    "egg",
+    "gun",
+    "print"
+  ],
+  "BELIEF": {
+    "filled": 0.3,
+    "missed": 0.05,
+    "min": 0.4,
+    "max": 2.5,
+    "spread": 0.06
+  },
+  "UPKEEP": {
+    "rate": 0.03,
+    "flat": 2
+  },
+  "INVENTORY_DAYS": 4,
+  "QUARTERMASTER": {
+    "bid": 0.75,
+    "ask": 1.3,
+    "exportCap": 40,
+    "treasury": true
+  },
+  "ARCHETYPES": {
+    "raider": {
+      "name": "Raider",
+      "count": 20,
+      "coin": [
+        500,
+        1100
+      ],
+      "income": [
+        45,
+        85
+      ],
+      "produce": {
+        "ore": [
+          2,
+          6
+        ],
+        "hide": [
+          1,
+          4
+        ],
+        "dust": [
+          0,
+          3
+        ],
+        "food": [
+          1,
+          3
+        ]
+      },
+      "consume": {
+        "food": 1,
+        "cage": 1,
+        "tonic": 0.3
+      },
+      "list": {
+        "creature": 0.2,
+        "gun": 0.08,
+        "print": 0.03
+      },
+      "wantsUnique": {
+        "gun": 0.5,
+        "print": 0.2
+      },
+      "death": 0.05
+    },
+    "smith": {
+      "name": "Smith",
+      "count": 10,
+      "coin": [
+        900,
+        1700
+      ],
+      "income": [
+        10,
+        20
+      ],
+      "convert": [
+        [
+          "ore",
+          2,
+          "ingot",
+          1,
+          3
+        ],
+        [
+          "dust",
+          2,
+          "glass",
+          1,
+          1
+        ],
+        [
+          "hide",
+          1,
+          "cloth",
+          1,
+          1
+        ],
+        [
+          "ingot",
+          2,
+          "parts",
+          1,
+          1
+        ],
+        [
+          "ingot",
+          1,
+          "core",
+          1,
+          0.5
+        ],
+        [
+          "cloth",
+          2,
+          "frame",
+          1,
+          0.5
+        ],
+        [
+          "glass",
+          2,
+          "lens",
+          1,
+          0.5
+        ]
+      ],
+      "consume": {
+        "food": 1
+      },
+      "list": {
+        "gun": 0.15
+      },
+      "wantsUnique": {
+        "print": 1
+      }
+    },
+    "breeder": {
+      "name": "Breeder",
+      "count": 12,
+      "coin": [
+        1000,
+        2000
+      ],
+      "income": [
+        40,
+        80
+      ],
+      "produce": {
+        "herbs": [
+          1,
+          3
+        ],
+        "silk": [
+          1,
+          3
+        ]
+      },
+      "consume": {
+        "food": 2
+      },
+      "list": {
+        "egg": 0.3,
+        "creature": 0.2
+      },
+      "bounty": 0.08,
+      "wantsUnique": {
+        "creature": 0.8,
+        "egg": 0.4
+      }
+    },
+    "collector": {
+      "name": "Collector",
+      "count": 6,
+      "coin": [
+        2500,
+        5000
+      ],
+      "income": [
+        40,
+        70
+      ],
+      "consume": {},
+      "wantsUnique": {
+        "creature": 1.4
+      },
+      "bounty": 0.05,
+      "rareOnly": true
+    },
+    "speculator": {
+      "name": "Speculator",
+      "count": 8,
+      "coin": [
+        1500,
+        3000
+      ],
+      "income": [
+        10,
+        25
+      ],
+      "consume": {},
+      "edge": 0.1
+    },
+    "quartermaster": {
+      "name": "Quartermaster",
+      "count": 4,
+      "coin": [
+        4000,
+        6000
+      ],
+      "income": [
+        0,
+        0
+      ],
+      "produce": {
+        "food": [
+          12,
+          18
+        ],
+        "cage": [
+          4,
+          7
+        ],
+        "tonic": [
+          4,
+          7
+        ]
+      },
+      "consume": {}
+    }
+  },
+  "AUCTION": {
+    "days": [
+      2,
+      4
+    ],
+    "step": 0.05,
+    "buyoutOver": 1.6,
+    "startUnder": 0.6,
+    "playerDays": 3
+  },
+  "BOUNTY": {
+    "days": 7,
+    "minGrade": [
+      6,
+      9
+    ],
+    "reward": [
+      300,
+      2400
+    ],
+    "shineBonus": 1.8
+  },
+  "SHOCKS": {
+    "chance": 0.1,
+    "list": {
+      "cavein": {
+        "name": "Cave-in in the Ember Abyss",
+        "days": 7,
+        "produce": {
+          "ore": 0.3
+        },
+        "news": "A cave-in seals the Abyss ore seams. Ore will be scarce for a week."
+      },
+      "migration": {
+        "name": "Migration",
+        "days": 5,
+        "flood": "creature",
+        "news": "A {type} migration sweeps the Rootworks. Wild {type}s flood the auctions."
+      },
+      "estate": {
+        "name": "Estate sale",
+        "days": 1,
+        "dump": 6,
+        "news": "A Keeper’s estate is being sold off: rare prints, weapons and creatures at low starting bids."
+      },
+      "harvest": {
+        "name": "Bumper harvest",
+        "days": 5,
+        "produce": {
+          "food": 2,
+          "herbs": 1.5
+        },
+        "news": "The Gardens of the Rootworks overflow. Food and herbs are cheap this week."
+      }
+    }
+  },
+  "NEWS_MOVE": 0.15,
+  "HISTORY_DAYS": 120,
+  "TARGETS": {
+    "coinGrowthWeek": 0.03,
+    "basketBand": 0.15,
+    "actSpread": 0.1,
+    "fromDay": 30,
+    "days": 90
+  },
+  "KEEPER_XP": {
+    "craft": [
+      10,
+      15,
+      25,
+      40,
+      60
+    ],
+    "component": 4,
+    "hatch": 30,
+    "bounty": 60,
+    "sale": 2
+  },
+  "PLAYSTYLES": {
+    "raider": {
+      "name": "Pure raider",
+      "raidsPerDay": 6,
+      "craftsPerDay": 0,
+      "eggsPerDay": 0
+    },
+    "crafter": {
+      "name": "Pure crafter",
+      "raidsPerDay": 3,
+      "craftsPerDay": 18,
+      "eggsPerDay": 0
+    },
+    "breeder": {
+      "name": "Pure breeder",
+      "raidsPerDay": 3,
+      "craftsPerDay": 0,
+      "eggsPerDay": 7
+    }
+  },
+  "ACT3": {
+    "keeperRank": 25,
+    "cutFreeGen": 3,
+    "gearScore": 6
+  },
+  "AGENT": {
+    "raidXp": 200,
+    "raidCoin": 160,
+    "raidRaw": {
+      "ore": 5,
+      "hide": 3,
+      "dust": 2,
+      "food": 2
+    },
+    "craftXp": 33,
+    "hatchXp": 86,
+    "gearPerGun": 1,
+    "generationEggs": 8,
+    "craftInput": {
+      "ore": 4,
+      "hide": 1,
+      "dust": 1
+    },
+    "craftOutput": "parts",
+    "_note": "Each style plays about 72 minutes a day: a raid is about 12 minutes, a craft 2, a pairing and hatching 5. Keeper XP is time played, so XP per minute is the same for every activity.",
+    "bidOver": 2.5,
+    "lotsPerDay": 2
+  },
+  "WARMUP_DAYS": 40
+}

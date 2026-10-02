@@ -299,6 +299,21 @@ The Test Lab gets an Economy Sandbox. It can fast-forward the trader simulation 
 - The price of a standard basket of 20 goods stays within ±15% of its day-30 level.
 - A pure raider, a pure crafter and a pure breeder each reach Act III within 10% of the same day.
 
+### The Exchange as built (Phase 3)
+
+Decisions made while building, so the design and the code agree. Every number lives in `src/data/exchange.json`.
+
+- **Sixteen commodities** trade on order books: the raw, refined and component materials from Phase 2 plus basic and gilded cages. **Unique goods** (creatures, eggs, weapons, prints) sell by auction with an optional buyout.
+- **Buy now and sell now.** Besides resting limit orders (which fill when a trader meets your price, usually at the next hideout day), you can take the best prices on the book immediately. Basic supplies are always on offer because the Quartermaster keeps standing bids and asks around its reference prices.
+- **Fees.** Posting an order costs 2% of its value; every sale pays 5% tax. Traders repost every day, so their 2% is charged when an order fills rather than every time it's posted.
+- **Traders.** 60 traders: 20 raiders, 10 smiths, 12 breeders, 6 collectors, 8 speculators and 4 quartermasters. Each believes a price for every good, nudged toward each trade it makes and away from each trade it misses, and posts bids and asks from those beliefs. Production stops when stock piles up, so supply answers price. Traders pay upkeep of 3% of their coin plus 2 a day (their hideouts and living costs), which holds the coin supply steady. The Quartermaster trades with the settlements beyond the Rootworks: its treasury is topped up or skimmed each day, and it ships out what it buys, which is the market's outlet for surplus goods.
+- **Auctions** run as proxy bids: each round the highest valuation leads and pays just over the second. Traders value a lot from an appraisal (type rarity, grades, generation, shine, Pedigree, hybrid; weapon tier and quality) times their own belief about that category. Collectors only chase rare looks, Pedigrees, cut-free lines and hybrids.
+- **Bounties** are posted by breeders and collectors for a type with a minimum grade in one combat stat, sometimes also a shine. The reward is held by the poster until paid or expired (7 days).
+- **Shocks**: a cave-in (ore production −70% for 7 days), a migration (one type's wild creatures flood the auctions for 5 days), an estate sale (six rare lots at low starting bids) and a bumper harvest (food and herbs up). Shocks, big sales and moves of 15% or more in a day go to the news ticker.
+- **Keeper rank is time played.** Crafting (by quality), components, hatching eggs, filled orders and paid bounties now earn Keeper XP too, so a crafter or breeder ranks up alongside a raider.
+- **The market runs in a background worker** behind a small protocol (`init`, `advance`, `postOrder`, `cancelOrder`, `marketOrder`, `listAuction`, `bid`, `buyout`, `fulfilBounty`, `inject`). The player's coin or goods are escrowed before each request and come back through events. A server can implement the same protocol later.
+- **Economy Sandbox** (Test Lab): fast-forwards a copy of your market or a fresh one by 7, 30 or 90 days, with optional supply injected or removed. A model raider, crafter and breeder play the same 72 minutes a day alongside the traders. In 90-day runs across eight seeds, coin supply grew 1.2–1.7% a week after day 30, the basket stayed within 2–11% of its day-30 level, and all three reached Act III on day 29 or 30. Act III for the sandbox means Keeper rank 25, owning a Gen 3 cut-free creature and six weapons' worth of gear.
+
 ### Ready for real players
 
 The solo Exchange runs on the same interface a server would use. Going online means moving order matching into Firebase Cloud Functions and validating inventories on the server. Simulated traders stay on as market makers, and their share of trades shrinks as real players take over.

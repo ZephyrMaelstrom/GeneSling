@@ -9,6 +9,7 @@ import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
 import {lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
+import {marketDay} from './exchange/market.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -1104,7 +1105,7 @@ function endRaid(outcome,via){
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
-  processDay();save();exitRaid();
+  processDay();save();marketDay();exitRaid();
   sfx(outcome==='extract'?'level':'fail');
   const sec=(h,arr,col)=>arr.length?`<h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);

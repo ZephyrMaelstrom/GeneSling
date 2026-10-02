@@ -1,7 +1,7 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
 import {clamp,pick} from './util.js';
-import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
@@ -10,7 +10,7 @@ import {expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCo
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
-  exp:{dest:'',team:['','','']},lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:'',t3:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'t1'},sim:{}};
+  exp:{dest:'',team:['','','']},eco:{src:'fresh',seed:1,good:'ore',qty:0,injDay:1},mk:{tab:'goods',good:null,qty:1,price:'',cat:'all',listKind:'creature',listRef:''},lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:'',t3:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'t1'},sim:{}};
 
 const lineOf=c=>LINES[c.species];
 const formOf=c=>lineOf(c)[Math.min(c.stage||0,lineOf(c).length-1)];
@@ -92,7 +92,7 @@ function newGame(){
     loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
     settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},
-    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',opts:defaultOpts(),nextId:1};
+    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,opts:defaultOpts(),nextId:1};
   const a=makeCreature('pyrrox','bred',4,{name:'Cinder',sex:'M',pers:'brave',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
   const b=makeCreature('puffcap','bred',4,{name:'Morel',sex:'F',pers:'calm',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
   const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',pers:'curious',proven:true,bondXp:70,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
@@ -202,7 +202,7 @@ function expeditionEgg(team){
   const ch=makeCreature(sp,'bred',1,{genome:rollGenome(rand,'wild',5)});recordLineage(ch);
   S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#9fe8ff'],parents:'an expedition nest',hybrid:false});
 }
-function hatchEgg(e){const c=e.child;if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
+function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
   S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;

@@ -8,13 +8,15 @@
      - crafting with quality tiers and recipe mastery, repairs and single-use prints,
      - the roster cap, Roost expeditions and the death legacy.
    All numbers live in src/data/jobs.json. */
-import {JOBS as J,SECTIONS,TYPES,GUNS,WEAPON_COST} from './content.js';
-import {S,byId,whereIs,unplace,secTier,addLog,addBond,formName,canCraft,lineage} from './state.js';
+import {EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST} from './content.js';
+import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,secTier,unplace,whereIs} from './state.js';
 import {rand} from './rng.js';
 import {ancestors} from './genetics.js';
 
 /* ---------- materials ---------- */
 // coin, ore, food and shards keep their v5 homes on S; everything else lives in S.mats.
+// Keeper rank is time played, so crafting, hatching and trading earn Keeper XP too.
+const XP=EXCHANGE_DATA.KEEPER_XP;
 const TOP={coin:'coin',ore:'ore',food:'food',shard:'shards'};
 const amt=id=>TOP[id]?S[TOP[id]]||0:(S.mats[id]||0);
 function give(id,n){if(!n)return;if(TOP[id])S[TOP[id]]=(S[TOP[id]]||0)+n;else S.mats[id]=(S.mats[id]||0)+n}
@@ -149,8 +151,8 @@ function craft(r){
   if(R.needForge&&secTier('forge')<R.needForge)return null;
   if(!pay(recipeCost(r)))return null;
   S.mastery[r]=(S.mastery[r]||0)+1;
-  if(R.kind==='component'){for(const [m,n] of Object.entries(R.out))give(m,n);return`${matName(Object.keys(R.out)[0])}`}
-  const q=rollQuality(r,R.station);
+  if(R.kind==='component'){addKeeperXp(XP.component);for(const [m,n] of Object.entries(R.out))give(m,n);return`${matName(Object.keys(R.out)[0])}`}
+  const q=rollQuality(r,R.station);addKeeperXp(XP.craft[q]);
   if(R.cages){const n=R.cages+J.QUALITY.cageBonus[q];S.cages.basic+=n;return`${n} ${QN[q].toLowerCase()} cages`}
   if(R.gilded){S.cages.gilded+=R.gilded;return'a gilded cage'}
   if(R.satchel){const it=newItem('satchel','satchel',q,stamp(R.station));return itemName(it)}
@@ -163,7 +165,7 @@ function craftWeapon(id,printIdx){
   if(!pay(weaponCost(id)))return null;
   if(usePrint)S.prints.splice(printIdx,1);
   const key='gun:'+id;S.mastery[key]=(S.mastery[key]||0)+1;
-  const q=rollQuality(key,'forge',usePrint);
+  const q=rollQuality(key,'forge',usePrint);addKeeperXp(XP.craft[q]);
   return newItem('gun',id,q,{...stamp('forge'),src:usePrint?'print':'crafted'});
 }
 

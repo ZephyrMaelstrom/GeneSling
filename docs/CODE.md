@@ -32,6 +32,7 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/data/*.json` | All content tables: `species` (types, species, hybrids, evolution lines, names), `attacks` (attacks, abilities, elements, reactions, combos), `creatures` (personalities, bond, genes, traits), `items` (guns, weapon costs, run buffs), `dungeon` (curses, room modifiers, modes), `enemies`, `bosses`, `hideout` (sections, armory, Keeper perks, research), `story` (intro, journal, NPCs and their quests). |
 | `src/data/genetics.json` | Every genetics number: loci, expression weights, inheritance and mutation odds, wild gene ranges by floor, stat effects of Grit, Focus and size, look names, tool unlocks, and the simulator's defaults. |
 | `src/data/jobs.json` | Every Phase 2 number: materials, station recipes, work rates, fatigue, chemistry and clashes, quality tiers, mastery, recipes, durability, prints, the bag, tonics, raid roles per species, the roster cap, expeditions, the death legacy and the supply sandbox. |
+| `src/data/exchange.json` | Every Phase 3 number: commodities and reference prices, fees, the basket, trader archetypes, beliefs, upkeep, auctions, bounties, shocks, Keeper XP for non-raid work, the balance targets and the sandbox's model players. |
 | `src/content.js` | Loads the JSON tables and derives id lists and lookups (`SPECIES_IDS`, `LINES`, `comboFor`, `foePool`, ...). |
 | `src/rng.js` | The seeded random number generator. |
 | `src/util.js` | Small helpers: `$`, `rnd`, `ri`, `pick`, `clamp`, `shuffle`, and their visual-only `fx` versions. |
@@ -40,6 +41,12 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/jobs.js` | Jobs and production: materials (`amt`, `give`, `pay`), items (weapons and satchels with quality, durability and maker's mark), station output and fatigue, foremen, chemistry, quality rolls and crafting, repairs, prints, the roster cap, raid roles, expeditions and the death legacy. |
 | `src/workui.js` | The Workshop, station production panels, expeditions, the Memorial wall, the raid gear picker and the supply sandbox panel. |
 | `src/supply.js` | The supply sandbox: a week of the real daily cycle on a throwaway copy of the save, for raid-only and craft-heavy play. |
+| `src/exchange/engine.js` | The market: order books and matching, fees and tax, auctions, bounties, 60 traders, shocks, news, price history and the basket index. Pure: state in, events out. |
+| `src/exchange/protocol.js` | The one message handler the game talks to (`{op, args}` → `{res, view, state}`); the worker, the tests and a future server all run it. |
+| `src/exchange/worker.js`, `client.js` | The background worker and the promise-based client (worker by default, in-thread fallback). `build.mjs` inlines the worker's bundle into the page. |
+| `src/exchange/market.js` | Game glue: escrow, applying fills, refunds, auction results and bounty pay to the save, the daily market step and catching up missed days. |
+| `src/exchange/sandbox.js` | The Economy Sandbox and its three model players, and the three-target report. |
+| `src/exchangeui.js`, `src/chart.js` | The Exchange tab and the Lab's sandbox panel; reusable line charts with crosshair tooltips and table views. |
 | `src/save.js` | Versioned IndexedDB saves and migrations. |
 | `src/state.js` | Save state `S`, creature creation and `stats()`, breeding and lineage records (`S.tree`), evolution, research, codex (dex), rewards, NPC quests, hideout sections, Keeper rank, day processing, hatching, breeding, deaths and the memorial. |
 | `src/sprites.js` | Procedural canvas sprites: a body drawer per species and hybrid, evolution dressing, eggs, NPCs, and the DOM sprite painter. |
@@ -74,6 +81,12 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 - `stationReport(k)` is the single source for a station's numbers: what each creature adds, the foreman, chemistry, and what limits output. The day (`runStations`) and the screens both use it.
 - The raid bag lives in `R.bag` with `R.bagCap`; add loot through `bagAdd(mat, n)`, which refuses what won't fit.
 
+## The Exchange
+
+- The market's whole state is `S.market` (about 150 KB). `S.marketSync` is the last hideout day the market has seen; on load, any missed days are replayed.
+- Player actions go through `exchange/market.js`: it escrows coin or goods, sends the operation, and applies the returned events. Never change `S.market` directly.
+- The engine keeps its own random generator inside the state, so a saved market replays exactly, and the worker and in-thread transports give identical results (tested).
+
 ## Randomness
 
 - All gameplay randomness goes through `rand()` in `rng.js` (and the helpers `rnd`, `ri`, `pick`, `wpick`, `shuffle` built on it). Never call `Math.random()` in gameplay code.
@@ -84,7 +97,8 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 ## Saves
 
 - The save lives in IndexedDB (database `genesling`, store `saves`, key `main`) as `{v, saved, data}`, with `data` the JSON of `S`. If IndexedDB isn't available, it falls back to `localStorage` under `genesling-save`.
-- `SAVE_VERSION` in `save.js` is the current format (8). Version 7 added genomes: v5 genes and traits became matching allele pairs. Version 8 added materials, weapons as items (every owned weapon became a Fine item), pens, expeditions and fatigue. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
+- `SAVE_VERSION` in `save.js` is the current format (9). Version 9 added the Exchange's state.
+- Earlier formats: Version 7 added genomes: v5 genes and traits became matching allele pairs. Version 8 added materials, weapons as items (every owned weapon became a Fine item), pens, expeditions and fatigue. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
 - **Never reset saves.** Any change to the save format bumps `SAVE_VERSION` and adds a migration, plus a test that an old save loads.
 - A save that can't be read or migrated (corrupt, or from a newer build) is copied to a `backup-<time>` key before a new game starts.
 - On first load, the v5 save (`localStorage` key `genesling-save-v5`) is migrated into IndexedDB. The v5 copy stays where it is as a backup.
@@ -94,7 +108,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 
 - Tests drive the game through its globals (`startRaid`, `hurtEnemy`, `useCage`, `act(...)`, `S`, `R`) and fail on any page error.
 - `tests/helpers.js` serves the repo over HTTP and gives each `openGame()` a fresh browser context with empty storage. Await `window.gameReady` before touching the game (the helper does).
-- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace; `jobs.test.js` checks stations, fatigue, foremen, chemistry, upkeep, the roster cap, crafting and quality, durability, the bag, raid roles, tonics, expeditions, the death legacy and the supply sandbox; `touch.test.js` checks the joysticks never move the page.
+- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace; `jobs.test.js` checks stations, fatigue, foremen, chemistry, upkeep, the roster cap, crafting and quality, durability, the bag, raid roles, tonics, expeditions, the death legacy and the supply sandbox; `touch.test.js` checks the joysticks never move the page; `exchange.test.js` checks buying and selling, limit orders, auctions, bounties, refunds, worker/in-thread parity, catching up missed days, Keeper XP from other work, and the 90-day Economy Sandbox targets.
 
 ## What v5 has
 

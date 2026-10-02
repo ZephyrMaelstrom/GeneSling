@@ -13,7 +13,7 @@
 import {S,defaultOpts} from './state.js';
 import {genomeFrom,express} from './genetics.js';
 
-const SAVE_VERSION=8;
+const SAVE_VERSION=9;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const FALLBACK_KEY='genesling-save';     // used only when IndexedDB is unavailable
 const DB_NAME='genesling',STORE='saves',SLOT='main';
@@ -50,6 +50,8 @@ const MIGRATIONS={
     (d.creatures||[]).forEach(c=>{c.fat=c.fat||0});(d.eggs||[]).forEach(e=>{e.child.fat=0});
     return d;
   },
+  // v9 (The Exchange): the market's state lives in the save. It's created on first load.
+  8:d=>{d.market=d.market??null;d.marketSync=d.marketSync??d.day;return d},
 };
 
 function migrate(d){
