@@ -39,7 +39,7 @@ Run lint and the tests after changing anything in `src/`. CI runs both on every 
 - In breeding, the mother sets species and type; the father weighs stats more heavily. Rare cross-type pairings make dual-type hybrids.
 - Creature types give both combat effects and hideout perks; rarer types come rarely from raids.
 - Art: simple 2D, colorful retro fantasy. Sprites are drawn procedurally on canvas, no image assets so far.
-- Touch-first: fixed on-screen joysticks, playable on a phone. Check phone layouts at about 390 px wide.
+- Touch-first: fixed on-screen joysticks, playable on a phone. For now the layout targets an Android S23 held sideways (about 780 × 360): move stick bottom left, attack stick bottom right, skills 1 and 2 above it, combo above those, a large Catch button left of it, minimap and the ⚙ menu (backpack, creatures, weapons, settings) top right. Check layouts at 780 × 360.
 - No premium currency, loot boxes or paid timers, ever.
 - Hosting: GitHub Pages plus Firebase (same setup as Conner's APlay app).
 - Every feature must serve one of the six pillars in `docs/DESIGN.md`.

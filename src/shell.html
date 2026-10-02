@@ -35,6 +35,21 @@ header.top{padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center
 .pill small{color:var(--muted);font-family:var(--body);font-size:.78rem}
 nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:8px 8px;padding-inline:2px;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
+/* Phones held sideways (the S23 is about 780 × 360): one compact pinned bar of brand, resources and tabs,
+   so the screen below is for the game. Notch-side insets are respected. */
+@media (orientation:landscape) and (max-height:500px){
+  .app{padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px));padding-bottom:24px}
+  .topbar{margin-inline:calc(-1 * max(12px,env(safe-area-inset-left,0px))) calc(-1 * max(12px,env(safe-area-inset-right,0px)));padding-inline:max(12px,env(safe-area-inset-left,0px)) max(12px,env(safe-area-inset-right,0px))}
+  header.top{flex-wrap:nowrap;padding-block:5px 4px;gap:10px}
+  .brand{font-size:1.05rem;text-shadow:1px 1px 0 var(--rose),2px 2px 0 var(--deep);flex:none}
+  .res{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:4px;padding:2px}
+  .res::-webkit-scrollbar{display:none}
+  .pill{font-size:.74rem;padding:1px 7px}.pill small{font-size:.66rem}
+  nav.tabs{padding-block:4px 5px;gap:4px}
+  .tab{padding:4px 10px;font-size:.82rem}
+  main{padding-top:8px}
+  html #modal .box{max-height:92vh;padding:12px}
+}
 .tab{font-family:var(--display);background:var(--panel);border:0;box-shadow:0 0 0 2px var(--line);padding:7px 14px;cursor:pointer;white-space:nowrap;color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--gold);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
 .tab:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
@@ -236,7 +251,62 @@ html.raiding,html.raiding body{position:fixed;inset:0;width:100%;height:100%;ove
 #arenaPanel .ap{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:flex-start}
 #arenaPanel .lab{font-family:var(--display);font-size:.78rem;color:var(--muted);text-transform:uppercase}
 #arenaPanel .row{gap:4px}
-#actCol{position:absolute;right:10px;top:54%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;align-items:center}
+/* Touch controls, laid out for a phone held sideways: move stick bottom left, aim stick bottom right,
+   skills 1 and 2 above the aim stick, the combo above them, a large Catch button left of the aim stick
+   and Roll above it. Positions follow the stick (--sm from the side, --sb from the bottom, --sr radius). */
+#actCol{position:absolute;inset:0;pointer-events:none;--sm:80px;--sb:78px;--sr:52px}
+#actCol .tb{position:absolute;pointer-events:auto;padding:0}
+#tQ,#tE{bottom:calc(var(--sb) + var(--sr) + 10px)}
+#tQ{right:calc(var(--sm) + 5px)}
+#tE{right:calc(var(--sm) - var(--tb,54px) - 5px)}
+#tCombo{right:calc(var(--sm) - var(--tb,54px) / 2);bottom:calc(var(--sb) + var(--sr) + var(--tb,54px) + 18px)}
+#raid #tCage{width:calc(var(--tb,54px) * 1.4);height:calc(var(--tb,54px) * 1.4);right:calc(var(--sm) + var(--sr) + 16px);bottom:calc(var(--sb) - var(--tb,54px) * .7)}
+#raid #tRoll{width:calc(var(--tb,54px) * .85);height:calc(var(--tb,54px) * .85);right:calc(var(--sm) + var(--sr) + 30px);bottom:calc(var(--sb) + var(--tb,54px) * .7 + 8px)}
+#raid.lefty #tQ{right:auto;left:calc(var(--sm) - var(--tb,54px) - 5px)}
+#raid.lefty #tE{right:auto;left:calc(var(--sm) + 5px)}
+#raid.lefty #tCombo{right:auto;left:calc(var(--sm) - var(--tb,54px) / 2)}
+#raid.lefty #tCage{right:auto;left:calc(var(--sm) + var(--sr) + 16px)}
+#raid.lefty #tRoll{right:auto;left:calc(var(--sm) + var(--sr) + 30px)}
+.tb.skill{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.05;overflow:hidden;
+  background:conic-gradient(rgba(14,10,31,.75) calc(var(--cd,0) * 360deg),rgba(45,36,87,.9) 0)}
+.tb.skill b{font-size:1rem;color:var(--gold)}
+.tb.skill span{font-size:.56rem;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb.skill.off{opacity:.45}
+.tb.cage{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.9rem}
+.tb.cage span{font-size:.62rem}
+.tb.cage.off{opacity:.5;background:rgba(45,36,87,.75);box-shadow:0 0 0 2px var(--line);color:var(--muted)}
+.tb.roll{font-size:.72rem}
+#rotateHint{display:none}
+@media (orientation:portrait) and (max-width:700px){#raid:not([hidden]) #rotateHint{display:block;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 8px);background:rgba(14,10,31,.85);box-shadow:0 0 0 2px var(--line);padding:4px 10px;font-family:var(--display);font-size:.75rem;color:var(--muted);pointer-events:none;white-space:nowrap}}
+/* Phones held sideways: a compact HUD so the left column clears the move stick */
+@media (orientation:landscape) and (max-height:500px){
+  .lcol{width:min(200px,30vw);gap:3px;top:calc(env(safe-area-inset-top,0px) + 6px);left:calc(env(safe-area-inset-left,0px) + 6px)}
+  .hud-top{padding:3px 6px;gap:2px}
+  .hud-line{font-size:.7rem}
+  .hud-hp{height:11px}.hud-hp span{font-size:.6rem;line-height:11px}
+  #hudGun{font-size:.64rem}
+  .pc{padding:2px 6px;font-size:.66rem;gap:1px 5px}
+  .pc .cd{font-size:.6rem}
+  .pc .mini-bar{height:3px}
+  #mini{width:72px;height:72px}
+  .hud-tr{top:calc(env(safe-area-inset-top,0px) + 6px);right:calc(env(safe-area-inset-right,0px) + 6px)}
+  .ccol{top:22%}
+  #raid{--tb:50px}
+  #pause .box{width:min(620px,100%);max-height:94vh;padding:12px}
+}
+.hud-tr{flex-direction:row;align-items:flex-start}
+#btnPause{font-size:1.2rem;line-height:1;padding:6px 10px}
+/* The raid menu: backpack, creatures, weapons, settings */
+.mtabs{display:flex;gap:4px;flex-wrap:wrap}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.mitem{background:var(--deep);box-shadow:0 0 0 2px var(--line);padding:6px 8px;display:flex;justify-content:space-between;gap:6px;font-family:var(--display);font-size:.85rem}
+.mitem b{color:var(--gold)}
+.mitem.empty{color:var(--muted)}
+.mcre{background:var(--deep);box-shadow:0 0 0 2px var(--line);padding:8px;display:flex;flex-direction:column;gap:5px}
+.mcre.caught{box-shadow:0 0 0 2px var(--gold)}
+.mcre.down{box-shadow:0 0 0 2px var(--rose)}
+.mcre .row{gap:6px}
+.bagbar{height:8px;background:#222;position:relative}.bagbar i{position:absolute;inset:0 auto 0 0;background:var(--mint)}
 .tb{width:54px;height:54px;border-radius:50%;border:0;background:rgba(45,36,87,.88);box-shadow:0 0 0 2px var(--line);font-family:var(--display);font-size:.78rem;color:var(--ink);touch-action:none}
 .tb.cage{background:rgba(255,207,74,.25);box-shadow:0 0 0 2px var(--gold);color:var(--gold)}
 .tb.big{background:rgba(255,207,74,.85);color:var(--deep)}
@@ -391,6 +461,7 @@ input[type=range]{accent-color:var(--gold);width:100%}
 #tutBox b{color:var(--mint);font-weight:600}
 #roomMod{font-family:var(--display);font-size:.74rem}
 #raid .tb.combo{background:rgba(255,207,74,.85);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
+#actCol .tb.combo{display:flex;align-items:center;justify-content:center;padding:0;gap:0}
 @media (max-width:700px){#bossBar{top:calc(env(safe-area-inset-top,0px) + 262px)!important}.ccol{top:calc(env(safe-area-inset-top,0px) + 272px)!important}.ccol.low{top:calc(env(safe-area-inset-top,0px) + 306px)!important}}
 </style>
 
@@ -417,15 +488,17 @@ input[type=range]{accent-color:var(--gold);width:100%}
     <div id="roomMod" hidden></div>
   </div>
   <div class="party" id="hudParty"></div></div>
-  <div class="hud-tr"><canvas id="mini" width="240" height="240"></canvas><button class="pbtn" id="btnPause" aria-label="Pause">II</button></div>
+  <div class="hud-tr"><button class="pbtn" id="btnPause" aria-label="Menu: backpack, creatures, weapons and settings">⚙</button><canvas id="mini" width="240" height="240"></canvas></div>
   <div id="bossBar" hidden><span id="bossName">Boss</span><div class="bb"><i id="bossHp"></i></div></div>
   <div class="ccol"><div id="tutBox" hidden></div><div class="hud" id="hudMsg" hidden></div><button id="hudPrompt" data-t="use" hidden></button></div>
   <div id="actCol" hidden>
     <button class="tb combo" data-t="combo" id="tCombo" hidden>Combo</button>
-    <button class="tb cage" data-t="cage" id="tCage" hidden>Cage</button>
-    <button class="tb" data-t="gun" id="tGun" hidden>Swap</button>
-    <button class="tb big" data-t="roll">Roll</button>
+    <button class="tb skill" data-t="q" id="tQ" aria-label="Skill 1"><b>1</b><span></span></button>
+    <button class="tb skill" data-t="e" id="tE" aria-label="Skill 2"><b>2</b><span></span></button>
+    <button class="tb cage" data-t="cage" id="tCage" aria-label="Catch"><b>Catch</b><span></span></button>
+    <button class="tb roll" data-t="roll" id="tRoll">Roll</button>
   </div>
+  <div id="rotateHint" aria-hidden="true">Turn your phone sideways to play</div>
   <div class="hud hud-keys" id="hudKeys">Move <kbd>WASD</kbd> · Attack <kbd>Mouse</kbd> · Roll <kbd>Space</kbd> · Abilities <kbd>Q</kbd> <kbd>E</kbd> or click a companion · Swap slot 3 <kbd>1</kbd> <kbd>2</kbd> · Combo <kbd>C</kbd> · Weapon <kbd>R</kbd> · Cage <kbd>F</kbd> · Use <kbd>G</kbd> · Pause <kbd>Esc</kbd></div>
   <div id="arenaPanel" hidden></div>
   <div id="pause" hidden><div class="box" id="pauseBox"></div></div>

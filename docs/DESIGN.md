@@ -70,6 +70,16 @@ One loop turns everything: raid, extract, breed, post, produce, trade, and back 
 4. **Hideout (3 to 5 min).** The day advances. Workers produce, eggs incubate, creatures heal. Scan new catches' genomes, pair breeders, post workers and craft.
 5. **Trade (1 to 2 min).** Sell surplus, fill buy orders for what your next plan needs, and post creatures or eggs with good genes.
 
+### Raid controls on a phone
+
+For now the game is laid out for an Android phone held sideways (a Galaxy S23 is about 780 × 360). On phones a raid goes full screen and turns the screen sideways where the browser allows it.
+
+- **Move** with the stick at the bottom left and **attack** with the stick at the bottom right.
+- **Skill 1 and Skill 2** (the two combat companions' abilities) sit above the attack stick, with the **combo** above them when it's ready. A large **Catch** button sits left of the attack stick, with **Roll** above it.
+- The **minimap** and the **menu** (⚙) sit at the top right. Opening the menu pauses the raid. It holds the **backpack** (everything carried, bag slots, prints, buffs and pacts), the **creatures** (both combat slots and slot 3: swap slot 3 into combat, or release), the **weapons** (both slots with quality and durability, and switching), and settings (abandon, sound, full screen).
+- **Releasing a creature** frees its slot for a better catch. It turns wild in the same room and attacks you, and you can weaken and catch it again. A creature from your roster that isn't caught again before the raid ends is gone for good, so the menu warns first. Nothing can be released in the tutorial, and in the arena only creatures caught there.
+- Left-handed mode mirrors the controls. Stick and button sizes are in Settings.
+
 ### Why the loop holds
 
 - **The Bloom is the only gene pool.** New alleles, mutations and rare traits only enter the game through wild catches. Even a master breeder keeps raiding.

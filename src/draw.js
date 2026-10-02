@@ -2,11 +2,12 @@
 import {$,TOUCH,clamp,dist,esc,fxRnd} from './util.js';
 import {ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} from './content.js';
 import {loadSave,migrate,save} from './save.js';
-import {S,formName,newGame,secTier,setS,sexSym} from './state.js';
+import {S,formName,newGame,secTier,setS,sexSym,stats,supportText} from './state.js';
+import {itemName} from './jobs.js';
 import {OL,drawCreature} from './sprites.js';
-import {sfx} from './audio.js';
-import {openIntro,renderAll} from './ui.js';
-import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
+import {auVol,sfx} from './audio.js';
+import {openIntro,renderAll,weaponLine} from './ui.js';
+import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,releaseCreature,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 import {startMarket} from './exchange/market.js';
 import {sessionStart} from './demo.js';
 let ctx,cv,mini,mctx;
@@ -15,6 +16,17 @@ let pageScroll=0;
 function lockPage(on){
   const h=document.documentElement;if(on===h.classList.contains('raiding'))return;
   if(on){pageScroll=window.scrollY;h.classList.add('raiding')}else{h.classList.remove('raiding');window.scrollTo(0,pageScroll)}
+}
+// On phones a raid goes full screen and turns the screen sideways where the browser allows it
+// (Chrome on Android does, from a tap). Anywhere it doesn't, nothing happens.
+function goLandscape(){
+  if(S.opts.fullscreen===false)return;
+  const el=document.documentElement,o=screen.orientation;
+  const lock=()=>{try{if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(e){}};
+  try{
+    if(document.fullscreenElement){lock();return}
+    if(el.requestFullscreen)el.requestFullscreen({navigationUI:'hide'}).then(lock).catch(()=>{});
+  }catch(e){}
 }
 // Belt and braces for browsers that still scroll a pinned page: swallow every touch drag mid-raid.
 document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
@@ -241,11 +253,18 @@ function updHud(){
   let h=R.comps.map((m,i)=>{const k=i?'E':'Q';if(!m)return`<div class="pc"><span class="key">${k}</span><span class="nm" style="color:var(--muted)">Empty</span><span></span></div>`;
     const max=m.abilMax||1;
     return`<button class="pc ${m.downed?'down':''}" data-t="${i?'e':'q'}" aria-label="Use ${esc(m.c.name)}'s ability"><span class="key">${k}</span><span class="nm">${esc(m.c.name)} <small>Lv${m.c.level}</small></span><span class="cd">${m.downed?'DOWN':m.abil>0?Math.ceil(m.abil)+'s':ABILITIES[m.st.abilId].name}</span><div class="mini-bar"><i style="width:${m.hp/m.maxHp*100}%"></i></div><div class="cdb"><i style="width:${m.abil>0?(1-m.abil/max)*100:100}%"></i></div></button>`}).join('');
-  if(R.comps[0]&&R.comps[1]){const cb=comboFor(R.comps[0].c.type,R.comps[1].c.type),rdy=comboReady();h+=`<button class="pc pcombo ${rdy?'ready':''}" data-t="combo" aria-label="Use combo ${cb.name}"><span class="key">C</span><span class="nm">${cb.name}</span><span class="cd">${rdy?'ready':Math.ceil(R.combo.cd)+'s'}</span><div class="cdb"><i style="width:${(1-R.combo.cd/R.combo.max)*100}%;background:var(--gold)"></i></div></button>`}
-  if(R.slot3){const c=R.slot3.c,caged=c.captureRaid===R.id;h+=`<div class="pc s3 ${caged?'caged':''}"><span class="key">3</span><span class="nm">${esc(c.name)} · ${caged?'caught':'support'}</span><span class="sw"><button data-t="s1" aria-label="Swap with slot 1">⇄1</button><button data-t="s2" aria-label="Swap with slot 2">⇄2</button></span></div>`}
+  if(!TOUCH&&R.comps[0]&&R.comps[1]){const cb=comboFor(R.comps[0].c.type,R.comps[1].c.type),rdy=comboReady();h+=`<button class="pc pcombo ${rdy?'ready':''}" data-t="combo" aria-label="Use combo ${cb.name}"><span class="key">C</span><span class="nm">${cb.name}</span><span class="cd">${rdy?'ready':Math.ceil(R.combo.cd)+'s'}</span><div class="cdb"><i style="width:${(1-R.combo.cd/R.combo.max)*100}%;background:var(--gold)"></i></div></button>`}
+  if(R.slot3){const c=R.slot3.c,caged=c.captureRaid===R.id;h+=`<div class="pc s3 ${caged?'caged':''}"><span class="key">3</span><span class="nm">${esc(c.name)} · ${caged?'caught':'support'}</span>${TOUCH?'<span></span>':`<span class="sw"><button data-t="s1" aria-label="Swap with slot 1">⇄1</button><button data-t="s2" aria-label="Swap with slot 2">⇄2</button></span>`}</div>`}
   else h+=`<div class="pc s3"><span class="key">3</span><span class="nm" style="color:var(--muted)">Free for a catch</span><span></span></div>`;
   $('#hudParty').innerHTML=h;
-  if(TOUCH){$('#tCage').hidden=!cageReady();$('#tGun').hidden=!(R.guns[0]&&R.guns[1]);$('#tCombo').hidden=!comboReady()}
+  if(TOUCH){
+    // Skill buttons show the ability (or its cooldown, filling as a clock); Catch shows the cages left.
+    R.comps.forEach((m,i)=>{const b=$(i?'#tE':'#tQ'),ok=m&&!m.downed;b.classList.toggle('off',!ok||m.abil>0);
+      b.style.setProperty('--cd',ok&&m.abil>0?Math.min(1,m.abil/(m.abilMax||1)):0);
+      b.querySelector('span').textContent=!m?'Empty':m.downed?'Down':m.abil>0?Math.ceil(m.abil)+'s':ABILITIES[m.st.abilId].name});
+    const cg=$('#tCage');cg.classList.toggle('off',!cageReady());cg.querySelector('span').textContent=R.mode==='arena'?'∞':`${R.cages.basic+R.cages.gilded} left`;
+    $('#tCombo').hidden=!comboReady();
+  }
   const bb=R.boss&&R.boss.hp>0;$('#bossBar').hidden=!bb;if(bb)$('#bossHp').style.width=clamp(R.boss.hp/R.boss.maxHp,0,1)*100+'%';
   $('.ccol').classList.toggle('low',!!bb);
   const rm=R.cur&&R.cur.mod&&R.cur.visited?ROOM_MODS[R.cur.mod]:null;const rmEl=$('#roomMod');if(rm){rmEl.hidden=false;rmEl.textContent=rm.name;rmEl.style.color=rm.col}else rmEl.hidden=true;
@@ -265,21 +284,66 @@ function loop(ts){
   raf=requestAnimationFrame(loop);
 }
 function showOverlay(html){R.paused=true;R.firing=false;keys.clear();touch.move=touch.aim=null;$('#pause').hidden=false;$('#pauseBox').innerHTML=html}
+/* ---------- the raid menu (⚙, or Esc): backpack, creatures, weapons and settings; the raid waits while it's open ---------- */
+const MENU_TABS=[['bag','Backpack'],['party','Creatures'],['gear','Weapons'],['options','Settings']];
 function setPause(on){
-  if(!R)return;R.paused=on;$('#pause').hidden=!on;if(!on){R.last=0;return}
-  const safe=R.mode==='arena'||R.mode==='tutorial';
+  if(!R)return;R.paused=on;$('#pause').hidden=!on;if(!on){R.last=0;R.releaseArm=null;R.abandonArm=false;return}
+  showOverlay(menuHtml());
+}
+function menuHtml(){
+  const t=R.menuTab||'bag',where=R.mode==='arena'?'Arena':R.mode==='tutorial'?'Tutorial':`Floor ${R.map.floor}`;
+  return`<div class="row" style="justify-content:space-between"><h2>${where} · paused</h2><button class="btn primary" data-p="resume">Resume</button></div>
+    <div class="mtabs" role="tablist">${MENU_TABS.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${t===k}" data-p="mtab" data-k="${k}">${l}</button>`).join('')}</div>
+    ${({bag:menuBag,party:menuParty,gear:menuGear,options:menuOptions})[t]()}`;
+}
+function menuBag(){
+  const b=R.bag,used=bagUsed(),it=(label,v)=>`<div class="mitem ${v?'':'empty'}"><span>${label}</span><b>${v}</b></div>`;
   const bl=Object.entries(R.buffs).map(([k,n])=>`<li><b>${BUFFS[k].name}${n>1?' ×'+n:''}</b> · ${BUFFS[k].desc}</li>`).join('')+[...R.curses].map(k=>`<li style="color:var(--rose)"><b>${CURSES[k].name}</b> · ${CURSES[k].desc}</li>`).join('');
-  showOverlay(`<h2>Paused</h2>
-    <p class="hint">${safe?'Leaving restores your creatures. Nothing is lost.':'Abandoning counts as death: everything you brought is lost.'}</p>
-    <button class="btn primary" data-p="resume">Resume</button>
-    ${safe?`<button class="btn" data-p="leave">${R.mode==='tutorial'?'Leave the tutorial':'Leave the arena'}</button>`:`<button class="btn danger" data-p="abandon">${R.abandonArm?'Confirm: abandon and lose loadout':'Abandon raid'}</button>`}
-    ${safe?'':`<p class="status">Bag ${bagUsed()}/${R.bagCap} slots: ${R.bag.coin} coin · ${R.bag.ore} ore · ${R.bag.food} food · ${R.bag.hide} hide · ${R.bag.dust} crystal dust${R.prints.length?' · '+R.prints.length+' print'+(R.prints.length>1?'s':''):''} · ${R.cages.basic+R.cages.gilded} cages · ${R.tonics} tonics · Keeper XP so far ${R.kxp}</p>`}
+  return`<p class="status">Bag ${used}/${R.bagCap} slots${R.satchel?' with your satchel':''}. Everything here is lost if you fall.</p><div class="bagbar"><i style="width:${Math.min(100,used/Math.max(1,R.bagCap)*100)}%"></i></div>
+    <div class="mgrid">${it('Coin',b.coin)}${it('Ore',b.ore)}${it('Food',b.food)}${it('Hide',b.hide)}${it('Crystal dust',b.dust)}${it('Tonics',R.tonics)}${it('Cages',R.mode==='arena'?'∞':R.cages.basic)}${it('Gilded cages',R.cages.gilded)}</div>
+    ${R.prints.length?`<h3>Prints</h3><ul class="plain">${R.prints.map(id=>`<li>${GUNS[id].name}</li>`).join('')}</ul>`:''}
     ${bl?`<h3>Buffs and pacts</h3><ul class="plain">${bl}</ul>`:''}
-    <p class="status">${TOUCH?'Change stick and button layout in the Settings tab.':'WASD move · Mouse aim and attack · Space roll · Q/E abilities · C combo · 1/2 swap slot 3 · R switch weapon · F cage · G use'}</p>`);
+    <p class="status">${R.caught||0} caught this raid · Keeper XP so far ${R.kxp}</p>`;
+}
+function menuParty(){
+  const card=slot=>{
+    const m=slot===2?R.slot3:R.comps[slot],label=slot===2?'Slot 3':`Combat slot ${slot+1}`;
+    if(!m)return`<div class="mcre"><b>${label}</b><span class="status">${slot===2?'Free for a catch':'Empty'}</span></div>`;
+    const c=m.c,caught=c.captureRaid===R.id,down=slot<2&&m.downed;
+    const hp=slot===2?c.hp/stats(c).hp:m.hp/m.maxHp,armed=R.releaseArm===slot;
+    const what=slot===2?(caught?'Caught this raid':`Support: ${supportText(c)}`):`Skill ${slot+1}: ${ABILITIES[m.st.abilId].name}${m.abil>0?` (${Math.ceil(m.abil)}s)`:''}`;
+    const btns=(slot===2?`<button class="btn small" data-p="swap" data-i="0">To combat slot 1</button><button class="btn small" data-p="swap" data-i="1">To combat slot 2</button>`:'')
+      +(canRelease(slot)?`<button class="btn small ${armed?'danger':''}" data-p="release" data-i="${slot}">${armed?`Confirm: release ${esc(c.name)}`:'Release'}</button>`:'');
+    return`<div class="mcre ${caught?'caught':''} ${down?'down':''}"><div><b>${label}: ${esc(c.name)}</b> <small class="status">${esc(formName(c))} · Lv ${c.level} · ${TYPES[c.type].name}${c.type2?'/'+TYPES[c.type2].name:''}${down?' · down':''}</small></div>
+      <div class="bagbar"><i style="width:${clamp(hp,0,1)*100}%;background:var(--rose)"></i></div><span class="status">${what}</span>
+      ${armed&&S.creatures.includes(c)?`<p class="status" style="color:var(--rose)">${esc(c.name)} is from your roster. Released, it leaves for good unless you catch it again before the raid ends.</p>`:''}
+      ${btns?`<div class="row">${btns}</div>`:''}</div>`;
+  };
+  return`<p class="hint">Slot 3 holds a catch or a support creature, and can swap into combat. To make room for a stronger catch, release one: it turns wild in this room and attacks you, and you can weaken and catch it again.</p>
+    ${[0,1,2].map(card).join('')}`;
+}
+function menuGear(){
+  const rows=[0,1].map(i=>{const id=R.guns[i];if(!id)return`<div class="mcre"><b>Weapon ${i+1}</b><span class="status">Empty</span></div>`;
+    const it=R.gunItem[i];
+    return`<div class="mcre ${i===R.active?'caught':''}"><div><b>${it?esc(itemName(it)):GUNS[id].name}</b> <small class="status">${i===R.active?'in hand':'on your back'}${it?` · ${it.dur}/${it.max} durability`:id==='pistol'?' · never breaks':' · found this raid'}</small></div><span class="status">${weaponLine(GUNS[id])}</span></div>`}).join('');
+  return`${rows}${R.guns[0]&&R.guns[1]?'<div class="row"><button class="btn" data-p="switch">Switch weapon</button></div>':''}<p class="status">Weapons in your hands come home if you extract. Pick up finds by walking over them.</p>`;
+}
+function menuOptions(){
+  const safe=R.mode==='arena'||R.mode==='tutorial';
+  return`<p class="hint">${safe?'Leaving restores your creatures. Nothing is lost.':'Abandoning counts as death: everything you brought is lost.'}</p>
+    <div class="row">${safe?`<button class="btn" data-p="leave">${R.mode==='tutorial'?'Leave the tutorial':'Leave the arena'}</button>`:`<button class="btn danger" data-p="abandon">${R.abandonArm?'Confirm: abandon and lose loadout':'Abandon raid'}</button>`}
+    <button class="btn" data-p="mute">${S.opts.mute?'Sound on':'Mute'}</button>${TOUCH&&document.fullscreenEnabled?`<button class="btn" data-p="fullscreen">${document.fullscreenElement?'Leave full screen':'Full screen'}</button>`:''}</div>
+    <p class="status">${TOUCH?'Stick and button sizes and left-handed layout are in the hideout’s Settings tab.':'WASD move · Mouse aim and attack · Space roll · Q/E skills · C combo · 1/2 swap slot 3 · R switch weapon · F catch · G use · Esc menu'}</p>`;
 }
 $('#pauseBox').addEventListener('click',e=>{
   const b=e.target.closest('[data-p]');if(!b||!R||b.disabled)return;const k=b.dataset.p;sfx('ui');
   if(k==='resume'){R.abandonArm=false;setPause(false)}
+  if(k==='mtab'){R.menuTab=b.dataset.k;R.releaseArm=null;setPause(true)}
+  if(k==='swap'){swapSlot3(+b.dataset.i);setPause(true)}
+  if(k==='switch'){switchGun();setPause(true)}
+  if(k==='release'){const i=+b.dataset.i;if(R.releaseArm!==i){R.releaseArm=i;setPause(true);return}R.releaseArm=null;if(releaseCreature(i))setPause(false);else setPause(true)}
+  if(k==='mute'){S.opts.mute=!S.opts.mute;auVol();save();setPause(true)}
+  if(k==='fullscreen'){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else goLandscape();setPause(true)}
   if(k==='leave'){$('#pause').hidden=true;endRaid(R.mode==='arena'?'arena':'quit')}
   if(k==='abandon'){if(!R.abandonArm){R.abandonArm=true;setPause(true);return}$('#pause').hidden=true;endRaid('dead')}
   if(k==='buy')buy(+b.dataset.i);
@@ -341,4 +405,4 @@ function boot(){
   return new Promise(res=>{const go=d=>res(start(d));if(window.claude?.hot?.ready)window.claude.hot.ready(go);else go(window.claude?.hot?.data??{})});
 }
 
-export {ctx,cv,mini,mctx,lockPage,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};
+export {goLandscape,ctx,cv,mini,mctx,lockPage,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};
