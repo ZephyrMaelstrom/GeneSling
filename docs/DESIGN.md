@@ -54,7 +54,37 @@ Each gate needs a boss, a rank and a creature or hideout goal, so skill, time an
 - **Generations are the real speed limit.** An egg hatches in 2 to 4 hideout days, and a creature can breed at Lv 10. One generation takes about 8 raids. An apex genome needs about 10 to 14 selected generations, and that is where the 90 days go.
 - **Daily and weekly beats keep people returning without punishing absence.** Contracts refresh daily, the Exchange restocks daily and the Deepening challenge changes weekly. Missed contracts bank up to 3 days.
 - **Keeper rank curve.** Ranks 1 to 10 come in the first week. Each later rank costs more, so rank 40 lands around day 60 and rank 50 around day 90 for a dedicated player.
-- **Catch-up.** A player who falls behind earns double Keeper XP until they're within 5 ranks of the week's expected rank.
+- **Catch-up.** A player who falls well behind earns double Keeper XP from raids until they're within 5 ranks of the expected rank for their calendar day. The expected rank is a gentle floor (rank 15 on day 30, 25 on day 60, 32 on day 90, 50 on day 180), so it rescues someone who stopped for a while without erasing the gap between a casual and a dedicated player.
+
+### Balance as built (Phase 8)
+
+Every number below is in `src/data/balance.json`, tuned with the Journey Simulator (Test Lab).
+
+- **The act gates are real.** Each portal down checks its gate and says what is still missing; the Raid tab shows the next gate as a checklist.
+  - **The veins (Floor 3's portal):** beat a Rootworks boss, Keeper rank 10 and 3 stations at tier 2.
+  - **The Underheart (Floor 6's portal):** beat a vein boss, rank 25, bosses beaten in 2 veins and a Gen 3 cut-free creature (and, as before, every creature in the party cut free).
+  - **The Heart (Floor 9's portal):** free Ilsa, rank 40 and a cut-free party of three.
+- **Unbound tiers need rank too.** Tier *t* needs rank 40 + 0.3 × *t*, so tier 20 needs rank 46. Tiers already cleared can always be replayed.
+- **Keeper rank curve.** The next rank costs 390 × rank XP (it was 120 × rank). Raids paid far more XP than the old curve expected: a bot playing an hour and a half a day reached rank 117 by day 90.
+- **Boss XP.** A boss pays its full Keeper XP (250, or 600 below the Rootworks) the first time and 40% after that, so farming one boss can't outrun the journey.
+- **The Journey Simulator.** Bot players play the whole journey on a throwaway save through the game's own systems: Keeper rank, catch-up, levels, evolution, breeding and hatching, stations and fatigue, research, pens, the gates, Ilsa, the endings and the Unbound tiers. Only fighting is modelled. A party's strength is worked out from its two combat companions' real stats (with gear and the player's skill) and compared with an average wild creature of the floor's level; the gap sets the odds of clearing the floor, and a failed floor is a real death.
+  - **Who plays:** a raider (6 raids a day), a crafter and a breeder (5 raids a day plus hideout time), all about an hour and a half; and a casual player (2 raids a day, about 30 minutes).
+  - **The market:** it isn't simulated (the Economy Sandbox tests it). Bots buy pen materials at Exchange reference prices.
+- **What the tuned runs show (seeds 1 to 3):**
+
+| | Act II | Act III | Act IV (the Heart's gate) | Rank on day 60 / 90 | Unbound tier on day 90 |
+| --- | --- | --- | --- | --- | --- |
+| Raider | day 9 | day 28 | day 50 | 41 / 49 | 20 (from day 79) |
+| Crafter | day 10 to 11 | day 33 | day 60 | 40 / 45 | 16 |
+| Breeder | day 10 to 11 | day 32 | day 58 to 59 | 40 / 46 | 20 (from day 88) |
+| Casual | day 27 to 31 | day 83 to 84 | day 149 | 20 / 27, rank 42 on day 180 | Heart on day 150 |
+
+- **Accessibility (Settings).**
+  - **Colorblind palettes:** two red-green palettes and one blue-yellow palette recolor good and bad, both teams' bullets and every type. Enemy bullets keep their white ring and gain a dark core, so they also read by shape.
+  - **Aim assist:** on touch, the aim stick bends toward the nearest enemy within a narrow cone.
+  - **Slower enemy bullets:** they move at 75% speed.
+- **Mid-range phones.** Raids now draw at up to 2.5 pixels per screen pixel instead of the full device ratio (3 on an S23). Auto quality starts at 2 and steps down by 0.25 when frames average over 22 ms (and back up under 13 ms). Battery saver draws at 1. On an S23-sized screen with the CPU slowed 4× and 14 enemies, a frame took 42.7 ms at 2.5, 22.8 ms on Auto and 16.7 ms at 1. The hideout map draws at most 2 pixels per screen pixel.
+- **Closed playtest support.** A save remembers when each act opened and how long each gate held the player back. A link with `?playtest` marks the save, and the full game then asks for play stats too. With stats on, `act`, `gate_blocked` and `gate_passed` events go to Firebase. The plan is in `docs/PLAYTEST.md`.
 
 ## The core loop
 

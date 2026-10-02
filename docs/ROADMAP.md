@@ -111,12 +111,13 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 8 · Balance and playtest (weeks 32 to 36)
 
-- [ ] Build bot players for raider, crafter, breeder and casual styles
-- [ ] Run full 90-day simulations and tune ranks, gates, drops, mutation and traders
-- [ ] Run a 20-person closed playtest for four weeks
-- [ ] Optimize for mid-range phones
-- [ ] Add colorblind palettes, aim assist and a slower-bullets option
-- [ ] Exit test: simulated dedicated players reach the top around day 90
+- [x] Build bot players for raider, crafter, breeder and casual styles
+- [x] Run full 90-day simulations and tune ranks, gates, drops, mutation and traders
+- [ ] Run a 20-person closed playtest for four weeks (the kit is ready: `docs/PLAYTEST.md`)
+- [x] Optimize for mid-range phones
+- [x] Add colorblind palettes, aim assist and a slower-bullets option
+- [x] Exit test, simulated half: dedicated players reach the top around day 90
+- [ ] Exit test, playtest half: testers reach Act II at the expected pace and nobody waits at a gate for more than a week
 
 ### Phase 9 · Online and launch (weeks 37 to 42)
 

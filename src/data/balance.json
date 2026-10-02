@@ -1,0 +1,75 @@
+{
+  "ACCESS": {
+    "aimAssist": {"cone": 0.38, "range": 460, "pull": 0.85},
+    "slowBullets": 0.75,
+    "quality": {"high": 2.5, "low": 1, "auto": {"start": 2, "min": 1, "max": 2.5, "step": 0.25, "slowMs": 22, "fastMs": 13, "window": 2}},
+    "palettes": {
+      "deutan": {"name": "Red-green (deuteranopia)", "good": "#56b4e9", "bad": "#e69f00", "friend": "#56b4e9", "enemy": "#e69f00",
+        "types": {"ember": "#d55e00", "fungal": "#cc79a7", "tide": "#0072b2", "echo": "#b8a6ff", "gale": "#56b4e9", "crystal": "#f0e442", "warden": "#c8c8c8", "venom": "#009e73", "lumen": "#ffe9a8"}},
+      "protan": {"name": "Red-green (protanopia)", "good": "#56b4e9", "bad": "#f0b400", "friend": "#56b4e9", "enemy": "#f0b400",
+        "types": {"ember": "#e69f00", "fungal": "#cc79a7", "tide": "#0072b2", "echo": "#b8a6ff", "gale": "#56b4e9", "crystal": "#f0e442", "warden": "#c8c8c8", "venom": "#009e73", "lumen": "#ffffff"}},
+      "tritan": {"name": "Blue-yellow (tritanopia)", "good": "#00c2c2", "bad": "#ff4d6d", "friend": "#00c2c2", "enemy": "#ff4d6d",
+        "types": {"ember": "#d55e00", "fungal": "#cc79a7", "tide": "#00a3a3", "echo": "#8b5cf6", "gale": "#7fe0e0", "crystal": "#ff9fcf", "warden": "#bdbdbd", "venom": "#2e7d32", "lumen": "#ffffff"}}
+    }
+  },
+  "PLAYTEST": {"act2Day": [5, 12], "maxGateWait": 7, "testers": 20, "weeks": 4},
+  "GATES": {
+    "veins": {
+      "floor": 3,
+      "act": 2,
+      "name": "the veins",
+      "rank": 10,
+      "stations": {"n": 3, "tier": 2}
+    },
+    "underheart": {"floor": 6, "act": 3, "name": "the Underheart", "rank": 25, "veinBosses": 2, "cutFree": 1},
+    "heart": {"floor": 9, "act": 4, "name": "the Heart", "rank": 40, "cutFreeParty": 3}
+  },
+  "CATCHUP": {
+    "mul": 2,
+    "within": 5,
+    "expected": [[1, 1], [7, 6], [30, 15], [60, 25], [90, 32], [180, 50]]
+  },
+  "WILD_LEVELS": [[0, 0], [2, 4], [4, 6], [6, 9], [10, 14], [14, 18], [18, 24], [24, 28], [27, 32], [30, 35], [34, 38]],
+  "JOURNEY": {
+    "days": 90,
+    "seeds": [1, 2, 3],
+    "targets": {"act2": [7, 12], "act3": [25, 38], "act4": [55, 65], "act4Each": [45, 70], "rank60": [37, 43], "rank90": [44, 52], "tier90": 15, "casualHeart": [120, 210]},
+    "styles": {
+      "raider": {"name": "Raider", "raids": 6, "risk": 0.62, "skill": 0.5, "breed": 1, "craft": 0},
+      "crafter": {"name": "Crafter", "raids": 5, "risk": 0.7, "skill": 0.5, "breed": 1, "craft": 2},
+      "breeder": {"name": "Breeder", "raids": 5, "risk": 0.7, "skill": 0.5, "breed": 2, "craft": 0},
+      "casual": {"name": "Casual", "raids": 2, "risk": 0.8, "skill": 0.25, "breed": 1, "craft": 0, "days": 180}
+    },
+    "power": {"gearTier": 0.08, "slope": 0.22, "boss": 0.35, "partyMin": 0.5, "player": 0.8, "growTo": 15},
+    "unbound": {
+      "perTier": 0.06,
+      "floors": [7, 8, 9]
+    },
+    "kills": {"base": 12, "perLocal": 3},
+    "killXp": {
+      "foe": [10, 14, 18],
+      "wild": 14,
+      "deep": 2
+    },
+    "boss": {"kxp": 250, "kxpDeep": 600, "xp": 120},
+    "loot": {
+      "coin": [20, 30],
+      "ore": 2,
+      "food": 1,
+      "perFloorMul": 0.35
+    },
+    "gunFind": 0.35,
+    "catchCandidates": 10,
+    "sellAbove": 4,
+    "catchNeed": 10,
+    "keepLine": 8,
+    "keepWorkers": 3,
+    "fillOffType": 3,
+    "marketMarkup": 1.1,
+    "penReserve": 3,
+    "acts": {"act4": "heart gate open after Ilsa"}
+  },
+  "BOSS_XP": {"repeat": 0.4},
+  "KEEPER_CURVE": {"base": 390, "exp": 1},
+  "UNBOUND_RANK": {"from": 40, "perTier": 0.3}
+}

@@ -7,7 +7,7 @@
      - the Archive's rune translation with a Lumen creature, from relics found deep down,
      - Renown, weekly shows, the weekly Deepening and 90-day seasons.
    Numbers live in src/data/endgame.json. */
-import {LORE,ENDGAME as E,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS} from './content.js';
+import {BALANCE,LORE,ENDGAME as E,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS} from './content.js';
 import {S,addLog,byId,lineOf,makeCreature,recordLineage,stats,unplace} from './state.js';
 import {mixSeed,rand,withSeed} from './rng.js';
 import {pick,ri} from './util.js';
@@ -51,7 +51,9 @@ const endingRules=()=>{const k=story().ending;return k?E.ENDINGS[k].unbound:{}};
 /* ---------- the Unbound Bloom ---------- */
 const U=E.UNBOUND;
 const unboundOpen=()=>!!story().heart&&!!story().ending;
-const nextTier=()=>Math.min(U.tiers,(S.unbound.cleared||0)+1);
+// Each Unbound tier also needs Keeper rank: tier 20 asks for rank 50 (src/data/balance.json).
+const tierRank=t=>Math.ceil(BALANCE.UNBOUND_RANK.from+BALANCE.UNBOUND_RANK.perTier*t);
+const nextTier=()=>{let t=Math.min(U.tiers,(S.unbound.cleared||0)+1);while(t>1&&S.keeper.level<tierRank(t)&&t>(S.unbound.cleared||0))t--;return Math.max(1,t)};
 const rulesFor=tier=>U.rules.slice(0,tier);
 // Whether rule id is in force in this raid (R.tier is the Unbound tier, 0 outside it).
 const ruleOn=(tier,id)=>!!tier&&U.rules.findIndex(r=>r.id===id)<tier&&U.rules.some(r=>r.id===id);
@@ -242,11 +244,14 @@ function labEndgame(){
   const party=['solaryx','tidewyrm','umbrowl'].map((sp,i)=>{const L=SPECIES[sp]?lineOf({species:sp}):null;
     const c=makeCreature(sp,'bred',34,{gen:4,proven:true,stage:L?L.length-1:0,sex:i%2?'M':'F'});express(c);c.hp=stats(c).hp;S.creatures.push(c);recordLineage(c);return c});
   S.loadout.slots=party.map(c=>c.id);
+  // Past every gate: two vein bosses beaten (Keeper rank 45 and the cut-free party cover the rest).
+  for(const b of ['prime','leviathan'])S.progress.bosses[b]=S.progress.bosses[b]||1;
+  S.progress.deepest=Math.max(S.progress.deepest||0,6);
   S.pens=Math.max(S.pens||0,10);give('apexshard',5);give('serum',5);
   addLog('Test Lab: an endgame party of three cut-free creatures at Lv 34.');
   return party;
 }
 
-export {story,endgamify,tethered,onStoryBoss,chooseEnding,endingRules,unboundOpen,nextTier,rulesFor,ruleOn,unboundMods,tierTwists,unboundBoss,clearTier,tierLoot,lordDamage,
+export {story,endgamify,tethered,onStoryBoss,chooseEnding,endingRules,unboundOpen,nextTier,tierRank,rulesFor,ruleOn,unboundMods,tierTwists,unboundBoss,clearTier,tierLoot,lordDamage,
   runeOf,knownLetters,runeWall,archivist,archiveDay,spliceBlock,splice,mutlabCreatures,mutlabBonus,setMutlab,chamberOpen,chamberBlock,applyChamber,
   renown,weekOf,showClasses,eligible,showScore,rivalScores,enterShow,judgeShows,deepeningSeed,deepeningScore,ladder,recordDeepening,seasonOf,seasonTwist,seasonEnd,endgameDay,seasonTypeMul,labEndgame};

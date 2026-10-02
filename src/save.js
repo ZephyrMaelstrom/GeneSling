@@ -18,10 +18,11 @@ import {pridify,placeStation} from './hideout.js';
 import {bloomify} from './bloom.js';
 import {endgamify} from './endgame.js';
 import {lorify} from './lore.js';
+import {balancify} from './balance.js';
 import {S,setS,defaultOpts} from './state.js';
 import {DEMO} from './flags.js';
 
-const SAVE_VERSION=13;
+const SAVE_VERSION=14;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
 const OWN=DEMO?NAMES.demo:NAMES.full;
@@ -78,6 +79,8 @@ const MIGRATIONS={
   11:endgamify,
   // v13 (Lore): journal pages carried home, rune walls copied and whispers heard.
   12:lorify,
+  // v14 (Balance): when the save began, for catch-up Keeper XP.
+  13:balancify,
 };
 
 function migrate(d){
@@ -144,8 +147,11 @@ async function loadSave(){
 // save() is called synchronously all over the game. It snapshots S right away and
 // writes in the background; if a write is in flight, only the newest snapshot follows it.
 let pending=null,writing=null;
+// While a simulation plays on a throwaway copy of the save, nothing may be written.
+let held=0;
+function holdSaves(fn){held++;try{return fn()}finally{held--}}
 function save(){
-  if(!S)return;S.v=SAVE_VERSION;
+  if(!S||held)return;S.v=SAVE_VERSION;
   pending=JSON.stringify(S);
   if(!writing)writing=flush();
   return writing;
@@ -162,4 +168,4 @@ async function flush(){
 // Resolves once every save so far is on disk (used by tests and before reloads).
 const saveDone=()=>writing||Promise.resolve();
 
-export {SAVE_VERSION,NAMES,MIGRATIONS,migrate,loadSave,save,saveDone};
+export {holdSaves,SAVE_VERSION,NAMES,MIGRATIONS,migrate,loadSave,save,saveDone};

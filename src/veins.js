@@ -19,6 +19,8 @@ import {chooseEnding,rulesFor,tethered,unboundMods} from './endgame.js';
 import {OL,drawCreature} from './sprites.js';
 import {drawPeddler,showOverlay,setPause} from './draw.js';
 import {onEnding} from './lore.js';
+import {gateBlockText} from './balance.js';
+import {gateBlocked} from './playtest.js';
 import {mutateGenome} from './genetics.js';
 import {sfx} from './audio.js';
 
@@ -77,6 +79,8 @@ function chooseVein(v){
 function enterUnderheart(){
   const bad=tethered(partyCreatures());
   if(bad.length){setPause(false);msg(`The Underheart won't let ${bad.map(c=>c.name).join(' and ')} pass: still tethered to the Bloom. Only cut-free creatures (Gen 3 and later) can go down.`);R.stairT=-3;return false}
+  const why=gateBlockText('underheart');
+  if(why){setPause(false);msg(why);gateBlocked('underheart');R.stairT=-4;return false}
   descend(7);return true;
 }
 // A Bloomlord that copies your party sends shadows first.

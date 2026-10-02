@@ -254,7 +254,7 @@ const anchor=(key,tile)=>{const [w,h]=foot(key);return{x:tile.x-Math.floor((w-1)
 
 function drawHideoutMap(){
   const cv=$('#hmap');if(!cv||ui.tab!=='hideout'||R||$('#app').hidden){HMAP.raf=0;return}
-  const dpr=window.devicePixelRatio||1,rect=cv.getBoundingClientRect(),H=mapH();
+  const dpr=Math.min(2,window.devicePixelRatio||1),rect=cv.getBoundingClientRect(),H=mapH();
   const Wp=Math.round(rect.width*dpr),Hp=Math.round(rect.width*H/HMAP.W*dpr);
   if(cv.width!==Wp||cv.height!==Hp){cv.width=Wp;cv.height=Hp}
   const g=cv.getContext('2d');HMAP.t+=1/60;HMAP.H=H;

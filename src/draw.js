@@ -12,6 +12,7 @@ import {startMarket} from './exchange/market.js';
 import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 import {runeWall} from './endgame.js';
+import {applyPalette,bulletCol,frameTime,renderScale} from './access.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -34,7 +35,8 @@ function goLandscape(){
 // Nothing in a raid scrolls: its menus are laid out to fit the screen at once (see fitOverlay).
 document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
 function resize(){
-  const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
+  // The render scale follows the Quality setting (auto steps down on slow phones; see access.js).
+  const dpr=renderScale();cv.width=Math.round(innerWidth*dpr);cv.height=Math.round(innerHeight*dpr);
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
 }
 function drawFoeBody(g,d,x,y,s,t,o){
@@ -141,8 +143,9 @@ function draw(){
   R.swings.forEach(sw=>{const k=sw.t/sw.max;g.globalAlpha=.25+.5*k;g.fillStyle=sw.col;g.beginPath();g.moveTo(p.x,p.y);g.arc(p.x,p.y,sw.r,sw.a-sw.arc/2,sw.a+sw.arc/2);g.closePath();g.fill();g.globalAlpha=1;g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,sw.r,sw.a-sw.arc/2,sw.a+sw.arc/2);g.stroke()});
   R.bullets.forEach(b=>{
     if(b.lob){g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(b.x,b.y+4,b.r,b.r*.4,0,0,7);g.fill();g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y-b.h,b.r+2,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y-b.h,b.r,0,7);g.fill();return}
-    if(b.team==='e'){g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,b.r+2,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
-    else{g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r+1.5,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
+    const bc=bulletCol(b);
+    if(b.team==='e'){g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,b.r+2,0,7);g.fill();g.fillStyle=bc;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill();if(bc!==b.col){g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r*.4,0,7);g.fill()}}
+    else{g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r+1.5,0,7);g.fill();g.fillStyle=bc;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
   });
   R.bolts.forEach(b=>{g.globalAlpha=Math.min(1,b.t*5);lightning(g,b.a,b.b,b.col);g.globalAlpha=1});
   R.fx.forEach(f=>{const k=f.t/f.max;g.globalAlpha=k;if(f.fill){g.fillStyle=f.col;g.globalAlpha=k*.45;g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill()}else{g.strokeStyle=f.col;g.lineWidth=4;g.beginPath();g.arc(f.x,f.y,f.r*(1-k)+10,0,7);g.stroke()}g.globalAlpha=1});
@@ -297,7 +300,8 @@ function startLoop(){cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
 function stopLoop(){cancelAnimationFrame(raf)}
 function loop(ts){
   if(!R||R.over)return;
-  const dt=Math.min(.04,(ts-(R.last||ts))/1000);R.last=ts;
+  const raw=ts-(R.last||ts),dt=Math.min(.04,raw/1000);R.last=ts;
+  if(raw>0&&raw<250&&frameTime(raw))resize();
   if(!R.paused)update(dt);
   if(!R||R.over)return;
   draw();hudT+=dt;if(hudT>.1){hudT=0;updHud()}
@@ -424,7 +428,7 @@ async function start(data){
   let loaded=null;
   if(data&&data.S){try{loaded=migrate(data.S)}catch(e){}}
   if(!loaded)loaded=await loadSave();
-  setS(loaded);
+  setS(loaded);applyPalette();
   let fresh=false;if(!S){newGame();fresh=true}
   save();startMarket();renderAll();
   if(fresh||!S.introSeen){S.introSeen=true;save();openIntro(true)}

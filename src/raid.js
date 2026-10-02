@@ -19,7 +19,10 @@ import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,vein
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
 import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
 import {loreEnd,lorePick,loreRoom,placeLore,restChest} from './lore.js';
-import {LORE} from './content.js';
+import {BALANCE,LORE} from './content.js';
+import {catchupMul,gateBlockText} from './balance.js';
+import {assistAim,enemyBulletMul,resetScale} from './access.js';
+import {gateBlocked,paceTick} from './playtest.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -272,7 +275,7 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
   $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
   $('#pause').hidden=true;$('#bossBar').hidden=true;$('#tutBox').hidden=!tut;$('#roomMod').hidden=true;
   applyOpts();
-  resize();startLoop();
+  resetScale();resize();startLoop();
 }
 function applyOpts(){
   const o=S.opts,raid=$('#raid');
@@ -321,7 +324,7 @@ function spawnPos(r,minD=180){
 function baseEnemy(pos,room){return{x:pos.x,y:pos.y,room,stun:0,slow:0,face:1,flash:0,hitCd:0,wind:0,rot:rand()*6,phase:0,queue:[],chargeT:0,strafe:pick([-1,1]),seed:rand()*9,shots:0,status:{},burn:null,lastHit:null}}
 const hpMods=()=>R.mods.hp*(CU('toll')?1.25:1);
 function spawnWild(pos,species,room,level){
-  const f=R.map.floor;const lv=level||[0,ri(2,4),ri(4,6),ri(6,9),ri(10,14),ri(14,18),ri(18,24),ri(24,28),ri(27,32),ri(30,35),ri(34,38)][Math.min(f,10)];
+  const f=R.map.floor,W=BALANCE.WILD_LEVELS[Math.min(f,10)];const lv=level||(f?ri(W[0],W[1]):0);
   const stage=R.mode==='arena'?wildStageFor(species,lv,6):wildStageFor(species,lv,f);
   const c=makeCreature(species,'wild',lv,{floor:f,stage});
   dexForm(species,stage,'seen');
@@ -464,6 +467,7 @@ function playerDown(){
 }
 function shoot(team,x,y,ang,speed,dmg,o={}){
   if(team==='e'&&R&&ruleOn(R.tier,'quickened'))speed*=1.2;
+  if(team==='e')speed*=enemyBulletMul();
   const b={team,x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:o.r||5,dmg,life:o.life||2.6,age:0,col:o.col||'#ff5c7a',slow:o.slow||0,
     pierce:o.pierce||0,hit:o.pierce?new Set():null,bounce:o.bounce||0,explode:o.explode||0,split:o.split||0,homing:o.homing||0,src:o.src||null,elem:o.elem||null,lob:o.lob||null,orbit:o.orbit||null,cloud:o.cloud||0};
   // Ricochet trait: a companion's shots bounce off a wall once.
@@ -763,7 +767,7 @@ function update(dt){
   R.combo.cd=Math.max(0,R.combo.cd-dt);if(R.rally){R.rally.t-=dt;if(R.rally.t<=0)R.rally=null}
   if(R.msgT>0)R.msgT-=dt;
   for(let i=R.timers.length-1;i>=0;i--){R.timers[i].t-=dt;if(R.timers[i].t<=0){const f=R.timers[i].f;R.timers.splice(i,1);f()}}
-  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=Math.atan2(dy,dx);R.firing=S.opts.autoFire||l>stickR()*.6}else R.firing=false}
+  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=assistAim(Math.atan2(dy,dx),p,R.enemies);R.firing=S.opts.autoFire||l>stickR()*.6}else R.firing=false}
   else if(R.mouse){const s=R.scale;const wx=(R.mouse.x-R.vw/2)/s+R.camx,wy=(R.mouse.y-R.vh/2)/s+R.camy;R.aim=Math.atan2(wy-p.y,wx-p.x)}
   p.rollCd-=dt;p.inv=Math.max(0,p.inv-dt);p.hurt=Math.max(0,p.hurt-dt);p.slow=Math.max(0,p.slow-dt);p.fireCd-=dt;
   if(R.sup.has('tide'))healPlayer(dt);
@@ -983,7 +987,8 @@ function updBoss(b,dt){
 function onBossDeath(b){
   const d=b.def,set=d.set,r=b.room;
   R.boss=null;$('#bossBar').hidden=true;sfx('evolve');
-  R.bossDown=d;R.kxp+=set?600:250;
+  // A boss pays full Keeper XP the first time, and a share after that, so farming one boss can't outrun the journey.
+  R.bossDown=d;R.kxp+=Math.round((set?600:250)*(S.progress.bosses[b.id]?BALANCE.BOSS_XP.repeat:1));
   const coin=Math.round((set?520:180)*R.mods.coin);R.bag.coin+=coin;bagAdd('ore',set?30:10,b.x,b.y);bagAdd(set?'dust':'hide',set?8:5,b.x,b.y);
   if(rand()<JOBS.PRINTS.boss)dropPrint(r.cx,r.cy+120);
   for(let i=0;i<2;i++)R.items.push({kind:'gun',id:gunOfTier(set?pick([3,4]):pick([2,3,3,4])),x:r.cx+(i?50:-50),y:r.cy+60});
@@ -1107,7 +1112,7 @@ function objectives(dt){
     const home={x:r.cx-80,y:r.cy},deep={x:r.cx+80,y:r.cy};
     if(dist(p,home)<44){R.ext+=dt;R.prompt=`Going home… ${Math.max(0,2-R.ext).toFixed(1)}s`;if(R.ext>=2){endRaid('extract','rift');return}}
     else if(r.deep&&dist(p,deep)<44){const fl=R.map.floor;R.stairT+=dt;R.prompt=`${fl===3?'The veins below':fl===6?'The Underheart below':'The Heart below'}… ${Math.max(0,1.2-R.stairT).toFixed(1)}s`;
-      if(R.stairT>=1.2){R.stairT=-2;if(fl===3)openVeinChoice();else if(fl===6)enterUnderheart();else descend(10)}}
+      if(R.stairT>=1.2){R.stairT=-2;if(fl===3){const why=gateBlockText('veins');if(why){msg(why);gateBlocked('veins');R.stairT=-4}else openVeinChoice()}else if(fl===6)enterUnderheart();else{const why=gateBlockText('heart',partyCreatures());if(why){msg(why);gateBlocked('heart');R.stairT=-4}else descend(10)}}}
     else{R.ext=0;R.stairT=0;R.prompt=r.deep?`Left circle: home · Right circle: ${R.map.floor===3?'choose a vein':R.map.floor===6?'the Underheart (cut-free creatures only)':'the Heart'}`:'Step into the rift to go home'}
     return;
   }
@@ -1233,12 +1238,13 @@ function endRaid(outcome,via){
   validGuns();
   if(R.deepening!=null){const d=recordDeepening(R.deepening,deepeningScore({deepest,kills:R.kills,coin:R.bag.coin,extracted:outcome==='extract',caught:caughtC.length}));L.notes.push(`Deepening, week ${R.deepening}: ${d.score} points, rank ${d.rank} of 100. Your best this week: ${d.best}.`)}
   if(R.mode==='raid'||scav){const cr=settleContract({extracted:outcome==='extract',bagCoin:R.bag.coin,bagOre:R.bag.ore,kills:R.kills,eliteKills:R.eliteKills||0,deepest,caught:caughtC});if(cr)L.notes.push(cr.text)}
-  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1));
+  // Catch-up: a Keeper well behind the expected rank for their calendar day earns double.
+  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1)*catchupMul());
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
   track('raid_end',{outcome,floor:R.map.floor,deepest,mode:R.mode});
-  processDay();save();marketDay();exitRaid();demoProgress();
+  processDay();paceTick();save();marketDay();exitRaid();demoProgress();
   sfx(outcome==='extract'?'level':'fail');
   const sec=(h,arr,col)=>arr.length?`<div class="rsec"><h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);
