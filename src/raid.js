@@ -10,6 +10,8 @@ import {closeModal,openModal,renderAll,validGuns} from './ui.js';
 import {lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
 import {marketDay} from './exchange/market.js';
+import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
+import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -230,7 +232,7 @@ const CU=k=>R.curses.has(k);
 function refreshSupport(){
   const c=R.slot3&&R.slot3.c.captureRaid!==R.id?R.slot3.c:null;
   R.sup=new Set(c?typesOf(c):[]);
-  const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.max(30,Math.round((100+25*B('hp')+(secTier('warroom')>=1?10:0)+(res('combat',0)?15:0)-(CU('glass')?30:0))*(R.sup.has('warden')?1.15:1)));R.p.hp=Math.max(1,Math.min(R.p.maxHp,Math.round(R.p.maxHp*ratio)));
+  const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.max(30,Math.round((100+25*B('hp')+(secTier('warroom')>=1?10:0)+(res('combat',0)?15:0)-(CU('glass')?30:0)+perk('hp'))*(R.sup.has('warden')?1.15:1)));R.p.hp=Math.max(1,Math.min(R.p.maxHp,Math.round(R.p.maxHp*ratio)));
   R.scout=roleInParty('scout');
   R.reveal=S.settings.reveal||secTier('roost')>=1||R.sup.has('echo')||R.scout;
 }
@@ -884,13 +886,14 @@ function onBossDeath(b){
   if(rand()<JOBS.PRINTS.boss)dropPrint(r.cx,r.cy+120);
   for(let i=0;i<2;i++)R.items.push({kind:'gun',id:gunOfTier(set?pick([3,4]):pick([2,3,3,4])),x:r.cx+(i?50:-50),y:r.cy+60});
   R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time')),x:r.cx,y:r.cy+90});
-  r.kind='portal';r.deep=!set;r.locked=false;r.cleared=true;
+  // The demo ends at the bottom of the Rootworks: no portal down.
+  r.kind='portal';r.deep=!set&&!DEMO;r.locked=false;r.cleared=true;R.bossId=b.id;
   R.fx.push({x:b.x,y:b.y,r:200,t:1,max:1,col:'#ffcf4a'});
   float(b.x,b.y-40,`+${coin} coin`,'#ffcf4a',true);
   if(R.mode==='arena'){r.kind='arena';return}
   const first=!S.progress.bosses[b.id];const sh=first?(set?4:2):(set?2:1);S.shards+=sh;
   float(b.x,b.y-60,`+${sh} memory shard${sh>1?'s':''}${first?' · new memory':''}`,'#ff8fe0',true);
-  msg(first?`${d.name} falls, and a memory surfaces. Read it in the Codex. ${set?'Take the rift home.':'Take the rift home, or the portal down.'}`:set?`${d.name} falls! Step into the rift to go home a champion.`:`${d.name} falls! Take the rift home, or the portal down to the Ember Abyss.`);
+  msg(first?`${d.name} falls, and a memory surfaces. Read it in the Codex. ${r.deep?'Take the rift home, or the portal down.':'Take the rift home.'}`:!r.deep?`${d.name} falls! Step into the rift to go home a champion.`:`${d.name} falls! Take the rift home, or the portal down to the Ember Abyss.`);
   if(first)addLog(`First victory over ${d.name}. A memory surfaced.`);
   S.progress.bosses[b.id]=(S.progress.bosses[b.id]||0)+1;S.stats.bossKills++;
 }
@@ -1034,13 +1037,13 @@ function endRaid(outcome,via){
     if(outcome==='extract'){
       caught.forEach(c=>{c.captureRaid=S.stats.raids-1;c.proven=true;S.creatures.push(c);S.stats.captures++});
       const first=!S.tutorialDone;S.tutorialDone=true;if(first){S.coin+=100;S.cages.basic+=2}
-      addLog('Tutorial complete.'+(caught.length?` ${caught[0].name} joined the hideout.`:''));
+      addLog('Tutorial complete.'+(caught.length?` ${caught[0].name} joined the hideout.`:''));if(first)tutorialDone();
       html=`<h2 class="res-title win">Tutorial complete</h2><p>You extracted safely.${caught.length?` <b>${esc(caught[0].name)}</b> the Cindlet is yours now, already proven.`:''}</p>${first?'<p class="status">Reward: 100 coin and 2 cages.</p>':''}
         <ul class="plain"><li>Real raids go 3 floors deep, with a boss on Floor 3.</li><li>Anything you bring is lost if you fall, unless the Vault saves it.</li><li>Keeper XP comes from every raid, so even losses move you forward.</li><li>Visit the Hideout to meet Brannoc, and check Ilsa's journal in the Codex.</li></ul>`;
     }else html=`<h2 class="res-title">Tutorial ended</h2><p class="hint">Nothing was lost. You can replay it from the Raid tab or Settings.</p>`;
     exitRaid();openModal(html+`<div class="row"><button class="btn primary" data-act="close">To the hideout</button></div>`);save();return;
   }
-  const L={home:[],lost:[],caught:[],proven:[],levels:[],loot:[],notes:[],keeper:[],bond:[]};
+  const L={home:[],lost:[],caught:[],proven:[],levels:[],loot:[],notes:[],keeper:[],bond:[],titles:[]};
   R.comps.forEach(m=>{if(m)m.c.hp=m.downed?0:Math.round(m.hp/m.maxHp*stats(m.c).hp)});
   const party=R.comps.filter(Boolean);
   const scav=R.mode==='scav',vt=scav?0:secTier('vault'),at=scav?0:armoryTier();
@@ -1057,7 +1060,7 @@ function endRaid(outcome,via){
   if(outcome==='extract'){
     S.stats.extracts++;
     const coinMul=1+.15*party.filter(m=>!m.downed&&m.c.traits.includes('hoard')).length;
-    const coin=Math.round(R.bag.coin*coinMul),food=R.bag.food+(R.sup.has('fungal')?2:0);
+    const coin=Math.round(R.bag.coin*coinMul*(1+perk('coin'))),food=R.bag.food+(R.sup.has('fungal')?2:0);
     S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;give('hide',R.bag.hide);give('dust',R.bag.dust);S.prints.push(...R.prints);give('tonic',R.tonics);
     const home=held.map(bringHome);
     S.cages.basic+=scav?0:R.cages.basic;S.cages.gilded+=R.cages.gilded;
@@ -1077,6 +1080,10 @@ function endRaid(outcome,via){
     party.forEach(m=>handle(m.c,m.downed,25+m.xpGain,m));
     if(R.slot3)handle(R.slot3.c,false,10+party.reduce((a,m)=>a+m.xpGain,0)/4,null);
     R.kxp+=40;
+    // Pride: titles, friendships between creatures that came home together, and a boss's trophy.
+    L.titles=extractTitles(party.map(m=>({c:m.c,downed:m.downed})),!!R.bossDown);
+    recordShared([...party.filter(m=>!m.downed).map(m=>m.c),R.slot3&&R.slot3.c].filter(c=>c&&S.creatures.includes(c)).map(c=>c.id));
+    if(R.bossId&&awardBossTrophy(R.bossId,party.filter(m=>!m.downed).map(m=>m.c.name),R.map.floor))L.notes.push(`The ${BOSSES[R.bossId].name} trophy comes home with you. Place it in the Hideout.`);
   }else{
     S.stats.deaths++;
     L.notes.push(outcome==='collapse'?'The dungeon collapsed around you.':'You were knocked out.');
@@ -1101,17 +1108,18 @@ function endRaid(outcome,via){
     const cg=scav?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
   }
   validGuns();
-  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1));
+  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp')));
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
-  processDay();save();marketDay();exitRaid();
+  track('raid_end',{outcome,floor:R.map.floor,deepest,mode:R.mode});
+  processDay();save();marketDay();exitRaid();demoProgress();
   sfx(outcome==='extract'?'level':'fail');
   const sec=(h,arr,col)=>arr.length?`<h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);
   openModal(`<h2 class="res-title ${outcome==='extract'?'win':'lose'}">${title}</h2>${L.notes.map(n=>`<p>${esc(n)}</p>`).join('')}
     <div class="slot"><div class="slot-label">Keeper XP</div><p><b style="font-family:var(--display);color:var(--gold)">+${kx}</b> · rank ${S.keeper.level} (${S.keeper.xp}/${keeperNeed()}) · ${R.kills} defeated · deepest floor ${deepest}</p>${L.keeper.map(k=>`<p class="status" style="color:var(--gold)">${esc(k)}</p>`).join('')}</div>
-    ${sec('Caught',L.caught,'var(--gold)')}${sec('Proven',L.proven,'var(--mint)')}${sec('Came home',L.home)}${sec('Level ups',L.levels)}${sec('Bond',L.bond,'var(--sky)')}${sec('Loot banked',L.loot)}${sec('Lost',L.lost,'var(--rose)')}${sec('Quests',quests,'var(--gold)')}
+    ${sec('Caught',L.caught,'var(--gold)')}${sec('Proven',L.proven,'var(--mint)')}${sec('Came home',L.home)}${sec('Level ups',L.levels)}${sec('Bond',L.bond,'var(--sky)')}${sec('Titles',L.titles,'var(--gold)')}${sec('Loot banked',L.loot)}${sec('Lost',L.lost,'var(--rose)')}${sec('Quests',quests,'var(--gold)')}
     <p class="status">Day ${S.day} begins. ${esc(S.log[0].msg)}</p>
     <div class="row"><button class="btn primary" data-act="close">Back to the hideout</button></div>`);
 }

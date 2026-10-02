@@ -1,17 +1,19 @@
 // Build the game: bundle src/main.js with esbuild and inline it into src/shell.html,
-// producing one self-contained dist/index.html (works from a web server, a file:// URL or a Claude artifact).
-//   node build.mjs           build once
+// producing one self-contained dist/index.html (works from a web server, a file:// URL or a Claude artifact),
+// and the demo (the Rootworks and Act I) as dist/demo/index.html, with __DEMO__ defined as true.
+//   node build.mjs           build both once
 //   node build.mjs --watch   rebuild on every change in src/
 import * as esbuild from 'esbuild';
 import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 
-const OUT = 'dist/index.html';
+const OUT = 'dist/index.html', DEMO_OUT = 'dist/demo/index.html';
 const options = {
   entryPoints: ['src/main.js'],
   bundle: true,
   format: 'iife',
   write: false,
   logLevel: 'warning',
+  define: {__DEMO__: 'false'},
 };
 
 // The Exchange worker is bundled on its own and handed to the page bundle as a string, so the
@@ -29,12 +31,13 @@ const workerPlugin = {
 };
 options.plugins = [workerPlugin];
 
-function emit(result) {
+function emit(result, out = OUT, demo = false) {
   const js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-  const shell = readFileSync('src/shell.html', 'utf8');
-  mkdirSync('dist', {recursive: true});
-  writeFileSync(OUT, shell + '<script>\n' + js + '</script>\n');
-  console.log(`built ${OUT} (${Math.round(js.length / 1024)} KB of script)`);
+  let shell = readFileSync('src/shell.html', 'utf8');
+  if (demo) shell = shell.replace(/<title>([^<]*)<\/title>/, '<title>$1 · Demo</title>');
+  mkdirSync(out.slice(0, out.lastIndexOf('/')), {recursive: true});
+  writeFileSync(out, shell + '<script>\n' + js + '</script>\n');
+  console.log(`built ${out} (${Math.round(js.length / 1024)} KB of script)`);
 }
 
 if (process.argv.includes('--watch')) {
@@ -46,4 +49,5 @@ if (process.argv.includes('--watch')) {
   console.log('watching src/ ...');
 } else {
   emit(await esbuild.build(options));
+  emit(await esbuild.build({...options, define: {__DEMO__: 'true'}}), DEMO_OUT, true);
 }

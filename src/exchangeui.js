@@ -11,6 +11,7 @@ import {matName,QN} from './jobs.js';
 import {geneSight,looksText} from './geneui.js';
 import {lineChart,sparkline} from './chart.js';
 import {runSandbox} from './exchange/sandbox.js';
+import {bredBy} from './prideui.js';
 
 const name=g=>g==='cage'?'Cage':g==='gilded'?'Gilded cage':matName(g);
 const c0=v=>Math.round(v);
@@ -65,8 +66,9 @@ function auctionCard(a){
   const info=it.kind==='gun'?`<small>${QN[it.q||0]} · Tier ${GUNS[it.id].tier}${it.dur!=null?` · ${it.dur}/${it.max} durability`:''}</small>`:it.kind==='print'?`<small>Single-use print · Tier ${GUNS[it.id].tier}</small>`:creatureLines(it.kind==='egg'?it.child:it.c);
   const minBid=Math.ceil(a.leader?a.price*(1+X.AUCTION.step)+1:a.start);
   const mine=a.mineSell?'<span class="chip">Your listing</span>':a.mineLead?'<span class="chip good">You lead</span>':'';
+  const bred=it.kind==='creature'?it.c:it.kind==='egg'?it.child:null;
   return`<div class="auction"><div class="row" style="justify-content:space-between;gap:6px"><b>${esc(it.kind==='egg'?'Egg: '+SPECIES[it.child.species].name:a.label)}</b>${mine}</div>
-    ${info}
+    ${info}${bred&&bred.by?bredBy(bred):''}
     <small class="status">${a.leader?`Current bid ${c0(a.price)}`:`Starts at ${c0(a.start)}`}${a.buyout?` · buy out ${c0(a.buyout)}`:''} · ${days?`ends in ${days} day${days>1?'s':''}`:'ends today'} · ${esc(a.sellerName||'')}</small>
     ${a.mineSell?'':`<div class="row" style="gap:6px"><button class="btn small" data-act="mkbid" data-id="${a.id}" data-min="${minBid}" ${S.coin>=minBid?'':'disabled'}>Bid ${minBid}</button>${a.buyout?`<button class="btn small primary" data-act="mkbuyout" data-id="${a.id}" ${S.coin>=a.buyout?'':'disabled'}>Buy out ${c0(a.buyout)}</button>`:''}</div>`}</div>`;
 }

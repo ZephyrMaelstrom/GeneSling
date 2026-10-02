@@ -1,11 +1,13 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
 import {clamp,pick} from './util.js';
-import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
 import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,cutFree,express,genomeFrom,hasPedigree,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
+import {breederMark,comfort,perk,pridify} from './hideout.js';
+import {DEMO} from './flags.js';
 import {expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 let S=null;
 const setS=v=>{S=v};
@@ -41,7 +43,7 @@ function makeCreature(species,origin,level,o={}){
   express(c);c.hp=stats(c).hp;return c;
 }
 const bondStar=c=>BOND_TH.filter(t=>(c.bondXp||0)>=t).length;
-function addBond(c,n){const before=bondStar(c);c.bondXp=(c.bondXp||0)+Math.round(n*(c.pers==='loyal'?1.5:1)*(res('bond',0)?1.5:1));return bondStar(c)>before}
+function addBond(c,n){const before=bondStar(c);c.bondXp=(c.bondXp||0)+Math.round(n*(c.pers==='loyal'?1.5:1)*(res('bond',0)?1.5:1)*(1+comfort()));return bondStar(c)>before}
 function stats(c){
   const B=TYPES[c.type].base,m=SPECIES[c.species].mods,g=c.genes,l=1+.07*(c.level-1),has=k=>c.traits.includes(k),st=c.stage||0;
   const E=GENETICS.EFFECTS,n=E.neutral,size=c.looks?c.looks.size:1;
@@ -99,6 +101,7 @@ function newGame(){
   const d=makeCreature('cindlet','bred',2,{name:'Kindle',sex:'F',traits:['worker','quick']});
   const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
   const f=makeCreature('coralisk','bred',2,{name:'Shoal',sex:'M',traits:['worker','thick']});
+  pridify(S);
   S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
@@ -173,7 +176,7 @@ const secTier=k=>{if(!S||!sectionUnlocked(k))return 0;const s=secScore(k);return
 const expandCost=k=>({coin:40*S.sections[k].cap,ore:4*S.sections[k].cap});
 const sectionUnlockedArmory=()=>S.keeper.level>=3;
 const armoryTier=()=>sectionUnlockedArmory()?ARMORY_TH.filter(t=>S.armory>=t).length:0;
-function weaponDmgMul(){const a=armoryTier();return(a>=5?1.2:a>=3?1.1:a>=1?1.05:1)*(secTier('forge')>=5?1.1:1)*(secTier('warroom')>=3?1.1:1)*(res('combat',1)?1.08:1)}
+function weaponDmgMul(){const a=armoryTier();return(a>=5?1.2:a>=3?1.1:a>=1?1.05:1)*(secTier('forge')>=5?1.1:1)*(secTier('warroom')>=3?1.1:1)*(res('combat',1)?1.08:1)*(1+perk('dmg'))}
 const cageCap=()=>3+(S.keeper.level>=5?1:0)+(S.keeper.level>=9?1:0)+(armoryTier()>=2?1:0)+(res('capture',0)?1:0);
 const eggCap=()=>[0,1,2,2,2,3][secTier('nursery')]+(res('breeding',3)&&secTier('nursery')?1:0);
 const modeUnlocked=m=>{const[k,t]=MODES[m].need;return secTier(k)>=t};
@@ -184,9 +187,12 @@ const priceMul=()=>res('economy',1)?.8:1;
 const keeperNeed=()=>120*S.keeper.level;
 function addKeeperXp(n){
   const out=[];S.keeper.xp+=Math.round(n);
+  // The demo stops at Keeper rank 10, the end of Act I.
+  if(DEMO&&S.keeper.level>=PRIDE.DEMO.maxRank)S.keeper.xp=Math.min(S.keeper.xp,keeperNeed()-1);
   while(S.keeper.xp>=keeperNeed()){
     S.keeper.xp-=keeperNeed();S.keeper.level++;const L=S.keeper.level;
     const coin=30*L;S.coin+=coin;S.cages.basic+=1;
+    if(DEMO&&L>=PRIDE.DEMO.maxRank)S.keeper.xp=Math.min(S.keeper.xp,keeperNeed()-1);
     const j=JOURNAL.find(e=>e.rank===L);
     out.push(`Keeper rank ${L}: +${coin} coin, +1 cage${KEEPER_PERKS[L]?'. '+KEEPER_PERKS[L]:''}${j?'. New journal entry: '+j.title:''}`);
   }
@@ -202,7 +208,7 @@ function expeditionEgg(team){
   const ch=makeCreature(sp,'bred',1,{genome:rollGenome(rand,'wild',5)});recordLineage(ch);
   S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#9fe8ff'],parents:'an expedition nest',hybrid:false});
 }
-function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
+function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(perk('bond'))c.bondXp=(c.bondXp||0)+perk('bond');if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
   S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;
@@ -210,6 +216,7 @@ function processDay(){
   if(S.food>=n)S.food-=n;
   else{const short=n-S.food;S.food=0;S.creatures.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.9))});notes.push(`Food ran short by ${short}. Creatures went hungry.`)}
   if(res('economy',3))S.food+=3;
+  S.food+=perk('food');
   runStations(notes);
   tickExpeditions(notes,expeditionEgg);
   tickFatigue();
@@ -292,7 +299,7 @@ function breed(){
     const got=inherit(mom,dad,{rate,inbred:isIn},rand);
     const child=makeCreature(species,'bred',t>=5||res('breeding',4)?5:1,{type,type2,genome:got.genome,pers:inheritPersonality(mom,dad,rand),
       gen:Math.max(mom.gen||0,dad.gen||0)+1,mom:mom.id,dad:dad.id,pure:pureRun(species,mom,dad)});
-    child.birth={mutations:got.mutations,defect:got.defect,inbred:isIn};
+    child.birth={mutations:got.mutations,defect:got.defect,inbred:isIn};child.by=breederMark();
     recordLineage(child);
     const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
     S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});

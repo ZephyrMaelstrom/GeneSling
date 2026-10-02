@@ -8,7 +8,7 @@ Live builds: GitHub Pages deploys `main` on every push (see below). The older v5
 
 ```bash
 npm install        # once
-npm run build      # src/ -> dist/index.html
+npm run build      # src/ -> dist/index.html and the demo, dist/demo/index.html
 npm run dev        # rebuild on every change in src/
 npm run lint       # ESLint: undeclared names and stale imports
 npm test           # build, then run every tests/*.test.js in headless Chrome
@@ -21,7 +21,7 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 ## Continuous integration and hosting
 
 - `.github/workflows/ci.yml` runs lint, build and the full test suite on every push and pull request.
-- `.github/workflows/pages.yml` builds and deploys `dist/` to GitHub Pages on every push to `main`. One-time setup: in the repo's **Settings → Pages**, set **Source** to **GitHub Actions**.
+- `.github/workflows/pages.yml` builds and deploys `dist/` to GitHub Pages on every push to `main`: the full game at `/GeneSling/` and the demo at `/GeneSling/demo/`. One-time setup: in the repo's **Settings → Pages**, set **Source** to **GitHub Actions**.
 
 ## Files
 
@@ -32,6 +32,8 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/data/*.json` | All content tables: `species` (types, species, hybrids, evolution lines, names), `attacks` (attacks, abilities, elements, reactions, combos), `creatures` (personalities, bond, genes, traits), `items` (guns, weapon costs, run buffs), `dungeon` (curses, room modifiers, modes), `enemies`, `bosses`, `hideout` (sections, armory, Keeper perks, research), `story` (intro, journal, NPCs and their quests). |
 | `src/data/genetics.json` | Every genetics number: loci, expression weights, inheritance and mutation odds, wild gene ranges by floor, stat effects of Grit, Focus and size, look names, tool unlocks, and the simulator's defaults. |
 | `src/data/jobs.json` | Every Phase 2 number: materials, station recipes, work rates, fatigue, chemistry and clashes, quality tiers, mastery, recipes, durability, prints, the bag, tonics, raid roles per species, the roster cap, expeditions, the death legacy and the supply sandbox. |
+| `src/data/pride.json` | Every Phase 4 number: the grid, footprints, hillside terraces, decor recipes and Comfort, creature life, Hall of Legends perks, titles, sigil parts, the demo's limits and goals, the default layout. |
+| `src/data/firebase.json` | The Firebase project for feedback and opt-in play stats (`apiKey`, `projectId`). Empty in the repo, so nothing is sent. |
 | `src/data/exchange.json` | Every Phase 3 number: commodities and reference prices, fees, the basket, trader archetypes, beliefs, upkeep, auctions, bounties, shocks, Keeper XP for non-raid work, the balance targets and the sandbox's model players. |
 | `src/content.js` | Loads the JSON tables and derives id lists and lookups (`SPECIES_IDS`, `LINES`, `comboFor`, `foePool`, ...). |
 | `src/rng.js` | The seeded random number generator. |
@@ -51,7 +53,11 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/state.js` | Save state `S`, creature creation and `stats()`, breeding and lineage records (`S.tree`), evolution, research, codex (dex), rewards, NPC quests, hideout sections, Keeper rank, day processing, hatching, breeding, deaths and the memorial. |
 | `src/sprites.js` | Procedural canvas sprites: a body drawer per species and hybrid, evolution dressing, eggs, NPCs, and the DOM sprite painter. |
 | `src/audio.js` | WebAudio sound effects and generative music. |
-| `src/map.js` | The illustrated hideout map canvas. |
+| `src/hideout.js` | Phase 4's rules: the grid layout (`S.layout`), placing, moving and storing, hillside terraces, decor crafting and Comfort, creature life (`lifePlan`), friendships, titles, trophies, the Hall of Legends and its perks (`perk(key)`), the breeder's sigil, and the v10 save fields (`pridify`). |
+| `src/map.js` | The hideout map canvas, drawn from `S.layout`: buildings by tier, decor, trophies and statues, workers and off-duty creatures, day and night, and build mode's grid and taps. `renderMapTo(g, t)` draws into any canvas (the snapshot uses it). |
+| `src/prideui.js` | Build mode's panel, the Hall of Legends, trophy and statue pop-ups, titles and "Bred by" on cards, decor recipes for the Workshop, and the sigil designer. |
+| `src/share.js` | Creature cards and hideout snapshots as PNGs, shared through Web Share or downloaded. |
+| `src/flags.js`, `src/demo.js` | The `DEMO` build flag; the demo's Act I goals and end screen, feedback, and opt-in play stats. |
 | `src/ui.js` | Tabs and screens: raid prep, hideout, roster, breeding, research, armory and market, codex, Test Lab, settings, the intro story. |
 | `src/raid.js` | Dungeon generation, the tutorial map, raid start and end, combat, companions, abilities, combos, reactions, curses, room modifiers, bosses, extraction. |
 | `src/draw.js` | Raid rendering, minimap, HUD, the game loop, pause menu, input handling and boot. |
@@ -87,6 +93,19 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 - Player actions go through `exchange/market.js`: it escrows coin or goods, sends the operation, and applies the returned events. Never change `S.market` directly.
 - The engine keeps its own random generator inside the state, so a saved market replays exactly, and the worker and in-thread transports give identical results (tested).
 
+## The hideout layout
+
+- `S.layout` is a list of `{id, key, x, y, ref?}` in tiles. Rows 0 to 6 are the yard; terraces add rows with negative numbers (`minRow()`), so clearing one never moves anything. `ref` points a trophy at `S.trophies` and a statue at `S.legends`.
+- Use `fits`, `placeNew`, `moveItem`, `storeItem` and `autoPlace` rather than editing `S.layout`. Stations and the board can't be stored.
+- `comfort()` (0 to 0.2) is applied in `tickFatigue` and `addBond`; `perk(key)` sums legend perks and is applied where each one acts (weapon damage, daily food, rest, raid Keeper XP, player HP, extraction coin, hatchling bond).
+- Creature life is visual. `lifePlan(phase)` decides who sleeps, follows or plays, and the map animates it with `fx` randomness.
+
+## The demo and play stats
+
+- `build.mjs` builds twice: `__DEMO__` is `false` for `dist/index.html` and `true` for `dist/demo/index.html`. Read it through `DEMO` in `flags.js`.
+- The demo saves to IndexedDB `genesling-demo` (fallback `genesling-demo-save`). The full game reads that save when it has none of its own.
+- To turn on feedback and play stats, create a Firebase project with Firestore, put its web `apiKey` and `projectId` in `src/data/firebase.json`, and allow create-only writes to the `stats` and `feedback` collections in the Firestore rules, for example `match /stats/{d} { allow create: if true; }` and the same for `feedback`. Reads stay closed.
+
 ## Randomness
 
 - All gameplay randomness goes through `rand()` in `rng.js` (and the helpers `rnd`, `ri`, `pick`, `wpick`, `shuffle` built on it). Never call `Math.random()` in gameplay code.
@@ -97,8 +116,8 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 ## Saves
 
 - The save lives in IndexedDB (database `genesling`, store `saves`, key `main`) as `{v, saved, data}`, with `data` the JSON of `S`. If IndexedDB isn't available, it falls back to `localStorage` under `genesling-save`.
-- `SAVE_VERSION` in `save.js` is the current format (9). Version 9 added the Exchange's state.
-- Earlier formats: Version 7 added genomes: v5 genes and traits became matching allele pairs. Version 8 added materials, weapons as items (every owned weapon became a Fine item), pens, expeditions and fatigue. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
+- `SAVE_VERSION` in `save.js` is the current format (10). Version 10 added the hideout layout, terraces, decor, friendships, titles, trophies (bosses already beaten became trophies in stores), the Hall of Legends, the sigil, and the demo and play-stats state.
+- Earlier formats: Version 9 added the Exchange's state. Version 7 added genomes: v5 genes and traits became matching allele pairs. Version 8 added materials, weapons as items (every owned weapon became a Fine item), pens, expeditions and fatigue. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
 - **Never reset saves.** Any change to the save format bumps `SAVE_VERSION` and adds a migration, plus a test that an old save loads.
 - A save that can't be read or migrated (corrupt, or from a newer build) is copied to a `backup-<time>` key before a new game starts.
 - On first load, the v5 save (`localStorage` key `genesling-save-v5`) is migrated into IndexedDB. The v5 copy stays where it is as a backup.
@@ -108,7 +127,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 
 - Tests drive the game through its globals (`startRaid`, `hurtEnemy`, `useCage`, `act(...)`, `S`, `R`) and fail on any page error.
 - `tests/helpers.js` serves the repo over HTTP and gives each `openGame()` a fresh browser context with empty storage. Await `window.gameReady` before touching the game (the helper does).
-- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace; `jobs.test.js` checks stations, fatigue, foremen, chemistry, upkeep, the roster cap, crafting and quality, durability, the bag, raid roles, tonics, expeditions, the death legacy and the supply sandbox; `touch.test.js` checks the joysticks never move the page; `exchange.test.js` checks buying and selling, limit orders, auctions, bounties, refunds, worker/in-thread parity, catching up missed days, Keeper XP from other work, and the 90-day Economy Sandbox targets.
+- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace; `jobs.test.js` checks stations, fatigue, foremen, chemistry, upkeep, the roster cap, crafting and quality, durability, the bag, raid roles, tonics, expeditions, the death legacy and the supply sandbox; `touch.test.js` checks the joysticks never move the page; `exchange.test.js` checks buying and selling, limit orders, auctions, bounties, refunds, worker/in-thread parity, catching up missed days, Keeper XP from other work, and the 90-day Economy Sandbox targets; `pride.test.js` checks the layout and build mode, terraces, Comfort, creature life and friends, titles, trophies, the Hall of Legends, the sigil, image export and the v9 save; `demo.test.js` checks the demo's limits, its separate save and carry-over, the end screen, opt-in stats and feedback.
 
 ## What v5 has
 

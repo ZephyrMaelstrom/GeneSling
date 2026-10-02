@@ -6,7 +6,13 @@ import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedB
 import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
-import {startRaid} from './raid.js';
+import {R,startRaid} from './raid.js';
+import {DEMO} from './flags.js';
+import {buyPlot,craftDecor,displayWeapon,retire,setSigil,storeItem,takeDownWeapon} from './hideout.js';
+import {bredBy,buildPanel,hallPanel,mapTools,openLegend,openTrophy,renderBuildPanel,sigilPanel,titleChips} from './prideui.js';
+import {openShare,shareGo} from './share.js';
+import {demoGoalsHtml,feedbackHtml,sendFeedback,setStats,statsPanel} from './demo.js';
+import {mapH} from './map.js';
 import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
 import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
 import {amt,buildPen,craft,craftWeapon,expAway,fatigueMul,give,itemByUid,itemName,makerText,mouths,newItem,overCap,repair,rosterCap,rosterCount,scrapItem,startExpedition,usable} from './jobs.js';
@@ -15,7 +21,8 @@ import {startMarket,marketDay} from './exchange/market.js';
 import {viewExchange,economyPanel,runEconomy} from './exchangeui.js';
 import {bindCharts} from './chart.js';
 import {marketView,onMarket,buyNow,sellNow,postOrder,cancelOrder,bid,buyout,listItem,fulfilBounty} from './exchange/market.js';
-const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['exchange','Exchange'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']];
+// The demo has no Test Lab.
+const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['exchange','Exchange'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']].filter(([k])=>!(DEMO&&k==='lab'));
 function renderAll(){renderHeader();renderTabs();renderMain()}
 function renderHeader(){
   const n=mouths();
@@ -117,14 +124,15 @@ function meterHtml(score,th,tier){
   return`<div class="meter"><i style="width:${pct}%"></i>${th.map((t,i)=>`<b class="${tier>i?'on':''}" style="left:${t/max*100}%"><span>T${i+1}</span></b>`).join('')}</div>`;
 }
 function viewHideout(){
-  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'T'+secTier(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button><button class="tab" aria-selected="${ui.section==='memorial'}" data-act="section" data-k="memorial">Memorial</button>`;
+  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'T'+secTier(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='legends'}" data-act="section" data-k="legends">Legends</button><button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button><button class="tab" aria-selected="${ui.section==='memorial'}" data-act="section" data-k="memorial">Memorial</button>`;
   const npcs=NPC_IDS.filter(id=>S.npc[id]).map(id=>`<button class="tab" data-act="npc" data-k="${id}">${NPCS[id].name}${npcAttention(id)?' <i class="dot"></i>':''}</button>`).join('');
-  return`<section class="card mapcard"><div class="mapwrap"><canvas id="hmap" aria-label="Hideout map. Select a building to manage it."></canvas></div>
-    <p class="status">Tap a building to manage it, a person to talk, the cave mouth to raid, or the board to open the Codex. Buildings grow as their tier rises.</p>
+  return`<section class="card mapcard"><div class="mapwrap" style="aspect-ratio:1000/${mapH()}"><canvas id="hmap" aria-label="Hideout map. Select a building to manage it."></canvas></div>
+    ${mapTools()}
+    <p class="status">${HMAP.build?'Building: tap something to pick it up, then tap where it should go.':'Tap a building to manage it, a person to talk, the cave mouth to raid, or the board to open the Codex. Off duty, creatures sleep in dens, play and follow their friends.'}</p>${DEMO?`<details class="demogoals"><summary>Demo: Act I goals</summary>${demoGoalsHtml()}</details>`:''}
     <div class="filters">${chips}</div>${npcs?`<div class="filters" style="margin-top:6px"><span class="status" style="align-self:center">Talk to:</span>${npcs}</div>`:''}</section>
     <section class="card secdetail" id="secPanel">${secBody()}</section>`;
 }
-const secBody=()=>ui.section==='log'?logView():ui.section==='memorial'?memorialView():sectionDetail(ui.section);
+const secBody=()=>HMAP.build?buildPanel():ui.section==='log'?logView():ui.section==='memorial'?memorialView():ui.section==='legends'?hallPanel():sectionDetail(ui.section);
 function renderSecPanel(){const p=$('#secPanel');if(!p)return;p.innerHTML=secBody();paintSprites(p);
   document.querySelectorAll('.mapcard .filters [data-act="section"]').forEach(b=>b.setAttribute('aria-selected',b.dataset.k===ui.section))}
 function logView(){
@@ -181,8 +189,8 @@ function creCard(c){
   const bs=st.star,bp=BOND_PASSIVE[T],nextB=BOND_TH[bs];
   return`<article class="cre">${spr(c,72)}<div class="cre-main">
     <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
-    <div class="status">${esc(formName(c))} · ${sp.blurb}</div>
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
+    <div class="status">${esc(formName(c))} · ${sp.blurb}</div>${bredBy(c)}
+    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
     ${hpBar(c)}
     <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
     <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
@@ -193,7 +201,8 @@ function creCard(c){
     <p class="status"><b class="lbl">Fatigue</b> ${Math.round(c.fat||0)}%${c.fat>0?` · working at ${Math.round(fatigueMul(c)*100)}%`:''}</p>${fatBar(c)}
     <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
     <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
-    <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button></div>
+    <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button>
+    <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button></div>
   </div></article>`;
 }
 function viewRoster(){
@@ -338,7 +347,8 @@ function viewSettings(){
   const sl=(k,l)=>`<label class="field">${l} <small class="status" id="v-${k}">${Math.round(o[k]*100)}%</small><input id="opt-${k}" type="range" min="0" max="1" step="0.05" value="${o[k]}" data-act="optr" data-k="${k}"></label>`;
   return`<div class="cols"><section class="card"><h2>Keeper</h2>
     <label class="field">Your name, for the maker’s mark<input id="keeper-name" type="text" maxlength="24" value="${esc(S.keeperName||'')}" placeholder="the Keeper" data-act="keepername"></label>
-    <p class="status">Everything you craft at Superior quality or better carries your name and its foreman’s, like “Masterwork Ember Carbine, made by ${esc(S.keeperName||'the Keeper')} with Pyrrovex”.</p></section>
+    <p class="status">Everything you craft at Superior quality or better carries your name and its foreman’s, like “Masterwork Ember Carbine, made by ${esc(S.keeperName||'the Keeper')} with Pyrrovex”.</p>
+    ${sigilPanel()}</section>
   <section class="card"><h2>Touch controls</h2>
     ${seg('stick',[['fixed','Fixed'],['float','Floating']],'Joysticks')}
     <p class="status">Fixed sticks stay in the bottom corners. Floating sticks appear wherever your thumb lands.</p>
@@ -357,12 +367,16 @@ function viewSettings(){
     ${tg('shake','Screen shake','Shake the screen when you take damage.')}
     <label class="field">HUD opacity<input id="opt-hud" type="range" min="0.4" max="1" step="0.05" value="${o.hudAlpha}" data-act="opthud"></label></section>
   <section class="card"><h2>Story and help</h2>
-    <div class="row"><button class="btn" data-act="tutorial">Replay the tutorial</button><button class="btn" data-act="intro">Read the opening story</button></div></section></div></div>`;
+    <div class="row"><button class="btn" data-act="tutorial">Replay the tutorial</button><button class="btn" data-act="intro">Read the opening story</button></div></section>
+  <section class="card"><h2>Feedback</h2>${statsPanel()}</section></div></div>`;
 }
 
 /* ---------- modals ---------- */
 function openModal(html){$('#modal').hidden=false;$('#modalBox').innerHTML=html;paintSprites($('#modalBox'))}
-function closeModal(){$('#modal').hidden=true}
+// Modals waiting for the open one to close (the demo's end screen after a raid's results, say).
+const modalQueue=[];
+function closeModal(){$('#modal').hidden=true;const next=modalQueue.shift();if(next)openModal(next)}
+function queueModal(html){if($('#modal').hidden&&!R)openModal(html);else modalQueue.push(html)}
 function openChooser(slot){
   const cur=S.loadout.slots[slot];
   const list=S.creatures.filter(c=>c.id!==cur&&!expAway(c)).sort((a,b)=>b.level-a.level);
@@ -475,6 +489,26 @@ function act(a,d){
     case'lab-prove':S.creatures.forEach(c=>c.proven=true);save();renderAll();break;
     case'lab-xp':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.level=Math.min(40,c.level+5);c.hp=stats(c).hp});save();renderAll();break;
     case'lab-hatch':{const n=S.eggs.length;S.eggs.forEach(hatchEgg);S.eggs=[];if(n)addLog(`Test Lab: hatched ${n} egg${n>1?'s':''}.`);save();renderAll();break}
+    case'buildmode':HMAP.build=!HMAP.build;HMAP.pick=null;renderMain();break;
+    case'placepick':HMAP.pick={kind:'place',key:d.k,ref:d.ref!=null?+d.ref:undefined};renderBuildPanel();break;
+    case'cancelpick':HMAP.pick=null;renderBuildPanel();break;
+    case'storeitem':if(storeItem(+d.id)){HMAP.pick=null;save();renderBuildPanel()}break;
+    case'buyplot':if(buyPlot()){sfx('level');save();renderAll()}break;
+    case'makedecor':if(craftDecor(d.k)){sfx('heavy');save();renderAll()}break;
+    case'retire':{const c=byId(+ui.retire);if(!c)break;if(ui.retireArm!==c.id){ui.retireArm=c.id;renderSecPanel();break}ui.retireArm=null;const L=retire(c);if(L){ui.retire='';sfx('quest');save();renderAll();openLegend(L.id)}break}
+    case'takedown':if(takeDownWeapon(+d.id)){save();renderAll()}break;
+    case'displayweapon':if(displayWeapon(+d.uid)){validGuns();sfx('quest');save();renderAll()}break;
+    case'trophy':openTrophy(+d.id);break;
+    case'legend':openLegend(+d.id);break;
+    case'sigil':{const Z=S.sigil||ui.sigilDraft||{};ui.sigilDraft={shape:Z.shape,color:Z.color,glyph:Z.glyph,[d.k]:d.v};if(S.sigil){setSigil(ui.sigilDraft);save()}renderMain();break}
+    case'sigilsave':setSigil(ui.sigilDraft||S.sigil||{});save();renderMain();break;
+    case'sigilclear':setSigil(null);ui.sigilDraft=null;save();renderMain();break;
+    case'sharecard':openShare('card',+d.id);break;
+    case'snapshot':openShare('snapshot');break;
+    case'sharego':shareGo();break;
+    case'feedback':openModal(feedbackHtml());break;
+    case'sendfeedback':{const rate=$('#fb-rate').value,text=$('#fb-text').value;sendFeedback(rate,text).then(how=>{const st=$('#fb-status');if(st)st.textContent=how==='empty'?'Write something first.':how==='firebase'?'Thank you! Sent.':'Thank you! Finish sending it on GitHub.'});break}
+    case'stats':setStats(d.k==='1');closeModal();if(ui.tab==='settings')renderMain();break;
     case'reset':if(!ui.resetArm){ui.resetArm=true;renderMain();break}ui.resetArm=false;newGame();save();startMarket();ui.tab='raid';renderAll();openIntro(true);break;
   }
 }
@@ -494,6 +528,8 @@ document.addEventListener('change',e=>{
   else if(a==='expsel'){ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()}
   else if(a==='expdest'){ui.exp.dest=el.dataset.k;renderSecPanel()}
   else if(a==='mom'){ui.mom=el.value;renderMain()}
+  else if(a==='retiresel'){ui.retire=el.value;ui.retireArm=null;renderSecPanel()}
+  else if(a==='statsopt'){setStats(el.checked);renderMain()}
   else if(a==='dad'){ui.dad=el.value;renderMain()}
   else if(a==='glc'){ui.gl.id=el.value;renderSecPanel()}
   else if(a==='glg'){ui.gl.gene=el.value;renderSecPanel()}
@@ -513,4 +549,4 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act==='optr'){S.opts[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();save()}});
 
-export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,openChooser,openNpc,questRewardText,openIntro,act};
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro,act};

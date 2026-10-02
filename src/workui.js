@@ -8,6 +8,7 @@ import {JOBS as J,SECTIONS,TYPES,TRAITS,GUNS,GUN_IDS,SCRAP_ORE,DONATE_PTS,ARMORY
 import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sectionUnlockedArmory,whereIs} from './state.js';
 import {spr} from './sprites.js';
 import {simulateSupply} from './supply.js';
+import {decorRecipes} from './prideui.js';
 import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale} from './jobs.js';
 
 const f1=v=>(Math.round(v*10)/10).toString();
@@ -108,13 +109,15 @@ function workshopView(ui){
       <small>${esc(makerText(it))} · ${it.dur}/${it.max} durability${it.kind==='gun'?` · ×${J.QUALITY.dmg[it.q]} damage`:` · +${J.QUALITY.satchelSlots[it.q]} bag slots`}</small>${durBar(it)}</span>
       <span class="row" style="gap:4px">${rc?`<button class="btn small" data-act="repair" data-uid="${it.uid}" ${canPay(rc)?'':'disabled'}>Repair · ${costText(rc)}</button>`:''}
       ${it.kind==='gun'?`<button class="btn small ${arm?'danger':''}" data-act="scrapitem" data-uid="${it.uid}">${arm?'Confirm scrap':'Scrap · +'+Math.round(SCRAP_ORE[tier]*(ft>=3?1.5:1))+' ore'}</button>
-      <button class="btn small" data-act="donateitem" data-uid="${it.uid}" ${un?'':'disabled'}>Donate · +${DONATE_PTS[tier]}</button>`:''}</span></div>`}).join('');
+      <button class="btn small" data-act="donateitem" data-uid="${it.uid}" ${un?'':'disabled'}>Donate · +${DONATE_PTS[tier]}</button>`:''}
+      ${it.kind==='gun'&&it.q>=4?`<button class="btn small" data-act="displayweapon" data-uid="${it.uid}">Put on display</button>`:''}</span></div>`}).join('');
   return`<div class="cols"><section class="card"><h2>Workshop</h2>
     <p class="hint">Stations turn raw finds into refined goods each day. Here you turn those into parts, then into gear that carries your maker’s mark. Quality comes from the station’s Knack, its foreman and how often you’ve made the recipe.</p>
     <h3>Components</h3><div class="recipes">${comp}</div>
     <h3>Cages and satchels</h3><div class="recipes">${fin}</div>
     <h3>Weapons · Forge T${ft}</h3><div class="recipes">${guns}</div>${unknown?`<p class="status">${unknown} more blueprint${unknown>1?'s':''} to find. Bring a weapon home from a raid to learn it.</p>`:''}
     ${prints?`<h3>Prints</h3>${prints}`:''}
+    <h3>Decor</h3><p class="hint">Place decor in the Hideout’s build mode. It raises Comfort, which cuts fatigue and speeds bond, up to +20%.</p><div class="recipes">${decorRecipes()}</div>
     <h3>Your gear</h3>${gear||'<p class="empty">Only the Scav Pistol. Find more in raids or forge some.</p>'}
   </section>
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
