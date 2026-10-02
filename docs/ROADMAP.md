@@ -30,7 +30,7 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 - [x] Move species, attacks, items, enemies and bosses into data files
 - [x] Add a seeded random number generator for replayable raids
 - [x] Store saves in IndexedDB with a version number and migrations
-- [ ] Turn the headless test scripts into a suite that runs on every push
+- [x] Turn the headless test scripts into a suite that runs on every push
 - [ ] Exit test: v5 plays the same, all tests pass, and a v5 save loads (automated checks pass; needs a hand test on a phone)
 
 ### Phase 1 · Genetics 2.0 (weeks 3 to 6)
