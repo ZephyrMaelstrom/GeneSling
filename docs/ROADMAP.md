@@ -25,24 +25,24 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 0 · Foundation (weeks 1 to 2)
 
-- [ ] Create the GitHub repo and turn on GitHub Pages
-- [ ] Split the v5 file into modules with a bundler build
-- [ ] Move species, attacks, items, enemies and bosses into data files
-- [ ] Add a seeded random number generator for replayable raids
-- [ ] Store saves in IndexedDB with a version number and migrations
-- [ ] Turn the headless test scripts into a suite that runs on every push
-- [ ] Exit test: v5 plays the same, all tests pass, and a v5 save loads
+- [ ] Create the GitHub repo and turn on GitHub Pages (repo and deploy workflow done; Pages needs Settings → Pages → Source: GitHub Actions)
+- [x] Split the v5 file into modules with a bundler build
+- [x] Move species, attacks, items, enemies and bosses into data files
+- [x] Add a seeded random number generator for replayable raids
+- [x] Store saves in IndexedDB with a version number and migrations
+- [x] Turn the headless test scripts into a suite that runs on every push
+- [ ] Exit test: v5 plays the same, all tests pass, and a v5 save loads (automated checks pass; needs a hand test on a phone)
 
 ### Phase 1 · Genetics 2.0 (weeks 3 to 6)
 
-- [ ] Build the 14-locus genome and its data model
-- [ ] Add inheritance: one allele from each parent, the father's 65% bias, recessive carriers and personality
-- [ ] Add mutation, defects, inbreeding risk, generations and the cut-free rule
-- [ ] Draw hue, pattern, size and shine on every species and evolution sprite
-- [ ] Add the first 20 traits
-- [ ] Build the Sequencer, Gene Lens, breeding outcome preview and family tree
-- [ ] Add a genetics simulator to the Test Lab
-- [ ] Exit test: Apex in 10 to 14 generations, and five generations feel worth planning
+- [x] Build the 14-locus genome and its data model (15 with Shine; see DESIGN.md)
+- [x] Add inheritance: one allele from each parent, the father's 65% bias, recessive carriers and personality
+- [x] Add mutation, defects, inbreeding risk, generations and the cut-free rule
+- [x] Draw hue, pattern, size and shine on every species and evolution sprite
+- [x] Add the first 20 traits
+- [x] Build the Sequencer, Gene Lens, breeding outcome preview and family tree
+- [x] Add a genetics simulator to the Test Lab
+- [ ] Exit test: Apex in 10 to 14 generations, and five generations feel worth planning (simulator median 13; the hand test is still to do)
 
 ### Phase 2 · Jobs and production (weeks 7 to 10)
 

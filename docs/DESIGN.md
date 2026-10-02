@@ -78,7 +78,7 @@ One loop turns everything: raid, extract, breed, post, produce, trade, and back 
 
 ## Genetics
 
-Every creature carries a real genome of 14 loci, two alleles each, and every stat, skill, job and look it has comes from that genome. Wild catches bring raw genetic variety. Breeding sorts it into something better. The best creatures in the game are about 12 generations from the wild.
+Every creature carries a real genome of 15 loci, two alleles each, and every stat, skill, job and look it has comes from that genome. Wild catches bring raw genetic variety. Breeding sorts it into something better. The best creatures in the game are about 12 generations from the wild.
 
 ### The genome
 
@@ -128,6 +128,22 @@ The chance rises with a Gen 0 wild parent (Bloomblood, +1%), Crystal creatures p
 ### The long chase
 
 An **Apex genome** has every combat stat at 10 or higher on both alleles. At the start of Act IV a top breeder has one or two. Players who chase a Prismatic, Apex, Pedigree, cut-free hybrid are chasing the rarest object in the game, and every one of them is different.
+
+### Genetics 2.0 as built (Phase 1)
+
+Decisions made while building, so the design and the code agree. Numbers live in `src/data/genetics.json`.
+
+- **Fifteen loci.** The six combat stats, two work stats, three trait slots, hue, pattern, size and shine. A fourth trait slot (below) is carried by every creature but only shows on a cut-free final form.
+- **The v5 genes map across.** Haste became Tempo and Temper became Focus, which now covers obedience as well as ability recharge and crits. Grit and Focus are neutral at grade 5. Knack and Yield are inherited now and start doing work in Phase 2.
+- **Dominance of looks.** Hue: the lower hue number wins, so the species' natural color (hue 0) beats every other hue. Pattern: any pattern beats Plain, and between two patterns the earlier one in the list shows (spots, stripes, ombre, rings, runes), so Runes is the most recessive. Size blends (the average, rounded up). Prismatic needs two copies; Bloomscar shows with one.
+- **Traits.** 20 traits at the end of Phase 1: the 16 from v5 (each now marked dominant or recessive) plus Twin Eggs (a mother's clutch is two eggs 25% of the time), Strong Blood (passes its better stat copy 75% of the time), Ricochet (shots bounce once) and Thrifty (eats nothing on days it works). The negative traits and defects are recessive. Defects: Brittle (takes 20% more damage) and Short-lived (can breed only twice).
+- **Mutation.** 1.5% per locus per egg, +1% with a Gen 0 parent, +0.5% each from the first breeding research node and Nursery tier 4. A mutated stat moves one grade up or down; Apex 11 is reached only by mutating a 10, and only on combat stats. A mutated trait slot gains a new trait (80%) or a defect (20%). Shine mutates to Prismatic, or to Bloomscar a quarter of the time.
+- **Inbreeding** means the two parents share an ancestor among themselves and their own parents (the child's parents and grandparents). The egg then has a 25% chance of a defect in both copies of one trait slot.
+- **Fourth trait slot.** When a cut-free creature reaches its final form it rolls one positive trait into its fourth slot. Its children inherit the slot, but it only shows on their own cut-free final forms.
+- **Pedigree** counts consecutive generations in which both parents were the creature's own species.
+- **Tools.** Until the act structure exists, the Sequencer turns on when Dr. Sorrel arrives (Keeper rank 4 or a working Nursery), and the Gene Lens whenever an Echo creature is posted in the Roost.
+- **Wild genes.** Wild alleles roll a grade range that rises with depth, with a small chance of a 10 that also rises with depth (8% by floor 6). The rest of the way to 10, and everything past it, comes from breeding and mutation.
+- **The pace check.** The Test Lab simulator models a focused breeder with a Gene Lens: 6 eggs a generation, keeping the best 3 of 8 wild creatures met each generation, and a pool of 12. It reaches an Apex genome in a median of 13 generations, inside the 10 to 14 target. About 1 run in 10 takes past 40 generations; those breeders stall waiting for one missing locus.
 
 ## Every creature matters
 

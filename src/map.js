@@ -1,4 +1,11 @@
 /* ================= Hideout map: buildings grow with tiers, creatures wander, NPCs wait ================= */
+import {$,fxRnd} from './util.js';
+import {NPCS,NPC_IDS,RES_IDS,SECTIONS} from './content.js';
+import {S,byId,npcAttention,secTier,sectionUnlocked,syncNpcs,ui} from './state.js';
+import {OL,drawCreature,drawPerson} from './sprites.js';
+import {sfx} from './audio.js';
+import {act,openNpc,renderSecPanel} from './ui.js';
+import {R} from './raid.js';
 const HMAP={W:1000,H:470,raf:0,bg:null,wander:{},hover:null,t:0};
 const BUILD={
   nursery:{x:150,y:200,w:120},training:{x:390,y:185,w:130},warroom:{x:625,y:185,w:120},archive:{x:860,y:200,w:120,link:'research',name:'Archive'},
@@ -83,8 +90,8 @@ function drawHideoutMap(){
     if(!SECTIONS[k])continue;
     const ids=S.sections[k].ids.slice(0,5);
     ids.forEach((id,i)=>{const c=byId(id);if(!c)return;
-      let w=HMAP.wander[id];if(!w||w.k!==k){w=HMAP.wander[id]={k,x:b.x+rnd(-b.w*.5,b.w*.5),y:b.y+rnd(30,48),tx:0,ty:0,wait:rnd(0,2),face:1}}
-      if(w.wait>0){w.wait-=1/60}else{const dx=w.tx-w.x,dy=w.ty-w.y,l=Math.hypot(dx,dy);if(l<2||!w.tx){w.tx=b.x+rnd(-b.w*.6,b.w*.6);w.ty=b.y+rnd(28,50);w.wait=rnd(1,3)}else{w.x+=dx/l*.6;w.y+=dy/l*.4;w.face=dx<0?-1:1}}
+      let w=HMAP.wander[id];if(!w||w.k!==k){w=HMAP.wander[id]={k,x:b.x+fxRnd(-b.w*.5,b.w*.5),y:b.y+fxRnd(30,48),tx:0,ty:0,wait:fxRnd(0,2),face:1}}
+      if(w.wait>0){w.wait-=1/60}else{const dx=w.tx-w.x,dy=w.ty-w.y,l=Math.hypot(dx,dy);if(l<2||!w.tx){w.tx=b.x+fxRnd(-b.w*.6,b.w*.6);w.ty=b.y+fxRnd(28,50);w.wait=fxRnd(1,3)}else{w.x+=dx/l*.6;w.y+=dy/l*.4;w.face=dx<0?-1:1}}
       drawCreature(g,c,w.x,w.y,.62,t,{face:w.face,seed:id})});
   }
   syncNpcs();
@@ -115,3 +122,5 @@ function startHideoutMap(){
   HMAP.sel=ui.section;
   if(!HMAP.raf)HMAP.raf=requestAnimationFrame(drawHideoutMap);
 }
+
+export {HMAP,BUILD,NPC_SPOT,GATE,BOARD,hmapBg,hmapTier,drawBuilding,shade,drawHideoutMap,hmapHit,startHideoutMap};

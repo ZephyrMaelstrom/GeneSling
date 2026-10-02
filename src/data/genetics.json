@@ -1,0 +1,46 @@
+{
+  "STAT_LOCI": ["pow","vig","swf","tem","foc","grt"],
+  "WORK_LOCI": ["kn","yld"],
+  "TRAIT_LOCI": ["t1","t2","t3"],
+  "BONUS_LOCUS": "t4",
+  "LOOK_LOCI": ["hue","pat","size","shine"],
+  "GRADE": {"min":1,"max":10,"apex":11},
+  "EXPRESS": {"better":0.6,"worse":0.4},
+  "INHERIT": {"fatherBetter":0.65,"strongBlood":0.75,"persMother":0.5,"persFather":0.3},
+  "MUTATION": {"perLocus":0.015,"bloomblood":0.01,"research":0.005,"nursery":0.005,"statUp":0.5,"traitDefect":0.2,"bloomscar":0.25},
+  "INBREEDING": {"generations":2,"defectChance":0.25},
+  "LINEAGE": {"treeDepth":5,"cutFreeGen":3,"pedigreeRun":5},
+  "TWIN_CHANCE": 0.25,
+  "SHORT_LIVED_BREEDS": 2,
+  "WILD": {
+    "gradeMin": [2,3,3,4,4,5],
+    "gradeMax": [7,8,8,9,9,9],
+    "tenChance": [0,0.005,0.01,0.03,0.05,0.08],
+    "traitAllele": 0.4,
+    "hueNatural": 0.75,
+    "patWeights": [50,18,14,9,6,3],
+    "sizeWeights": [25,45,22,8],
+    "prismatic": 0.04
+  },
+  "BRED": {"gradeMin":2,"gradeMax":7},
+  "LEGACY_DEFAULT": 5,
+  "EFFECTS": {
+    "focusAbil": 0.02,
+    "focusCrit": 0.01,
+    "gritTaken": 0.02,
+    "neutral": 5,
+    "brittleTaken": 1.2,
+    "sizeHp": [0.94,1,1.05,1.1],
+    "sizeScale": [0.85,1,1.12,1.25],
+    "sizeHitbox": [0.9,1,1.08,1.15]
+  },
+  "HUES": ["Natural","Warm","Sunlit","Verdant","Tidal","Azure","Dusk","Blush"],
+  "PATTERNS": ["Plain","Spots","Stripes","Ombre","Rings","Runes"],
+  "SIZES": ["Small","Medium","Large","Huge"],
+  "SHINES": ["Normal","Prismatic","Bloomscar"],
+  "TOOLS": {
+    "sequencer": {"npc":"sorrel","name":"Sequencer","desc":"Dr. Sorrel’s Sequencer reads the exact grade of every gene."},
+    "lens": {"section":"roost","type":"echo","name":"Gene Lens","desc":"An Echo creature posted in the Roost hears both copies of every gene, including hidden carriers."}
+  },
+  "SIM": {"runs":200,"maxGens":40,"eggsPerGen":6,"wildSeen":8,"wildPerGen":3,"floor":6,"poolSize":12,"pairs":3,"tenWeight":4}
+}

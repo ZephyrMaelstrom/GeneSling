@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>GeneSling</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
@@ -63,6 +67,23 @@ canvas.spr{image-rendering:pixelated;background:var(--deep);box-shadow:0 0 0 2px
 .stats div{background:var(--deep);padding:3px 6px}
 .stats dt{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .stats dd{margin:0;font-family:var(--display)}
+/* Genetics: star ratings, allele pairs, family tree, simulator histogram */
+.gstars{color:var(--gold);letter-spacing:1px;font-size:.8rem;white-space:nowrap}
+.gstars i{color:var(--line);font-style:normal}
+.genes small.al{color:var(--muted);font-size:.72rem}
+.apex{color:var(--gold)}
+span.neg{color:var(--rose)}
+.tree{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.tcol{display:flex;flex-direction:column;gap:6px;min-width:150px;flex:none}
+.tnodes{display:flex;flex-direction:column;justify-content:space-around;gap:6px;flex:1}
+.tnode{display:flex;gap:6px;align-items:center;background:var(--deep);box-shadow:0 0 0 1.5px var(--line);padding:4px 6px;font-size:.8rem;line-height:1.25}
+.tnode.unknown{color:var(--muted);justify-content:center;min-height:42px}
+.tnode.twice{box-shadow:0 0 0 1.5px var(--gold)}
+.tnode canvas{flex:none}
+.hist{display:grid;gap:3px;margin-top:6px}
+.hrow{display:grid;grid-template-columns:4.5em 1fr 2.5em;gap:8px;align-items:center;font-size:.8rem}
+.hrow .g{height:8px;background:var(--deep);position:relative}
+.hrow .g i{position:absolute;inset:0 auto 0 0;background:var(--sky)}
 .genes{display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;align-items:center;font-size:.85rem}
 .genes .g{height:6px;background:var(--deep);position:relative}
 .genes .g i{position:absolute;inset:0 auto 0 0;background:var(--sky)}

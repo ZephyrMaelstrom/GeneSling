@@ -1,6 +1,15 @@
 /* ================= Raid engine ================= */
+import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
+import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
+import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
+import {save} from './save.js';
+import {S,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
+import {sfx} from './audio.js';
+import {startHideoutMap} from './map.js';
+import {closeModal,openModal,renderAll,validGuns} from './ui.js';
+import {resize,showOverlay,startLoop,stopLoop} from './draw.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
-let R=null,raf=0;
+let R=null;
 const keys=new Set();
 const touch={move:null,aim:null};
 const localFloor=f=>(f-1)%3+1;
@@ -29,8 +38,8 @@ function genMap(floor,arena,bossId){
     if(loc>=2)set1('lair');
     const rest=shuffle(others.slice(i));let j=0;const put=k=>{if(rest[j])rest[j++].kind=k};
     put('chest');put('chest');
-    if(Math.random()<.75)put('shop');
-    if(Math.random()<.35)put('shrine');
+    if(rand()<.75)put('shop');
+    if(rand()<.35)put('shrine');
     const pool=foePool(floor),newIntro=loc+set*3;
     const swarm=S.modes.swarm&&modeUnlocked('swarm')?2:0;
     const wildMul=(S.modes.hunter&&modeUnlocked('hunter')?2:1)*(secTier('roost')>=4?1.3:1)*(res('capture',4)?1.25:1);
@@ -38,17 +47,17 @@ function genMap(floor,arena,bossId){
       if(['start','shop','shrine','boss'].includes(r.kind))continue;
       const base={fight:[3,4],chest:[1,2],stairs:[3,4],gate:[2,3],rift:[3,4],cliff:[2,3],lair:[3,4]}[r.kind];
       const n=ri(base[0],base[1])+(loc-1)+swarm;
-      const wc=r.kind==='lair'?(Math.random()<.5?1:0):(Math.random()<(loc===3?.26:.2)*wildMul?1:0);
+      const wc=r.kind==='lair'?(rand()<.5?1:0):(rand()<(loc===3?.26:.2)*wildMul?1:0);
       const foes=[];while(foes.length<n-wc)foes.push(wpick(pool,k=>FOES[k].intro===newIntro?2.2:1));
       r.plan={foes,wilds:Array.from({length:wc},()=>rollWildSpecies(floor,r.kind==='lair')),elite:r.kind==='lair'};
-      if((r.kind==='fight'||r.kind==='lair')&&Math.random()<(floor===1?.15:.25))r.mod=pick(ROOM_MOD_IDS);
+      if((r.kind==='fight'||r.kind==='lair')&&rand()<(floor===1?.15:.25))r.mod=pick(ROOM_MOD_IDS);
     }
     if(bossId)rooms.find(r=>r.kind==='boss').bossId=bossId;
-    if(Math.random()<.65){
+    if(rand()<.65){
       const hosts=shuffle(rooms.filter(r=>!['boss','start'].includes(r.kind)));
       outer:for(const h of hosts)for(const[dx,dy]of shuffle([[1,0],[-1,0],[0,1],[0,-1]])){const nx=h.gx+dx,ny=h.gy+dy;if(nx<0||ny<0||nx>=G||ny>=G||grid[nx+','+ny])continue;
         const s=add(nx,ny,'secret');s.hidden=true;s.host=h;s.links.push(h);h.links.push(s);s.chest={x:0,y:0,open:false,rich:true};
-        s.plan={foes:[],wilds:Math.random()<.4?[rollWildSpecies(floor,true)]:[]};break outer}
+        s.plan={foes:[],wilds:rand()<.4?[rollWildSpecies(floor,true)]:[]};break outer}
     }
   }
   return buildMap(rooms,grid,G,G,floor,arena,start);
@@ -104,7 +113,7 @@ const PALS={1:{a:'#2c4a55',b:'#284450',fl:'#3a6070',wall:'#336b66',top:'#5fb3a0'
   arena:{a:'#4a2f3f',b:'#43293a',fl:'#5e3c50',wall:'#7a3f5a',top:'#ff8fb1',edge:'#24101c'}};
 function paintTile(g,M,x,y,pal){
   const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const t=M.tiles[y*M.W+x];return t===1||t===3};
-  if(walk(x,y)){g.fillStyle=(x+y)%2?pal.a:pal.b;g.fillRect(x*TS,y*TS,TS,TS);if(Math.random()<.18){g.fillStyle=pal.fl;g.fillRect(x*TS+ri(4,24),y*TS+ri(4,24),ri(2,5),ri(2,4))}return}
+  if(walk(x,y)){g.fillStyle=(x+y)%2?pal.a:pal.b;g.fillRect(x*TS,y*TS,TS,TS);if(fxRand()<.18){g.fillStyle=pal.fl;g.fillRect(x*TS+fxRi(4,24),y*TS+fxRi(4,24),fxRi(2,5),fxRi(2,4))}return}
   let near=false;for(let dy=-1;dy<=1&&!near;dy++)for(let dx=-1;dx<=1;dx++)if(walk(x+dx,y+dy)){near=true;break}
   if(!near&&M.tiles[y*M.W+x]!==4)return;
   g.fillStyle=pal.wall;g.fillRect(x*TS,y*TS,TS,TS);
@@ -133,18 +142,23 @@ function damageCrack(i,dmg){
 }
 
 /* ---------- raid setup ---------- */
+// Size from genes nudges the hitbox.
+const hitboxMul=c=>GENETICS.EFFECTS.sizeHitbox[c.looks?c.looks.size:1];
 function makeComp(c){
   const st=stats(c),mh=Math.round(st.hp*(secTier('spring')>=4?1.1:1)*(res('bond',1)?1.1:1));
-  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:12,hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
-    cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:Math.random()*9,lastStand:st.star>=5};
+  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
+    cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:rand()*9,lastStand:st.star>=5};
 }
 function pickBoss(set){return pick(BOSS_IDS.filter(b=>BOSSES[b].set===set))}
-function startRaid(mode,startFloor){
+// Each floor is generated on its own stream seeded from the raid seed and the floor number,
+// so the same seed always builds the same floors, whatever happened in the fight before.
+function genFloor(seed,f,arena){return withSeed(mixSeed(seed,f),()=>{const boss=isBossFloor(f)?pickBoss(f>=4?1:0):null;return{boss,M:genMap(f,arena,boss)}})}
+function startRaid(mode,startFloor,seed){
   closeModal();
   const f0=startFloor||1,tut=mode==='tutorial';
-  const boss=!tut&&isBossFloor(f0)?pickBoss(f0>=4?1:0):null;
-  const M=tut?genTutorialMap():genMap(f0,mode==='arena',boss);
-  R={mode,id:mode==='arena'||tut?mode:S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'||tut?0:600+(f0>=4?360:0),
+  seed=seed!=null?seed>>>0:newSeed();seedRng(mixSeed(seed,0));
+  const{M}=tut?{M:genTutorialMap()}:genFloor(seed,f0,mode==='arena');
+  R={mode,seed,id:mode==='arena'||tut?mode:S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'||tut?0:600+(f0>=4?360:0),
     p:{x:M.start.cx,y:M.start.cy+40,r:11,hp:100,maxHp:100,roll:0,rollCd:0,rvx:0,rvy:0,vx:0,vy:0,inv:0,hurt:0,slow:0,fireCd:0},
     comps:[null,null],slot3:null,enemies:[],bullets:[],fields:[],floats:[],fx:[],items:[],trail:[],swings:[],timers:[],bolts:[],
     bag:{coin:0,ore:0,food:0},cages:{basic:0,gilded:0},guns:['pistol',null],active:0,spin:0,burst:[],
@@ -177,7 +191,7 @@ function startRaid(mode,startFloor){
   $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
   $('#pause').hidden=true;$('#bossBar').hidden=true;$('#tutBox').hidden=!tut;$('#roomMod').hidden=true;
   applyOpts();
-  resize();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+  resize();startLoop();
 }
 function applyOpts(){
   const o=S.opts,raid=$('#raid');
@@ -217,7 +231,7 @@ function spawnPos(r,minD=180){
   for(let i=0;i<40;i++){const x=(r.ox+rnd(1.5,RW-1.5))*TS,y=(r.oy+rnd(1.5,RH-1.5))*TS;if(!hitsWall(x,y,18)&&Math.hypot(x-R.p.x,y-R.p.y)>minD)return{x,y}}
   return{x:r.cx,y:r.cy};
 }
-function baseEnemy(pos,room){return{x:pos.x,y:pos.y,room,stun:0,slow:0,face:1,flash:0,hitCd:0,wind:0,rot:Math.random()*6,phase:0,queue:[],chargeT:0,strafe:pick([-1,1]),seed:Math.random()*9,shots:0,status:{},burn:null,lastHit:null}}
+function baseEnemy(pos,room){return{x:pos.x,y:pos.y,room,stun:0,slow:0,face:1,flash:0,hitCd:0,wind:0,rot:rand()*6,phase:0,queue:[],chargeT:0,strafe:pick([-1,1]),seed:rand()*9,shots:0,status:{},burn:null,lastHit:null}}
 const hpMods=()=>R.mods.hp*(CU('toll')?1.25:1);
 function spawnWild(pos,species,room,level){
   const f=R.map.floor;const lv=level||[0,ri(2,4),ri(4,6),ri(6,9),ri(10,14),ri(14,18),ri(18,24)][f];
@@ -225,7 +239,7 @@ function spawnWild(pos,species,room,level){
   const c=makeCreature(species,'wild',lv,{floor:f,stage});const st=stats(c);
   const fire=WILD_FIRE[c.type];const hp=Math.round(st.hp*.7*hpMods());
   dexForm(species,stage,'seen');
-  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:14,hp,maxHp:hp,dmg:st.atk*.6*R.mods.dmg,spd:st.spd*.65,
+  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:Math.round(14*hitboxMul(c)),hp,maxHp:hp,dmg:st.atk*.6*R.mods.dmg,spd:st.spd*.65,
     fire,every:fire.every/Math.max(.6,st.rate),cd:rnd(.8,1.8),melee:fire.kind==='charge'||c.type==='warden',bcol:SPECIES[c.species].col}));
   return R.enemies[R.enemies.length-1];
 }
@@ -249,7 +263,7 @@ function enterRoom(r){
   const f=R.map.floor;
   r.plan.foes.forEach((id,i)=>spawnFoe(spawnPos(r),id,f,r,r.plan.elite&&i===0));
   r.plan.wilds.forEach(s=>spawnWild(spawnPos(r),s,r));
-  if(r.kind==='secret'){bump('secrets');if(Math.random()<.35){S.shards++;float(R.p.x,R.p.y-30,'+1 memory shard','#ff8fe0',true)}if(r.plan.wilds.length)msg(`A wild ${SPECIES[r.plan.wilds[0]].name} hides in the secret room.`);return}
+  if(r.kind==='secret'){bump('secrets');if(rand()<.35){S.shards++;float(R.p.x,R.p.y-30,'+1 memory shard','#ff8fe0',true)}if(r.plan.wilds.length)msg(`A wild ${SPECIES[r.plan.wilds[0]].name} hides in the secret room.`);return}
   if(R.enemies.some(e=>e.room===r)){
     r.locked=true;pullComps();sfx('door');
     const w=r.plan.wilds;
@@ -327,7 +341,7 @@ function hurtEnemy(e,dmg,quiet,src,elem){
 }
 function hurtPlayer(d,slow){
   const p=R.p;if(S.settings.god||R.god||p.roll>0||R.shield>0||p.inv>0)return;
-  if((R.sup.has('crystal')&&Math.random()<.2)||(bondComp('crystal')&&Math.random()<.1)){float(p.x,p.y-24,'Blocked','#ff8fe0',true);p.inv=.2;return}
+  if((R.sup.has('crystal')&&rand()<.2)||(bondComp('crystal')&&rand()<.1)){float(p.x,p.y-24,'Blocked','#ff8fe0',true);p.inv=.2;return}
   if(R.fortress>0)d*=.5;
   p.hp-=d;p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;if(S.opts.shake)R.shake=.18;sfx('hurt');
   if(p.hp<=0)playerDown();
@@ -350,9 +364,11 @@ function playerDown(){
 function shoot(team,x,y,ang,speed,dmg,o={}){
   const b={team,x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:o.r||5,dmg,life:o.life||2.6,age:0,col:o.col||'#ff5c7a',slow:o.slow||0,
     pierce:o.pierce||0,hit:o.pierce?new Set():null,bounce:o.bounce||0,explode:o.explode||0,split:o.split||0,homing:o.homing||0,src:o.src||null,elem:o.elem||null,lob:o.lob||null,orbit:o.orbit||null,cloud:o.cloud||0};
+  // Ricochet trait: a companion's shots bounce off a wall once.
+  if(o.src&&o.src.c&&o.src.c.traits.includes('ricochet'))b.bounce=Math.max(b.bounce,1);
   R.bullets.push(b);return b;
 }
-const critMul=st=>st&&st.crit&&Math.random()<st.crit?2:1;
+const critMul=st=>st&&st.crit&&rand()<st.crit?2:1;
 function nearestEnemy(from,range,spareWeak){let best=null,bd=range;for(const e of R.enemies){if(e.hp<=0)continue;if(spareWeak&&isWeak(e))continue;const d=dist(from,e)-e.r;if(d<bd){bd=d;best=e}}return best}
 function pickTarget(e){
   if(R.taunt>0&&R.tauntEnt&&!R.tauntEnt.downed)return R.tauntEnt;
@@ -375,7 +391,7 @@ const roomFoes=(r=R.cur)=>R.enemies.filter(e=>e.hp>0&&(e.room===r||dist(e,R.p)<4
 /* ---------- abilities ---------- */
 function compAtk(m){return m.atk*(1+.2*B('pdmg'))*(CU('feral')?1.4:1)*(R.rally?R.rally.dmg:1)}
 function doAbility(m,id){
-  const atk=compAtk(m),el=TYPES[m.c.type].elem,col=SPECIES[m.c.species].col,p=R.p;
+  const atk=compAtk(m),col=SPECIES[m.c.species].col,p=R.p;
   const tg=nearestEnemy(m,460);sfx('ability');
   const near=(rad)=>R.enemies.filter(e=>e.hp>0&&dist(e,m)<rad);
   switch(id){
@@ -409,7 +425,7 @@ function useAbility(i){
   if(m.abil>0)return;
   if(modOn('silence')){msg('Silence: abilities are sealed until the room is clear.');return}
   const max=ABILITIES[m.st.abilId].cd*m.st.abil*Math.max(.4,1-.25*B('abil'))*(CU('feral')?1.5:1);
-  if(!R.tut&&Math.random()>m.obey){m.abil=max*.5;float(m.x,m.y-26,'Ignores you','#ff6688',true);return}
+  if(!R.tut&&rand()>m.obey){m.abil=max*.5;float(m.x,m.y-26,'Ignores you','#ff6688',true);return}
   m.abil=max;m.abilMax=max;doAbility(m,m.st.abilId);
   if(R.tut)R.tut.abil=true;
 }
@@ -476,7 +492,7 @@ function tryCapture(e,kind){
   const hpf=e.hp/e.maxHp,tier=TYPES[e.c.type].tier,rare=SPECIES[e.c.species].w===1?.85:1;
   let ch=(1-hpf)*1.15*(kind==='gilded'?1.7:1)*[1,1,.8,.6,.45][tier]*rare*(1-.12*(e.c.stage||0))+(partyTrait('lucky')?.1:0)+.1*B('cage')+(res('capture',2)?.1:0);
   if(e.stun>0)ch+=.1;if(R.mode==='tutorial')ch=1;
-  if(S.settings.instant||Math.random()<ch){
+  if(S.settings.instant||rand()<ch){
     const c=e.c;c.hp=stats(c).hp;c.captureRaid=R.id;c.bondXp=0;
     e.hp=0;e.captured=true;R.slot3={c};refreshSupport();R.caught++;R.kxp+=15;dexForm(c.species,c.stage||0,'caught');sfx('capture');
     float(e.x,e.y-e.r-12,'Caught!','#ffcf4a',true);msg(`Caught ${c.name}, a ${sexSym(c.sex)} ${formName(c)}! ${TOUCH?'Tap ⇄1 or ⇄2':'Press 1 or 2'} to test it.`);
@@ -527,7 +543,7 @@ function buy(i){
 }
 function openShrine(r){
   if(r.used){msg('The shrine has gone quiet.');return}
-  if(!r.choices){r.cursed=Math.random()<.5;const bl=shuffle(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena'));r.choices=r.cursed?[...shuffle(CURSE_IDS.filter(k=>!R.curses.has(k))).slice(0,2).map(k=>({curse:k})),{buff:bl[0]}]:bl.slice(0,3).map(k=>({buff:k}))}
+  if(!r.choices){r.cursed=rand()<.5;const bl=shuffle(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena'));r.choices=r.cursed?[...shuffle(CURSE_IDS.filter(k=>!R.curses.has(k))).slice(0,2).map(k=>({curse:k})),{buff:bl[0]}]:bl.slice(0,3).map(k=>({buff:k}))}
   showOverlay(`<h2>${r.cursed?'Cursed Shrine':'Old Shrine'}</h2><p class="hint">${r.cursed?'Roots coil around this shrine. Its pacts are strong, and they cost something. Choose one gift. It lasts until this raid ends.':'Choose one blessing. It lasts until this raid ends.'}</p>
     <div class="choose-list">${r.choices.map(c=>c.curse?`<button class="choice cursed" data-p="curse" data-k="${c.curse}"><span class="nm">${CURSES[c.curse].name} <span class="chip bad">Pact</span><small>${CURSES[c.curse].desc}</small></span></button>`:`<button class="choice" data-p="bless" data-k="${c.buff}"><span class="nm">${BUFFS[c.buff].name}<small>${BUFFS[c.buff].desc}</small></span></button>`).join('')}</div>
     <button class="btn" data-p="resume">Decide later</button>`);
@@ -600,7 +616,7 @@ function tutEnter(i){
   $('#tutBox').innerHTML=`<b>Tutorial ${i+1}/${TUT.length}</b><span>${TUT[i].t()}</span>`;
 }
 function tutUpdate(){
-  const T=R.tut,p=R.p,M=R.map,[A,Bm]=M.rooms;
+  const T=R.tut,p=R.p,M=R.map,Bm=M.rooms[1];
   const d=Math.hypot(p.x-T.lx,p.y-T.ly);T.moved+=d;T.lx=p.x;T.ly=p.y;
   const s=T.step;
   if(s===0&&T.moved>260)tutEnter(1);
@@ -704,7 +720,7 @@ function updComp(m,dt,idx){
   if(typesOf(m.c).includes('tide'))healPlayer(1.2*dt);
   if(m.c.type==='fungal'&&m.st.star>=3&&dist(m,p)<130)healPlayer(1.5*dt);
   if(modOn('fog'))0;
-  if(m.obey<1&&m.sulk<=0){m.obeyCheck-=dt;if(m.obeyCheck<=0){m.obeyCheck=rnd(4,6);if(Math.random()>m.obey+.15){m.sulk=1.6;float(m.x,m.y-24,'?','#ffcf4a',true)}}}
+  if(m.obey<1&&m.sulk<=0){m.obeyCheck-=dt;if(m.obeyCheck<=0){m.obeyCheck=rnd(4,6);if(rand()>m.obey+.15){m.sulk=1.6;float(m.x,m.y-24,'?','#ffcf4a',true)}}}
   m.sulk=Math.max(0,m.sulk-dt);
   const K=ATTACKS[m.st.atkId],el=TYPES[m.c.type].elem;
   if(m.dash>0){
@@ -792,7 +808,7 @@ function pattern(e,a){
 function bossAttack(b,name,P){
   const tg=pickTarget(b),a=Math.atan2(tg.y-b.y,tg.x-b.x);
   const sh=(x,y,ang,spd,o={})=>shoot('e',x,y,ang,spd,b.dmg,{col:b.bcol,r:6,...o});
-  const ring=(n,spd,off,gap)=>{const g0=Math.floor(Math.random()*n);for(let i=0;i<n;i++){if(gap&&((i-g0+n)%n)<gap)continue;sh(b.x,b.y,b.rot+off+i/n*Math.PI*2,spd)}b.rot+=.17};
+  const ring=(n,spd,off,gap)=>{const g0=Math.floor(rand()*n);for(let i=0;i<n;i++){if(gap&&((i-g0+n)%n)<gap)continue;sh(b.x,b.y,b.rot+off+i/n*Math.PI*2,spd)}b.rot+=.17};
   const fan=(n,spr,spd)=>{const t2=pickTarget(b),aa=Math.atan2(t2.y-b.y,t2.x-b.x);for(let i=0;i<n;i++){const t=n===1?0:i/(n-1)-.5;sh(b.x,b.y,aa+t*spr,spd)}};
   let dur=0;
   switch(name){
@@ -899,7 +915,7 @@ function onEnemyDeath(e){
       const coin=Math.round((ri(3,7)*f+(e.def.body==='brute'?20:0)+(e.elite?30:0))*gm);R.bag.coin+=coin;float(e.x,e.y,`+${coin}`,'#ffcf4a');
       if(e.def.body==='brute'||e.elite)R.bag.ore+=2;
       if(e.def.split&&R.enemies.length<16)for(let i=0;i<e.def.split.n;i++)spawnFoe({x:e.x+rnd(-14,14),y:e.y+rnd(-14,14)},e.def.split.id,f,e.room);
-      const roll=Math.random();
+      const roll=rand();
       if(roll<.04*R.mods.buff)R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena')),x:e.x,y:e.y});
       else if(roll<.16)R.items.push({kind:'loot',id:pick(['cage','food','ore']),x:e.x,y:e.y});
     }
@@ -918,9 +934,9 @@ function openChest(r){
   const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3);R.bag.coin+=coin;R.bag.ore+=ore;R.bag.food+=food;
   float(r.chest.x,r.chest.y-20,`+${coin} coin +${ore} ore +${food} food`,'#ffcf4a',true);
   const gunP=rich?1:r.kind==='lair'?.9:.45;
-  if(Math.random()<.25){R.cages.basic++;float(r.chest.x,r.chest.y-36,'+1 cage','#5de8b0',true)}
-  if(Math.random()<gunP){const g=gunOfTier(Math.min(4,gunTierRoll(f)+(rich?1:0)));R.items.push({kind:'gun',id:g,x:r.chest.x+rnd(-30,30),y:r.chest.y+30});msg(`The chest held a ${GUNS[g].name}. Stand on it and press Use to take it.`)}
-  if(Math.random()<gunP/3*R.mods.buff)R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena')),x:r.chest.x+rnd(-30,30),y:r.chest.y-30});
+  if(rand()<.25){R.cages.basic++;float(r.chest.x,r.chest.y-36,'+1 cage','#5de8b0',true)}
+  if(rand()<gunP){const g=gunOfTier(Math.min(4,gunTierRoll(f)+(rich?1:0)));R.items.push({kind:'gun',id:g,x:r.chest.x+rnd(-30,30),y:r.chest.y+30});msg(`The chest held a ${GUNS[g].name}. Stand on it and press Use to take it.`)}
+  if(rand()<gunP/3*R.mods.buff)R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena')),x:r.chest.x+rnd(-30,30),y:r.chest.y-30});
 }
 function objectives(dt){
   const p=R.p,r=R.cur;R.prompt='';R.canUse=false;
@@ -953,8 +969,7 @@ function objectives(dt){
   }
 }
 function descend(f){
-  const boss=isBossFloor(f)?pickBoss(f>=4?1:0):null;
-  const M=genMap(f,false,boss);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
+  const{boss,M}=genFloor(R.seed,f,false);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
   R.p.x=M.start.cx;R.p.y=M.start.cy+40;R.trail=[];R.comps.forEach(m=>{if(m){m.x=R.p.x+rnd(-30,30);m.y=R.p.y+rnd(-10,30)}});
   R.enemies=[];R.bullets=[];R.fields=[];R.items=[];R.timers=[];R.stairT=0;R.ext=0;R.heardCrack=false;R.floorsSeen.add(f);sfx('door');
   S.progress.deepest=Math.max(S.progress.deepest||0,f);
@@ -967,7 +982,7 @@ function descend(f){
 function restoreSaved(){R.comps.forEach(m=>{if(m&&R.saved[m.c.id]!=null)m.c.hp=R.saved[m.c.id]});if(R.slot3&&R.saved[R.slot3.c.id]!=null)R.slot3.c.hp=R.saved[R.slot3.c.id]}
 function endRaid(outcome,via){
   if(!R||R.over)return;
-  R.over=true;cancelAnimationFrame(raf);
+  R.over=true;stopLoop();
   keys.clear();touch.move=touch.aim=null;
   if(R.mode==='arena'){
     restoreSaved();let kept='';
@@ -1062,3 +1077,5 @@ function exitRaid(){
   const done=R;renderAll();
   setTimeout(()=>{if(R===done){R=null;if(ui.tab==='hideout')startHideoutMap()}},0);
 }
+
+export {TS,RW,RH,CW,CH,R,keys,touch,localFloor,isBossFloor,capT,isWeak,rollWildSpecies,newRoom,genMap,genTutorialMap,buildMap,solidAt,hitsWall,moveEnt,roomAt,PALS,paintTile,renderMapCanvas,damageCrack,makeComp,pickBoss,genFloor,startRaid,applyOpts,stickR,stickBases,B,CU,refreshSupport,applyBuff,applyCurse,msg,float,partyHas,partyTrait,bondComp,capRadius,playerDmgMul,modOn,spawnPos,baseEnemy,hpMods,spawnWild,spawnFoe,spawnBoss,enterRoom,pullComps,buildArenaPanel,applyElem,react,hurtEnemy,hurtPlayer,hurtComp,healPlayer,playerDown,shoot,critMul,nearestEnemy,pickTarget,explodeAt,crackHitArea,later,roomFoes,compAtk,doAbility,useAbility,comboReady,useCombo,doRoll,cageReady,useCage,swapSlot3,switchGun,tryCapture,nearestItem,nearNpc,interact,gunTierRoll,gunOfTier,payCoin,openShop,buy,openShrine,moveVec,swing,fireWeapon,TUT,tutEnter,tutUpdate,update,updFields,compAttack,updComp,updEnemy,release,ringShot,fanShot,pattern,bossAttack,updBoss,onBossDeath,updBullets,onEnemyDeath,takeLoot,openChest,objectives,descend,restoreSaved,endRaid,exitRaid};

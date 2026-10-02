@@ -1,4 +1,14 @@
 /* ================= Hideout UI ================= */
+import {$,clamp,esc,fxPick,pick} from './util.js';
+import {ABILITIES,ARMORY_TH,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,WEAPON_COST,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {save} from './save.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canCraft,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,priceMul,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
+import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
+import {auVol,sfx} from './audio.js';
+import {HMAP,startHideoutMap} from './map.js';
+import {startRaid} from './raid.js';
+import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
+import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
 const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Armory'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']];
 function renderAll(){renderHeader();renderTabs();renderMain()}
 function renderHeader(){
@@ -129,15 +139,16 @@ function sectionDetail(k){
     const pool=S.creatures;
     const sel=(id,val)=>`<select id="${id}" data-act="${id}">${pool.map(c=>`<option value="${c.id}" ${String(c.id)===String(val)?'selected':''}>${esc(c.name)} · ${esc(formName(c))} Lv ${c.level}</option>`).join('')}</select>`;
     if(!ui.gl.id&&pool[0])ui.gl.id=String(pool[0].id);if(!ui.tt.id&&pool[0])ui.tt.id=String(pool[0].id);
-    const gc=byId(+ui.gl.id),gv=gc?gc.genes[ui.gl.gene]:0,gcost={coin:20*(gv+1),ore:2*(gv+1)};
+    if(!GRADE_LOCI.includes(ui.gl.gene))ui.gl.gene='pow';if(!TRAIT_LOCI.includes(ui.tt.slot))ui.tt.slot='t1';
+    const gc=byId(+ui.gl.id),gv=gc?Math.min(...gc.genome[ui.gl.gene]):0,gcost={coin:20*(gv+1),ore:2*(gv+1)},sight=geneSight();
     const tc=byId(+ui.tt.id);
     extra=`<h3>Gene Lab ${t>=2?'':'· opens at T2'}</h3>
-      ${t>=2?`<p class="hint">Raise one gene by 1, up to 10. Some evolutions need a gene at 7 or higher.</p>
-      <div class="row">${sel('glc',ui.gl.id)}<select id="glg" data-act="glg">${Object.entries(GENES).map(([g,l])=>`<option value="${g}" ${ui.gl.gene===g?'selected':''}>${l}${gc?' ('+gc.genes[g]+')':''}</option>`).join('')}</select>
+      ${t>=2?`<p class="hint">Raise the weaker copy of one gene by 1, up to 10. Some evolutions need a gene at 7 or higher.</p>
+      <div class="row">${sel('glc',ui.gl.id)}<select id="glg" data-act="glg">${GRADE_LOCI.map(g=>`<option value="${g}" ${ui.gl.gene===g?'selected':''}>${GENES[g]}${gc&&sight!=='stars'?' ('+gc.genes[g]+')':''}</option>`).join('')}</select>
       <button class="btn small" data-act="genelab" ${gc&&gv<10&&S.coin>=gcost.coin&&S.ore>=gcost.ore?'':'disabled'}>${gv>=10?'Maxed':`Train · ${gcost.coin}c ${gcost.ore} ore`}</button></div>`:'<p class="status">Reach tier 2 to raise genes with coin and ore.</p>'}
       <h3>Trait Tutor ${t>=4?'':'· opens at T4'}</h3>
-      ${t>=4?`<p class="hint">Replace one trait with a random positive trait. 60 coin and 8 ore.</p>
-      <div class="row">${sel('ttc',ui.tt.id)}<select id="tts" data-act="tts">${tc?tc.traits.map((x,i)=>`<option value="${i}" ${ui.tt.slot==String(i)?'selected':''}>${TRAITS[x].name}</option>`).join(''):''}</select>
+      ${t>=4?`<p class="hint">Rewrite one trait slot, both copies, with a random positive trait. 60 coin and 8 ore.</p>
+      <div class="row">${sel('ttc',ui.tt.id)}<select id="tts" data-act="tts">${tc?TRAIT_LOCI.map((k,i)=>`<option value="${k}" ${ui.tt.slot===k?'selected':''}>Slot ${i+1}: ${traitName(expressTrait(tc.genome[k]))}</option>`).join(''):''}</select>
       <button class="btn small" data-act="tutor" ${tc&&S.coin>=60&&S.ore>=8?'':'disabled'}>Retrain trait</button></div>`:'<p class="status">Reach tier 4 to swap out unwanted traits.</p>'}`;
   }
   return`<div class="row" style="justify-content:space-between"><h2>${sec.name}</h2>${tierTag(t)}</div>
@@ -154,26 +165,23 @@ function sectionDetail(k){
 
 function creCard(c){
   const st=stats(c),sp=SPECIES[c.species],T=c.type,L=lineOf(c),nf=nextForm(c),A=ABILITIES[st.abilId],K=ATTACKS[st.atkId];
-  const genes=Object.entries(GENES).map(([k,l])=>`<span title="${GENE_HINT[k]}">${l}</span><div class="g"><i style="width:${c.genes[k]*10}%"></i></div><span>${c.genes[k]}</span>`).join('');
   const sellArmed=ui.sellId===c.id;
-  const traits=c.proven?c.traits.map(t=>`<li class="${NEG_TRAITS.includes(t)?'neg':''}"><b>${TRAITS[t].name}</b> · ${TRAITS[t].desc}</li>`).join(''):'<li><b>Traits hidden</b> · revealed once proven</li>';
   const chain=L.map((f,i)=>`<span class="evo ${i===(c.stage||0)?'on':i<(c.stage||0)?'done':''}">${f.name}${i?` <small>Lv ${f.lv}</small>`:''}</span>`).join('<i>›</i>');
   let evo='';
   if(nf){const ok=canEvolve(c),k=evolveCost(c),afford=S.coin>=k.coin&&S.ore>=k.ore&&S.shards>=k.shard;
-    const why=!c.proven?'Must be proven first':c.level<nf.lv?`Needs Lv ${nf.lv}`:nf.need&&c.genes[nf.need[0]]<nf.need[1]?`Needs ${GENES[nf.need[0]]} ${nf.need[1]}`:'';
+    const why=!c.proven?'Must be proven first':c.level<nf.lv?`Needs Lv ${nf.lv}`:nf.need&&c.genes[nf.need[0]]<nf.need[1]?`Needs ${GENES[nf.need[0]]} ${nf.need[1]}+`:'';
     evo=`<div class="row"><button class="btn small ${ok&&afford?'primary':''}" data-act="evolve" data-id="${c.id}" ${ok&&afford?'':'disabled'}>${ok?`Evolve into ${nf.name} · ${k.coin}c ${k.ore} ore${k.shard?' '+k.shard+' shard':''}`:`${nf.name}: ${why}`}</button></div>`}
   const bs=st.star,bp=BOND_PASSIVE[T],nextB=BOND_TH[bs];
   return`<article class="cre">${spr(c,72)}<div class="cre-main">
     <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
     <div class="status">${esc(formName(c))} · ${sp.blurb}</div>
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${c.origin==='bred'?`<span class="chip good">Bred · Gen ${c.gen}</span>`:(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}</div>
+    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
     ${hpBar(c)}
     <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
     <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
     <div class="evochain">${chain}</div>${evo}
     <div class="row" style="gap:6px">${stars(bs)}<small class="status">${nextB!=null?`${c.bondXp}/${nextB} bond`:'Max bond'}${bs>=3?` · ${bp.name}: ${bp.desc}`:` · ★3 unlocks ${bp.name}`}</small></div>
-    <div class="genes">${genes}</div>
-    <ul class="traits">${traits}</ul>
+    ${genomeBlock(c)}
     <div class="bar" title="XP"><i style="width:${c.xp/xpNeed(c)*100}%;background:var(--sky)"></i></div>
     <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
     <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
@@ -203,21 +211,12 @@ function viewBreeding(){
   const moms=S.creatures.filter(c=>c.proven&&c.sex==='F'),dads=S.creatures.filter(c=>c.proven&&c.sex==='M');
   const opt=(list,sel)=>`<option value="">Choose</option>`+list.map(c=>`<option value="${c.id}" ${String(c.id)===String(sel)?'selected':''}>${esc(c.name)} · ${esc(formName(c))}${c.type2?' (hybrid)':''} Lv ${c.level}</option>`).join('');
   const a=byId(+ui.mom),b=byId(+ui.dad);
-  let pred='';
-  if(a&&b){
-    const mut=mutChance()>.2?2:1,h=hybridChance(a,b);
-    const genes=Object.entries(GENES).map(([k,l])=>{const lo=clamp(Math.min(a.genes[k],b.genes[k])-mut,1,10),hi=clamp(Math.max(a.genes[k],b.genes[k])+mut,1,10);
-      return`<span>${l}</span><div class="g"><i style="left:${(lo-1)*10}%;width:${(hi-lo+1)*10}%"></i><b style="left:calc(${(b.genes[k]-.5)*10}% - 2px)"></b></div><span>${lo}–${hi}</span>`}).join('');
-    const tpool=[...new Set([...b.traits,...a.traits])].map(x=>TRAITS[x].name).join(', ');
-    pred=`<div class="slot"><div class="slot-label">Likely offspring</div>
-      <p><b style="font-family:var(--display)">${SPECIES[a.species].name}</b> (from the mother)${h.id?` · <span style="color:var(--gold)">${Math.round(h.p*100)}% chance of a ${SPECIES[h.id].name} hybrid</span>`:''}</p>
-      <div class="genes">${genes}</div>
-      <p class="status">Each gene comes from the father 70% of the time (gold tick), with a ${Math.round(mutChance()*100)}% mutation chance. Traits draw from: ${tpool}. Personality: half the time ${PERS[a.pers].name} like the mother, a quarter ${PERS[b.pers].name} like the father, otherwise new. Hatchlings start at the base form.</p></div>`;
-  }
+  const why=a||b?breedBlock(a,b):'';
+  const pred=a&&b&&!why?previewHtml(a,b):why&&a&&b?`<div class="risk">${esc(why)}</div>`:'';
   const eggs=S.eggs.map(e=>`<div class="slot"><div class="slot-body"><canvas class="spr" width="56" height="56" data-egg="${e.cols.join(',')}" data-shiny="${e.hybrid?1:0}" aria-label="Egg"></canvas><div><div class="nm">${e.hybrid?'Shimmering egg':'Egg'} of ${esc(e.parents)}</div><p class="status">Hatches in ${e.days} day${e.days===1?'':'s'}${t?'':' (paused)'}</p></div></div></div>`).join('');
-  const can=t&&a&&b&&S.coin>=20&&S.food>=3&&S.eggs.length<eggCap();
+  const can=t&&a&&b&&!why&&S.coin>=20&&S.food>=3&&S.eggs.length<eggCap();
   return`<div class="cols"><section class="card"><h2>Breeding</h2>
-    ${t?`<p class="hint">Pair a proven female and a proven male. The mother sets the species. The father passes on most stats. 20 coin and 3 food per egg.</p>`:`<div class="risk"><b>Nursery offline.</b> Add Wardens (or Warden hybrids) to the Nursery in the Hideout until it reaches tier 1.</div>`}
+    ${t?`<p class="hint">Pair a proven female and a proven male. The mother sets the species. Each parent passes one copy of every gene, and the father passes his better copy more often. 20 coin and 3 food per egg.</p>`:`<div class="risk"><b>Nursery offline.</b> Add Wardens (or Warden hybrids) to the Nursery in the Hideout until it reaches tier 1.</div>`}
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
       <label class="field">Mother ♀<select id="breedMom" data-act="mom">${opt(moms,ui.mom)}</select></label>
       <label class="field">Father ♂<select id="breedDad" data-act="dad">${opt(dads,ui.dad)}</select></label>
@@ -325,9 +324,11 @@ function viewLab(){
       <label class="field">Level<input id="lab-level" type="number" min="1" max="40" value="${L.level}" data-act="lab" data-k="level"></label>
       <label class="field">Trait 1<select id="lab-t1" data-act="lab" data-k="t1">${trOpts(L.t1)}</select></label>
       <label class="field">Trait 2<select id="lab-t2" data-act="lab" data-k="t2">${trOpts(L.t2)}</select></label>
+      <label class="field">Trait 3<select id="lab-t3" data-act="lab" data-k="t3">${trOpts(L.t3)}</select></label>
     </div>
     <div class="row"><label class="toggle"><input type="checkbox" id="lab-max" data-act="lab" data-k="max" ${L.max?'checked':''}> Max genes</label><label class="toggle"><input type="checkbox" id="lab-proven" data-act="lab" data-k="proven" ${L.proven?'checked':''}> Already proven</label></div>
     <div class="row"><button class="btn primary" data-act="lab-spawn">Add to roster</button><button class="btn" data-act="lab-squad">Add 10 random Lv 10 creatures</button></div>
+    ${simPanel(ui.sim)}
     <h3>Evolution and bond</h3>
     <div class="row"><button class="btn" data-act="lab-evoready">Make loadout ready to evolve</button><button class="btn" data-act="lab-evomax">Fully evolve loadout</button><button class="btn" data-act="lab-bond">Max bond for loadout</button></div>
     <h3>Jump into a raid</h3>
@@ -344,7 +345,8 @@ function viewLab(){
     ${tg('reveal','Reveal maps','Show the whole map, including secret rooms.')}
     ${tg('instant','Guaranteed capture','Any cage on a wild creature in range works, at any health.')}
     ${tg('noTimer','No raid timer','The dungeon never collapses.')}
-    <h3>Save</h3><p class="hint">Progress saves in this browser only. This version uses a new save format, so earlier saves were reset.</p>
+    ${tg('genes','Reveal genomes','See both copies of every gene and exact breeding odds, as with a Gene Lens.')}
+    <h3>Save</h3><p class="hint">Progress saves in this browser only. Saves from earlier versions are upgraded when they load, never reset.</p>
     <div class="row"><button class="btn ${ui.resetArm?'danger':''}" data-act="reset">${ui.resetArm?'Confirm: wipe and restart':'Reset save'}</button></div>
   </section></div>`;
 }
@@ -390,7 +392,7 @@ function openChooser(slot){
 }
 function openNpc(id){
   const n=NPCS[id],st=S.npc[id];if(!st)return;
-  let line;if(!st.met){line=n.intro;st.met=true;save()}else line=pick(n.idle);
+  let line;if(!st.met){line=n.intro;st.met=true;save()}else line=fxPick(n.idle);
   const p=npcQuest(id);
   const quest=p?`<div class="slot"><div class="slot-label">Quest ${st.q+1} of ${n.quests.length}</div><p>${p.q.text}</p>
     <div class="bar"><i style="width:${p.v/p.q.n*100}%;background:var(--gold)"></i></div><p class="status">${p.v}/${p.q.n} · Reward: ${questRewardText(p.q.reward)}</p>
@@ -433,8 +435,12 @@ function act(a,d){
     case'assign':{const sel=$('#addsel');if(!sel)break;const c=byId(+sel.value);if(!c||S.sections[d.k].ids.length>=secCap(d.k))break;unplace(c);S.sections[d.k].ids.push(c.id);save();renderAll();break}
     case'unassign':{const c=byId(+d.id);if(c){unplace(c);save();renderAll()}break}
     case'expand':{const ec=expandCost(d.k);if(S.coin<ec.coin||S.ore<ec.ore||S.sections[d.k].cap>=10)break;S.coin-=ec.coin;S.ore-=ec.ore;S.sections[d.k].cap++;save();renderAll();break}
-    case'genelab':{const c=byId(+ui.gl.id);if(!c)break;const g=ui.gl.gene,v=c.genes[g],cc={coin:20*(v+1),ore:2*(v+1)};if(v>=10||S.coin<cc.coin||S.ore<cc.ore)break;S.coin-=cc.coin;S.ore-=cc.ore;c.genes[g]=v+1;addLog(`Gene Lab: ${c.name}'s ${GENES[g]} rose to ${v+1}.`);sfx('level');save();renderAll();break}
-    case'tutor':{const c=byId(+ui.tt.id);if(!c||S.coin<60||S.ore<8)break;S.coin-=60;S.ore-=8;const i=+ui.tt.slot||0;const old=c.traits[i];c.traits[i]=rollTraits(1,c.traits,true)[0];addLog(`Trait Tutor: ${c.name} swapped ${TRAITS[old].name} for ${TRAITS[c.traits[i]].name}.`);save();renderAll();break}
+    case'genelab':{const c=byId(+ui.gl.id);if(!c)break;const g=ui.gl.gene,pair=c.genome[g],w=pair[0]<=pair[1]?0:1,v=pair[w],cc={coin:20*(v+1),ore:2*(v+1)};if(v>=10||S.coin<cc.coin||S.ore<cc.ore)break;
+      S.coin-=cc.coin;S.ore-=cc.ore;pair[w]=v+1;express(c);addLog(`Gene Lab: ${c.name}'s weaker ${GENES[g]} copy rose to ${v+1}.`);sfx('level');save();renderAll();break}
+    case'tutor':{const c=byId(+ui.tt.id);if(!c||S.coin<60||S.ore<8)break;S.coin-=60;S.ore-=8;const k=ui.tt.slot,old=expressTrait(c.genome[k]);const nt=rollTraits(1,c.traits,true)[0];c.genome[k]=[nt,nt];express(c);
+      addLog(`Trait Tutor: ${c.name} ${old?`swapped ${TRAITS[old].name} for`:'learned'} ${TRAITS[nt].name}.`);save();renderAll();break}
+    case'tree':{const c=byId(+d.id);if(c)openModal(treeHtml(c));break}
+    case'lab-sim':{runSim(ui.sim);renderMain();break}
     case'feed':{const c=byId(+d.id);if(S.food<1)break;S.food--;addBond(c,10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));sfx('pickup');save();renderAll();break}
     case'sell':{const c=byId(+d.id);if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
       S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);sfx('coin');save();renderAll();break}
@@ -449,8 +455,8 @@ function act(a,d){
     case'sell-ore':if(S.ore>0){S.ore--;S.coin+=8;save();renderAll()}break;
     case'opt':S.opts[d.k]=d.v;save();renderMain();break;
     case'lab-spawn':{const L=ui.lab;const lv=clamp(+L.level||1,1,40);
-      let traits=null;if(L.t1||L.t2){traits=[];if(L.t1)traits.push(L.t1);if(L.t2&&L.t2!==L.t1)traits.push(L.t2);while(traits.length<2)traits.push(rollTraits(1,traits)[0])}
-      const c=makeCreature(L.species,L.origin,lv,{proven:L.proven,sex:L.sex==='R'?null:L.sex,traits,genes:L.max?{vig:10,pow:10,swf:10,hst:10,tmp:10}:undefined,captureRaid:L.origin==='wild'&&!L.proven?S.stats.raids:-1});
+      let traits=null;if(L.t1||L.t2||L.t3){traits=[L.t1,L.t2,L.t3].map(t=>t||null)}
+      const c=makeCreature(L.species,L.origin,lv,{proven:L.proven,sex:L.sex==='R'?null:L.sex,traits,genes:L.max?Object.fromEntries(GRADE_LOCI.map(k=>[k,10])):undefined,captureRaid:L.origin==='wild'&&!L.proven?S.stats.raids:-1});
       S.creatures.push(c);dexForm(c.species,0,'owned');addLog(`Test Lab: added ${c.name}, a ${sexSym(c.sex)} ${L.origin} ${SPECIES[c.species].name} at Lv ${lv}.`);save();renderAll();break}
     case'lab-squad':{for(let i=0;i<10;i++){const sp=pick(BASE_SPECIES);const c=makeCreature(sp,'bred',10);S.creatures.push(c);dexForm(sp,0,'owned')}addLog('Test Lab: added 10 Lv 10 creatures.');save();renderAll();break}
     case'lab-evoready':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{const n=nextForm(c);if(!n)return;c.level=Math.max(c.level,n.lv);c.proven=true;if(n.need)c.genes[n.need[0]]=Math.max(c.genes[n.need[0]],n.need[1]);c.hp=stats(c).hp});S.coin+=600;S.ore+=60;S.shards+=2;save();renderAll();break;
@@ -486,9 +492,12 @@ document.addEventListener('change',e=>{
   else if(a==='ttc'){ui.tt.id=el.value;ui.tt.slot='0';renderSecPanel()}
   else if(a==='tts'){ui.tt.slot=el.value}
   else if(a==='lab'){const k=el.dataset.k;ui.lab[k]=el.type==='checkbox'?el.checked:el.value}
-  else if(a==='setting'){S.settings[el.dataset.k]=el.checked;save()}
+  else if(a==='sim'){ui.sim[el.dataset.k]=Math.max(+el.min||0,Math.min(+el.max||1e9,+el.value||0))}
+  else if(a==='setting'){S.settings[el.dataset.k]=el.checked;save();if(el.dataset.k==='genes')renderMain()}
   else if(a==='mode'){S.modes[el.dataset.k]=el.checked;save()}
   else if(a==='optc'){S.opts[el.dataset.k]=el.checked;save();auVol()}
   else if(a==='opthud'){S.opts.hudAlpha=+el.value;save()}
 });
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act==='optr'){S.opts[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();save()}});
+
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,openChooser,openNpc,questRewardText,openIntro,act};

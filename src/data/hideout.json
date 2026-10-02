@@ -1,0 +1,56 @@
+{
+  "SEC_TH": [
+    15,
+    45,
+    100,
+    180,
+    300
+  ],
+  "SECTIONS": {
+    "forge": {"name":"Forge","type":"ember","gene":"pow","col":"#ff7a3d","blurb":"Ember creatures stoke the furnace. Unlocks weapon tiers you can craft.","tiers":["Craft tier 1 weapons you have blueprints for","Craft tier 2 weapons","Gilded cages and +50% ore from scrapping","Craft tier 3 weapons","Craft tier 4 weapons and +10% weapon damage"]},
+    "garden": {"name":"Garden","type":"fungal","gene":"vig","col":"#7fd860","blurb":"Fungal creatures grow food for the whole hideout.","tiers":["3 food per day","6 food per day","10 food per day","15 food per day","22 food per day"]},
+    "spring": {"name":"Spring","type":"tide","gene":"foc","col":"#3fa9ff","blurb":"Tide creatures tend the healing waters.","tiers":["Creatures heal 50% per day","Creatures heal fully each day","Every creature gains 5 bond per day","Companions get +10% max HP in raids","One free auto-revive per raid"]},
+    "roost": {"name":"Roost","type":"echo","gene":"swf","col":"#9b7bff","blurb":"Echo creatures scout the dungeon ahead of you.","tiers":["Reveal the full floor map","Mark rooms that hold rare creatures","Show secret rooms on the map","+30% wild creature encounters","Reveal which boss waits below"]},
+    "vault": {"name":"Vault","type":"crystal","gene":"vig","col":"#ff8fe0","blurb":"Crystal creatures guard what you bring back.","tiers":["Keep your slot 3 creature if you die","Keep the weapons in your hands if you die","Keep 30% of raid coin if you die","Your slot 1 companion survives your death","Keep 60% of raid coin and all ore if you die"]},
+    "nursery": {"name":"Nursery","type":"warden","gene":"foc","col":"#e3b04b","blurb":"Warden creatures watch over eggs. Needed for any breeding.","tiers":["Breed one egg at a time, 2-day hatch","Two eggs at once","Eggs hatch in 1 day","+0.5% mutation chance per gene, hybrid odds 15%","Three eggs, hybrids 20%, hatchlings start at Lv 5"]},
+    "training": {"name":"Training Grounds","type":null,"gene":"pow","unlock":2,"col":"#c9b48a","blurb":"Any creature placed here trains every day for XP and bond. Trainees eat 2 food a day.","tiers":["Trainees gain 30 XP a day","45 XP a day and the Gene Lab opens","60 XP a day","75 XP a day and the Trait Tutor opens","100 XP a day"]},
+    "warroom": {"name":"War Room","type":"gale","gene":"swf","unlock":4,"col":"#4fe0c8","blurb":"Gale creatures plan raids. Unlocks bonuses and raid modes.","tiers":["+10 max HP for you","Unlocks the Hunter’s Moon mode","+10% weapon damage","Unlocks the Iron Will mode","Start every raid with a random buff, unlocks Swarm mode"]}
+  },
+  "ARMORY_TH": [
+    40,
+    120,
+    260,
+    480,
+    800
+  ],
+  "ARMORY_TIERS": [
+    "+5% weapon damage",
+    "Carry 1 more cage",
+    "+10% weapon damage in total",
+    "Keep your primary weapon if you die",
+    "+20% weapon damage in total"
+  ],
+  "KEEPER_PERKS": {
+    "2": "Training Grounds unlocked, Pip the scout arrives",
+    "3": "Armory unlocked",
+    "4": "War Room unlocked, Dr. Sorrel arrives",
+    "5": "Carry 1 more cage",
+    "7": "Every section gains 1 free slot",
+    "9": "Carry 1 more cage",
+    "12": "Every section gains 1 free slot"
+  },
+  "RESEARCH": {
+    "combat": {"name":"Combat","col":"#ff6688","nodes":["+15 max HP","+8% weapon damage","Roll recharges 20% faster","Elemental reactions deal 30% more damage","Start every raid with a random buff"]},
+    "capture": {"name":"Capture","col":"#ffcf4a","nodes":["Carry 1 more cage","Cage ring 25% wider","+10% capture chance","Catch below 60% health instead of 50%","+25% wild creature encounters"]},
+    "breeding": {"name":"Breeding","col":"#ff8fe0","nodes":["+0.5% mutation chance per gene","Eggs hatch 1 day sooner","+5% hybrid chance","+1 incubator slot","Hatchlings start at Lv 5"]},
+    "economy": {"name":"Economy","col":"#7fd860","nodes":["+15% coin from raids","Market prices 20% lower","+50% ore from chests","+3 food per day","+15% Keeper XP"]},
+    "bond": {"name":"Bond","col":"#58c2ff","nodes":["+50% bond gain","Companions +10% max HP","Combos recharge 25% faster","Abilities recharge 10% faster","Evolution costs halved"]}
+  },
+  "RES_COST": [
+    {"coin":50,"ore":10,"shard":0},
+    {"coin":100,"ore":25,"shard":0},
+    {"coin":200,"ore":45,"shard":1},
+    {"coin":350,"ore":70,"shard":2},
+    {"coin":500,"ore":100,"shard":3}
+  ]
+}

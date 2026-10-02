@@ -1,0 +1,116 @@
+{
+  "LORE_INTRO": [
+    "Under the hills lies the Bloom: a living dungeon that grows its own creatures and wraps every one of them in a root-thread called a tether.",
+    "While a creature is tethered, the Bloom can take it back. Fall inside and the roots drink you, creature and keeper alike. Only an extraction point is strong enough to cut the tether cleanly.",
+    "The last Keeper of this hideout, Ilsa Marrow, went down to the sixth floor a year ago and never came back. Her creatures are gone. Her journal is still on the desk.",
+    "The hideout is yours now. Catch, raise and breed creatures, cut them free, and find out what Ilsa found."
+  ],
+  "JOURNAL": [
+    {
+      "rank": 1,
+      "title": "To whoever finds this",
+      "text": "If you are reading this at my desk, I did not come back. The hideout is yours. Feed the creatures before you feed yourself, and never go deeper than your companions can carry you. — Ilsa Marrow, Keeper"
+    },
+    {
+      "rank": 2,
+      "title": "The tether",
+      "text": "Every creature born in the Bloom has a root-thread in its chest. I call it the tether. Inside, the Bloom can pull on it at any time. Extraction points are the only places where the thread thins enough to cut. That is why we leave with them, never without them."
+    },
+    {
+      "rank": 3,
+      "title": "Why the dead stay down",
+      "text": "I lost Clover on Floor 2 today. I went back an hour later and there was nothing but a new flower where she fell. The Bloom does not waste anything."
+    },
+    {
+      "rank": 4,
+      "title": "Sorrel’s theory",
+      "text": "Wen Sorrel thinks the Bloom is one organism, and every creature is a cell it lets wander. If she is right, breeding cut-free creatures is the only way to make something it cannot take back. I hope she is right."
+    },
+    {
+      "rank": 5,
+      "title": "Evolution",
+      "text": "Cut-free creatures keep changing after they leave. Biscuit grew into something I had never seen in the dungeon. Out here, they grow for themselves instead of for the Bloom."
+    },
+    {
+      "rank": 6,
+      "title": "The boss on Floor 3",
+      "text": "Biscuit is gone. Something wearing her colors waits at the end of the third floor. I could not bring myself to fight it. Next time I will bring someone who never knew her."
+    },
+    {
+      "rank": 7,
+      "title": "Old camps",
+      "text": "Pip found an old Keeper camp on Floor 3, older than any record. Forge coals, a crown, a drilling machine. We are not the first to try this. We are only the first to keep a journal."
+    },
+    {
+      "rank": 8,
+      "title": "The Ember Abyss",
+      "text": "Below the third floor the Bloom gets hot, like a fever. Everything bites harder. Bring creatures that have grown up. The Abyss does not forgive young ones."
+    },
+    {
+      "rank": 9,
+      "title": "Runes",
+      "text": "There are carvings on the Abyss totems in a language I almost recognize. One repeats on every wall: KEEP IT ASLEEP."
+    },
+    {
+      "rank": 10,
+      "title": "The song",
+      "text": "Three voices sing in the deep, always the same melody. I hum it without meaning to. Marrowtail goes quiet when I do."
+    },
+    {
+      "rank": 11,
+      "title": "What the Bloom wants",
+      "text": "I do not think the Bloom is cruel. I think it is lonely, and it is afraid of everything that leaves. That is why it builds walls out of the creatures it loves."
+    },
+    {
+      "rank": 12,
+      "title": "The heart",
+      "text": "There is a seventh floor. I can hear it under the sixth, slow, like breathing. The heart is down there. If it can be cut free, maybe the whole Bloom can."
+    },
+    {
+      "rank": 14,
+      "title": "Last entry",
+      "text": "I am going down with Marrowtail. If we do not come back, do not follow until your creatures are stronger than mine were. When you reach the heart, do not kill it. Cut the tether. — I."
+    }
+  ],
+  "NPCS": {
+    "brannoc": {
+      "name": "Brannoc",
+      "role": "Blacksmith",
+      "home": "forge",
+      "col": "#c84a3a",
+      "skin": "#e8b890",
+      "arrive": {"always":true},
+      "arriveText": "The smith who keeps the Forge.",
+      "intro": "Name’s Brannoc. I forged Ilsa’s blades, and I’ll forge yours. Bring me steel from the deep and I’ll teach you what it’s worth.",
+      "idle": ["The Bloom grows metal like it grows flowers. Nobody knows where it gets the ore.","Ilsa swung a Moonblade. Said the old Keepers left a pattern for it somewhere in the deep.","Melee is honest work. Blade meets bullet, bullet loses.","A weapon that comes home is a weapon that learned something."],
+      "quests": [{"text":"Bring home 2 weapons from raids.","stat":"weaponsHome","n":2,"reward":{"coin":80,"blueprint":"carbine"},"done":"Good steel. Here’s the pattern for an Ember Carbine."},{"text":"Scrap 3 weapons in the Armory.","stat":"scrapped","n":3,"reward":{"ore":25},"done":"You’re learning what metal is for. Take some ore for the trouble."},{"text":"Defeat 40 enemies with a melee weapon.","stat":"meleeKills","n":40,"reward":{"blueprint":"scythe","coin":120},"done":"That’s a fighter’s count. You’ve earned the Reaper Scythe pattern."},{"text":"Defeat a boss.","stat":"bossKills","n":1,"reward":{"weapon":"moonblade","shard":1},"done":"Ilsa’s Moonblade. I kept it for whoever came next. It’s yours."}],
+      "outro": "Nothing left to teach you. Keep the Forge hot."
+    },
+    "pip": {
+      "name": "Pip Tallow",
+      "role": "Scout",
+      "home": "roost",
+      "col": "#4fe0c8",
+      "skin": "#f3d2a8",
+      "arrive": {"keeper":2},
+      "arriveText": "Arrives at Keeper rank 2.",
+      "intro": "Pip Tallow, scout! I map the Bloom for Keepers who’ll pay me in stories. Ilsa paid best. Let’s see what you’re worth.",
+      "idle": ["The floors shift every time you go down, but the boss rooms never move. Weird, right?","If a wall sounds hollow, hit it. Echoes and Curious creatures can hear them.","I found an old camp on Floor 3 once. Crown, coals, a big drill. Older than anyone.","Rooms with a colored shimmer have a twist. Darkness, fog, gold. Read the banner."],
+      "quests": [{"text":"Reach Floor 2.","stat":"deepest","n":2,"abs":true,"reward":{"coin":60,"cage":2},"done":"Floor 2! Here, cages. You’ll want spares."},{"text":"Find a secret room.","stat":"secrets","n":1,"reward":{"ore":20,"coin":60},"done":"Ha! You heard it too. Bloom hides its best stuff behind cracked walls."},{"text":"Trigger 15 elemental reactions.","stat":"reactions","n":15,"reward":{"coin":150,"gilded":2},"done":"Steam, sparks, roots! You fight like Ilsa. Gilded cages, my treat."},{"text":"Reach Floor 4, the Ember Abyss.","stat":"deepest","n":4,"abs":true,"reward":{"shard":2,"coin":200},"done":"You made the Abyss. Ilsa’s notes say the runes there read KEEP IT ASLEEP. Take these shards."}],
+      "outro": "I’ve got nothing left to map that you haven’t walked. Stay safe down there."
+    },
+    "sorrel": {
+      "name": "Dr. Wen Sorrel",
+      "role": "Geneticist",
+      "home": "nursery",
+      "col": "#ff8fe0",
+      "skin": "#c8946a",
+      "arrive": {"keeper":4,"section":"nursery","tier":1},
+      "arriveText": "Arrives at Keeper rank 4, or when the Nursery opens.",
+      "intro": "Wen Sorrel. I study tethers. Every creature you cut free and breed is a creature the Bloom can never take back. Let’s make a lot of them.",
+      "idle": ["Mothers pass on the body, fathers pass on the strength. It’s the root-thread, I think.","Hybrids are the Bloom’s mistakes. Beautiful mistakes.","Evolution needs good genes, not just age. The Gene Lab is your friend.","Personality isn’t random. It’s what the creature learned before you caught it."],
+      "quests": [{"text":"Catch 3 wild creatures.","stat":"captures","n":3,"reward":{"coin":80,"gilded":1},"done":"Three new tethers cut. Lovely. A gilded cage for the next one."},{"text":"Lay 2 eggs in the Nursery.","stat":"eggs","n":2,"reward":{"ore":30},"done":"Eggs! The first generation born free. Ore for the incubators."},{"text":"Evolve a creature.","stat":"evolutions","n":1,"reward":{"coin":150,"shard":1},"done":"It changed for itself, not for the Bloom. That’s exactly what I hoped."},{"text":"Hatch a hybrid.","stat":"hybridsHatched","n":1,"reward":{"egg":true,"shard":1},"done":"A hybrid! Here: an egg I recovered from Ilsa’s last nest. I don’t know what’s inside."}],
+      "outro": "You’ve done more for my research than a decade alone. Keep breeding them free."
+    }
+  }
+}

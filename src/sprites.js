@@ -1,4 +1,8 @@
 /* ================= Creature sprites: one body per species, evolution adornments per stage ================= */
+import {esc} from './util.js';
+import {BOSSES,FOES,GENETICS,LINES,NPCS,SPECIES,TYPES,typesOf} from './content.js';
+import {S,byId,formName,lineage,sexSym} from './state.js';
+import {drawBossBody,drawFoeBody} from './draw.js';
 const OL='#160f2c';
 function spriteKit(g,C){
   const fs=()=>{g.fill();g.stroke()};
@@ -150,21 +154,72 @@ function stageFront(g,type,st,C,t,fin){
   if(fin){g.strokeStyle=C.acc;g.lineWidth=2;g.beginPath();g.ellipse(2,-23,8,2.5,0,0,7);g.stroke();g.fillStyle=C.acc;g.beginPath();g.arc(2,-23,2,0,7);g.fill()}
   g.strokeStyle=OL;g.lineWidth=2.2;
 }
+/* ---------- looks from genes ---------- */
+// Hue rotates the body and shade colors in 45° steps (0 is the species' natural color).
+const hueCache={};
+function hueShift(hex,deg){
+  deg=((Math.round(deg)%360)+360)%360;if(!deg)return hex;
+  const key=hex+deg;if(hueCache[key])return hueCache[key];
+  const n=parseInt(hex.slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;
+  let h=0,s=0;if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60}
+  h=(h+deg+360)%360;
+  const C=(1-Math.abs(2*l-1))*s,X=C*(1-Math.abs((h/60)%2-1)),m=l-C/2;
+  const [R,G,B]=h<60?[C,X,0]:h<120?[X,C,0]:h<180?[0,C,X]:h<240?[0,X,C]:h<300?[X,0,C]:[C,0,X];
+  const out='#'+[R,G,B].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+  return hueCache[key]=out;
+}
+const NATURAL={hue:0,pat:0,size:1,shine:0};
+// Patterns and shine are painted over the body only: the body is drawn on a scratch canvas,
+// the overlay goes on with 'source-atop', and the result is copied back.
+let scratch=null;
+function withOverlay(g,paint,overlay){
+  const m=g.getTransform(),k=Math.max(.5,Math.hypot(m.a,m.b)),U=84,W=Math.ceil(U*k);
+  if(!scratch)scratch=document.createElement('canvas');
+  if(scratch.width<W||scratch.height<W){scratch.width=W;scratch.height=W}
+  const o=scratch.getContext('2d');o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,W,W);
+  o.setTransform(k,0,0,k,W/2,W/2);paint(o);
+  o.globalCompositeOperation='source-atop';overlay(o);o.globalCompositeOperation='source-over';
+  g.drawImage(scratch,0,0,W,W,-U/2,-U/2,U,U);
+}
+function drawPattern(g,L,C,t,seed){
+  const pat=L.pat;g.save();
+  if(pat===1){g.fillStyle=C.sh;g.globalAlpha=.75;for(let i=0;i<10;i++){const a=i*2.4,r=3+((i*37)%15);g.beginPath();g.arc(Math.cos(a)*r,-5+Math.sin(a)*r*.9,2+(i%3)*.8,0,7);g.fill()}}
+  if(pat===2){g.strokeStyle=C.sh;g.globalAlpha=.42;g.lineWidth=2.4;for(let x=-36;x<36;x+=7){g.beginPath();g.moveTo(x,-34);g.lineTo(x+16,24);g.stroke()}}
+  if(pat===3){const gr=g.createLinearGradient(0,-10,0,14);gr.addColorStop(0,C.sh+'00');gr.addColorStop(1,C.sh);g.globalAlpha=.6;g.fillStyle=gr;g.fillRect(-42,-42,84,84)}
+  if(pat===4){g.strokeStyle=C.sh;g.globalAlpha=.55;g.lineWidth=2;for(const r of [4,9,14,19]){g.beginPath();g.arc(0,-3,r,0,7);g.stroke()}}
+  if(pat===5){g.strokeStyle=C.acc;g.globalAlpha=.85;g.lineWidth=1.4;g.shadowColor=C.acc;g.shadowBlur=3;
+    const glyph=(x,y)=>{g.beginPath();g.moveTo(x-2,y-3);g.lineTo(x,y+3);g.lineTo(x+2,y-3);g.moveTo(x-2.5,y);g.lineTo(x+2.5,y);g.stroke()};
+    glyph(-6,-6);glyph(5,-9);glyph(-1,4);glyph(8,3)}
+  g.restore();
+  if(L.shine===1){g.save();const sh=(t*40)%84;const gr=g.createLinearGradient(-42+sh-84,-42,42+sh,42);
+    ['#ff6b6b','#ffcf4a','#5de8b0','#58c2ff','#c27bff','#ff6b6b','#ffcf4a'].forEach((c2,i,a)=>gr.addColorStop(i/(a.length-1),c2));
+    g.globalAlpha=.32;g.fillStyle=gr;g.fillRect(-42,-42,84,84);g.restore()}
+  if(L.shine===2){g.save();g.fillStyle='rgba(70,0,24,.28)';g.fillRect(-42,-42,84,84);
+    g.strokeStyle='#ff2a55';g.lineWidth=1.6;g.shadowColor='#ff2a55';g.shadowBlur=4+2*Math.sin(t*4);g.globalAlpha=.9;
+    for(const [x,y,a] of [[-8,-10,.6],[6,-2,-.8],[-2,6,.3]]){g.beginPath();g.moveTo(x,y);let px=x,py=y;for(let i=0;i<4;i++){px+=Math.cos(a+i*.9)*4;py+=Math.sin(a+i*.9)*4;g.lineTo(px,py)}g.stroke()}
+    g.restore()}
+}
 function drawCreature(g,c,x,y,s,t,o={}){
-  const sp=SPECIES[c.species],st=c.stage||0,flash=o.flash;
-  const C={col:flash?'#fff':sp.col,sh:flash?'#fff':sp.shade,acc:flash?'#fff':TYPES[c.type].acc};
+  const sp=SPECIES[c.species],st=c.stage||0,flash=o.flash,L=c.looks||NATURAL;
+  // Prismatic creatures drift through every hue.
+  const deg=L.hue*45+(L.shine===1?t*50:0);
+  const C={col:flash?'#fff':hueShift(sp.col,deg),sh:flash?'#fff':hueShift(sp.shade,deg),acc:flash?'#fff':TYPES[c.type].acc};
   const body=sp.hybrid?HYBRID_BODY[c.type]:c.species;
-  const seed=o.seed||0,bob=Math.sin(t*6+seed)*1.5,sz=s*(sp.size||1)*(1+.1*st);
+  const seed=o.seed||0,bob=Math.sin(t*6+seed)*1.5,sz=s*(sp.size||1)*(1+.1*st)*GENETICS.EFFECTS.sizeScale[L.size];
   g.save();g.translate(x,y);g.scale(sz,sz);
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,15,11,3.5,0,0,7);g.fill();
   g.translate(0,bob);if(o.face<0)g.scale(-1,1);
-  g.lineWidth=2.2;g.strokeStyle=OL;g.lineJoin='round';
   const fin=st>0&&st===LINES[c.species].length-1;
-  stageBack(g,c.type,st,C,t,fin);
-  if(c.type2)drawMark(g,c.type2,t);
-  g.lineWidth=2.2;g.strokeStyle=OL;
-  BODY[body](g,C,t,seed);
-  stageFront(g,c.type,st,C,t,fin);
+  const paint=G=>{
+    G.lineWidth=2.2;G.strokeStyle=OL;G.lineJoin='round';
+    stageBack(G,c.type,st,C,t,fin);
+    if(c.type2)drawMark(G,c.type2,t);
+    G.lineWidth=2.2;G.strokeStyle=OL;
+    BODY[body](G,C,t,seed);
+    stageFront(G,c.type,st,C,t,fin);
+  };
+  if(!flash&&(L.pat||L.shine))withOverlay(g,paint,G=>drawPattern(G,L,C,t,seed));else paint(g);
   if(o.sex){g.font='700 9px sans-serif';g.textAlign='center';g.fillStyle=o.sex==='F'?'#ff8fb1':'#7fc8ff';g.fillText(sexSym(o.sex),13,-12)}
   g.restore();
 }
@@ -204,10 +259,12 @@ function paintSprites(root){
     let c=null;
     if(cv.dataset.sp){const sp=cv.dataset.sp,S0=SPECIES[sp];c={species:sp,type:S0.hybrid?S0.types[0]:S0.type,type2:S0.hybrid?S0.types[1]:null,stage:+cv.dataset.st||0}}
     else if(cv.dataset.cid)c=byId(+cv.dataset.cid)||(cv.dataset.mem?null:null);
-    if(cv.dataset.mem){const m=S.memorial[+cv.dataset.mem];if(m)c={species:m.species,type:m.type,type2:m.type2,stage:m.stage}}
+    if(cv.dataset.mem){const m=S.memorial[+cv.dataset.mem];if(m)c={species:m.species,type:m.type,type2:m.type2,stage:m.stage,looks:m.looks}}
+    if(cv.dataset.tree){const e=lineage(+cv.dataset.tree);if(e)c={species:e.species,type:e.type,type2:e.type2,stage:e.stage,looks:e.looks}}
     if(!c)return;
-    const sz=(SPECIES[c.species].size||1)*(1+.1*(c.stage||0));
-    drawCreature(g,c,w/2,h/2+3,w/50/Math.max(1,sz*.92),0,{face:1,sex:cv.dataset.sp||cv.dataset.mem?null:c.sex});
+    // Fit the sprite to its canvas, but let size genes still show: Huge only shrinks a little to fit.
+    const ss=GENETICS.EFFECTS.sizeScale[(c.looks||NATURAL).size],sz=(SPECIES[c.species].size||1)*(1+.1*(c.stage||0))*Math.max(1,ss*.85);
+    drawCreature(g,c,w/2,h/2+3,w/50/Math.max(1,sz*.92),0,{face:1,sex:cv.dataset.sp||cv.dataset.mem||cv.dataset.tree?null:c.sex});
     if(cv.dataset.sil)silhouette(g,w,h);
   });
 }
@@ -218,3 +275,5 @@ const typeChip=t=>`<span class="chip type" style="--c:${TYPES[t].color}">${TYPES
 const typeChips=c=>typesOf(c).map(typeChip).join('')+(c.type2?'<span class="chip warn">Hybrid</span>':'');
 const sexChip=c=>`<span class="chip sex ${c.sex==='F'?'f':'m'}" title="${c.sex==='F'?'Female: passes on her species':'Male: passes on most of his stats'}">${sexSym(c.sex)}</span>`;
 const stars=n=>`<span class="stars" aria-label="${n} of 5 bond stars">${'★'.repeat(n)}<i>${'★'.repeat(5-n)}</i></span>`;
+
+export {OL,hueShift,drawPattern,spriteKit,BODY,HYBRID_BODY,drawMark,stageBack,stageFront,drawCreature,drawEgg,drawPerson,paintSprites,silhouette,spr,sprSp,typeChip,typeChips,sexChip,stars};

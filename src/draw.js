@@ -1,4 +1,12 @@
 /* ---------- drawing ---------- */
+import {$,TOUCH,clamp,dist,esc,fxRnd} from './util.js';
+import {ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} from './content.js';
+import {loadSave,migrate,save} from './save.js';
+import {S,formName,newGame,secTier,setS,sexSym} from './state.js';
+import {OL,drawCreature} from './sprites.js';
+import {sfx} from './audio.js';
+import {openIntro,renderAll} from './ui.js';
+import {CU,R,RH,RW,TS,applyBuff,applyCurse,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 let ctx,cv,mini,mctx;
 function resize(){
   const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
@@ -55,11 +63,11 @@ function drawBossBody(g,d,x,y,s,t,flash){
   }
   g.restore();
 }
-function lightning(g,a,b,col){g.strokeStyle=col;g.lineWidth=3;g.beginPath();g.moveTo(a.x,a.y);const n=6;for(let i=1;i<n;i++){const k=i/n;g.lineTo(a.x+(b.x-a.x)*k+rnd(-8,8),a.y+(b.y-a.y)*k+rnd(-8,8))}g.lineTo(b.x,b.y);g.stroke();g.strokeStyle='#fff';g.lineWidth=1;g.stroke()}
+function lightning(g,a,b,col){g.strokeStyle=col;g.lineWidth=3;g.beginPath();g.moveTo(a.x,a.y);const n=6;for(let i=1;i<n;i++){const k=i/n;g.lineTo(a.x+(b.x-a.x)*k+fxRnd(-8,8),a.y+(b.y-a.y)*k+fxRnd(-8,8))}g.lineTo(b.x,b.y);g.stroke();g.strokeStyle='#fff';g.lineWidth=1;g.stroke()}
 function draw(){
   const g=ctx,p=R.p,s=R.scale,dpr=R.dpr,t=R.t,M=R.map;
   R.camx=p.x;R.camy=p.y;
-  const sx=R.shake>0?rnd(-3,3):0,sy=R.shake>0?rnd(-3,3):0;
+  const sx=R.shake>0?fxRnd(-3,3):0,sy=R.shake>0?fxRnd(-3,3):0;
   g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle='#0d0a1c';g.fillRect(0,0,R.vw,R.vh);
   g.imageSmoothingEnabled=false;
   g.setTransform(dpr*s,0,0,dpr*s,dpr*(R.vw/2-R.camx*s+sx),dpr*(R.vh/2-R.camy*s+sy));
@@ -176,13 +184,13 @@ function drawEnemy(g,e){
   if(e.burn){g.fillStyle=`rgba(255,122,61,${.3+.2*Math.sin(t*12)})`;g.beginPath();g.arc(e.x,e.y-e.r*.6,e.r*.5,0,7);g.fill()}
   if(e.kind==='boss'){drawBossBody(g,e.def,e.x,e.y,e.r/40,t,e.flash>0);pips(g,e,e.y+e.r+10);return}
   if(e.kind==='wild'){
-    drawCreature(g,e.c,e.x+(e.wind>0?rnd(-1,1):0),e.y,.9,t,{face:e.face,flash:e.flash>0,seed:e.seed});
+    drawCreature(g,e.c,e.x+(e.wind>0?fxRnd(-1,1):0),e.y,.9,t,{face:e.face,flash:e.flash>0,seed:e.seed});
     const f=e.hp/e.maxHp,weak=isWeak(e);hpOver(g,e.x,e.y-30,30,f,weak?'#ffcf4a':'#ff6688');pips(g,e,e.y-38);
     g.font='600 10px "Pixelify Sans", monospace';g.fillStyle=SPECIES[e.c.species].col;g.fillText(`WILD ${formName(e.c).toUpperCase()} ${sexSym(e.c.sex)} LV${e.c.level}`,e.x,e.y-44);
     if(weak){g.strokeStyle='#ffcf4a';g.lineWidth=2;g.setLineDash([4,4]);g.lineDashOffset=t*20;g.beginPath();g.arc(e.x,e.y,22+Math.sin(t*6)*2,0,7);g.stroke();g.setLineDash([])}
     return;
   }
-  drawFoeBody(g,e.def,e.x+(e.wind>0&&e.fire.kind==='charge'?rnd(-1.5,1.5):0),e.y,e.r/14,t,{flash:e.flash>0,seed:e.seed,face:e.face,dir:e.chargeT>0?Math.atan2(e.cvy,e.cvx):null});
+  drawFoeBody(g,e.def,e.x+(e.wind>0&&e.fire.kind==='charge'?fxRnd(-1.5,1.5):0),e.y,e.r/14,t,{flash:e.flash>0,seed:e.seed,face:e.face,dir:e.chargeT>0?Math.atan2(e.cvy,e.cvx):null});
   hpOver(g,e.x,e.y-e.r-12,e.elite||e.def.body==='brute'?44:26,e.hp/e.maxHp,'#ff6688');pips(g,e,e.y-e.r-18);
   if(e.elite||e.def.body==='brute'){g.font='600 10px "Pixelify Sans", monospace';g.fillStyle='#ffa04f';g.fillText((e.elite?'ELITE ':'')+e.def.name.toUpperCase(),e.x,e.y-e.r-24)}
   if(e.stun>0&&e.stun<99){g.fillStyle='#9b7bff';g.font='600 11px "Pixelify Sans", monospace';g.fillText('STUN',e.x,e.y+e.r+14)}
@@ -235,7 +243,9 @@ function updHud(){
   const pr=$('#hudPrompt');if(R.prompt){pr.hidden=false;pr.textContent=R.prompt;pr.classList.toggle('tap',!!(R.canUse&&TOUCH))}else pr.hidden=true;
   drawMini();
 }
-let hudT=0;
+let hudT=0,raf=0;
+function startLoop(){cancelAnimationFrame(raf);raf=requestAnimationFrame(loop)}
+function stopLoop(){cancelAnimationFrame(raf)}
 function loop(ts){
   if(!R||R.over)return;
   const dt=Math.min(.04,(ts-(R.last||ts))/1000);R.last=ts;
@@ -305,12 +315,19 @@ function bindCanvas(){
 window.addEventListener('resize',()=>{if(cv)resize()});
 
 /* ================= Boot ================= */
-function start(data){
+async function start(data){
   cv=$('#cv');ctx=cv.getContext('2d');mini=$('#mini');mctx=mini.getContext('2d');bindCanvas();
-  S=(data&&data.S&&data.S.v===5)?data.S:load();
+  let loaded=null;
+  if(data&&data.S){try{loaded=migrate(data.S)}catch(e){}}
+  if(!loaded)loaded=await loadSave();
+  setS(loaded);
   let fresh=false;if(!S){newGame();fresh=true}
   save();renderAll();
   if(fresh||!S.introSeen){S.introSeen=true;save();openIntro(true)}
 }
-if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(()=>({S}))}catch(e){}}
-if(window.claude?.hot?.ready)window.claude.hot.ready(start);else start(window.claude?.hot?.data??{});
+function boot(){
+  if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(()=>({S}))}catch(e){}}
+  return new Promise(res=>{const go=d=>res(start(d));if(window.claude?.hot?.ready)window.claude.hot.ready(go);else go(window.claude?.hot?.data??{})});
+}
+
+export {ctx,cv,mini,mctx,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};

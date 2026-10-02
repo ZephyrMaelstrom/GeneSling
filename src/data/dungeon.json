@@ -1,0 +1,23 @@
+{
+  "CURSES": {
+    "glass": {"name":"Glass Cannon","desc":"+40% weapon damage, but −30 max HP."},
+    "blood": {"name":"Blood Pact","desc":"+30% attack speed, but you cannot heal."},
+    "doom": {"name":"Doom Clock","desc":"+25% move speed, but lose 90 seconds on the clock."},
+    "toll": {"name":"Greed’s Toll","desc":"+60% coin, but enemies have 25% more HP."},
+    "feral": {"name":"Feral Pact","desc":"Companions deal +40% damage, but abilities recharge 50% slower."},
+    "blind": {"name":"Blind Faith","desc":"+1 pierce and +20% damage, but no minimap."}
+  },
+  "ROOM_MODS": {
+    "dark": {"name":"Darkness","desc":"You can only see close to you.","col":"#6a5cab"},
+    "slick": {"name":"Slick Floor","desc":"You slide when you move.","col":"#9fe8ff"},
+    "fog": {"name":"Poison Fog","desc":"You and your companions lose health until the room is clear.","col":"#7fd860"},
+    "golden": {"name":"Golden Room","desc":"Enemies drop double coin.","col":"#ffcf4a"},
+    "silence": {"name":"Silence","desc":"Companion abilities and combos are sealed.","col":"#b4a9d8"},
+    "frenzy": {"name":"Frenzy","desc":"Enemies attack faster. Companions earn 50% more XP.","col":"#ff5c7a"}
+  },
+  "MODES": {
+    "hunter": {"name":"Hunter’s Moon","need":["warroom",2],"desc":"Twice as many wild creatures. Enemies have 20% more HP. +20% Keeper XP."},
+    "iron": {"name":"Iron Will","need":["warroom",4],"desc":"Enemies hit 40% harder. +60% coin and +50% Keeper XP."},
+    "swarm": {"name":"Swarm","need":["warroom",5],"desc":"Two more enemies per room. +30% coin and more buff orbs."}
+  }
+}
