@@ -15,6 +15,6 @@ const angDiff=(a,b)=>{let d=a-b;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+
 const fxRnd=(a,b)=>a+fxRand()*(b-a);
 const fxRi=(a,b)=>Math.floor(fxRnd(a,b+1));
 const fxPick=a=>a[Math.floor(fxRand()*a.length)];
-const TOUCH=(window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window);
+const TOUCH=typeof window!=='undefined'&&((window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window));
 
 export {$,rnd,ri,pick,clamp,esc,dist,wpick,shuffle,angDiff,fxRnd,fxRi,fxPick,TOUCH};

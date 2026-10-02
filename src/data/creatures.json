@@ -33,40 +33,54 @@
     "Last Stand: survives one knockout per raid and unleashes its ability"
   ],
   "GENES": {
-    "vig": "Vigor",
     "pow": "Power",
+    "vig": "Vigor",
     "swf": "Swift",
-    "hst": "Haste",
-    "tmp": "Temper"
+    "tem": "Tempo",
+    "foc": "Focus",
+    "grt": "Grit",
+    "kn": "Knack",
+    "yld": "Yield"
   },
   "GENE_HINT": {
-    "vig": "max HP",
     "pow": "attack",
+    "vig": "max HP",
     "swf": "move speed",
-    "hst": "attack speed",
-    "tmp": "obedience when wild"
+    "tem": "attack speed",
+    "foc": "ability recharge, crits and obedience",
+    "grt": "damage resistance",
+    "kn": "quality of hideout work (from Phase 2)",
+    "yld": "amount of hideout work (from Phase 2)"
   },
   "TRAITS": {
-    "thick": {"name":"Thick Hide","desc":"+12% max HP","w":3},
-    "glow": {"name":"Glowcore","desc":"+10% attack","w":3},
-    "quick": {"name":"Quickfoot","desc":"+12% move speed","w":3},
-    "rapid": {"name":"Rapid Pulse","desc":"+15% attack speed","w":3},
-    "keen": {"name":"Keen Eye","desc":"15% chance to deal double damage","w":2},
-    "sturdy": {"name":"Sturdy","desc":"Takes 15% less damage","w":2},
-    "regen": {"name":"Regrowth","desc":"Heals 1.5% of max HP per second in raids","w":2},
-    "reach": {"name":"Long Reach","desc":"Shots fly 30% farther and faster","w":2},
-    "focus": {"name":"Focused","desc":"Ability recharges 20% faster","w":2},
-    "vamp": {"name":"Leech Fang","desc":"Heals 8% of the damage it deals","w":1.5},
-    "lucky": {"name":"Lucky Charm","desc":"+10% capture chance while in your party","w":1.5},
-    "hoard": {"name":"Hoarder","desc":"+15% coin from raids it survives","w":1.5},
-    "worker": {"name":"Hard Worker","desc":"+50% contribution to hideout sections","w":2},
-    "lazy": {"name":"Drowsy","desc":"Ability recharges 25% slower","w":1.2},
-    "frail": {"name":"Frail","desc":"-10% max HP","w":1.2},
-    "clumsy": {"name":"Clumsy","desc":"-10% move speed","w":1.2}
+    "thick": {"name":"Thick Hide","desc":"+12% max HP","w":3,"dom":true},
+    "glow": {"name":"Glowcore","desc":"+10% attack","w":3,"dom":true},
+    "quick": {"name":"Quickfoot","desc":"+12% move speed","w":3,"dom":true},
+    "rapid": {"name":"Rapid Pulse","desc":"+15% attack speed","w":3,"dom":true},
+    "keen": {"name":"Keen Eye","desc":"15% chance to deal double damage","w":2,"dom":false},
+    "sturdy": {"name":"Sturdy","desc":"Takes 15% less damage","w":2,"dom":true},
+    "regen": {"name":"Regrowth","desc":"Heals 1.5% of max HP per second in raids","w":2,"dom":false},
+    "reach": {"name":"Long Reach","desc":"Shots fly 30% farther and faster","w":2,"dom":true},
+    "focus": {"name":"Focused","desc":"Ability recharges 20% faster","w":2,"dom":true},
+    "vamp": {"name":"Leech Fang","desc":"Heals 8% of the damage it deals","w":1.5,"dom":false},
+    "lucky": {"name":"Lucky Charm","desc":"+10% capture chance while in your party","w":1.5,"dom":false},
+    "hoard": {"name":"Hoarder","desc":"+15% coin from raids it survives","w":1.5,"dom":false},
+    "worker": {"name":"Hard Worker","desc":"+50% contribution to hideout sections","w":2,"dom":true},
+    "lazy": {"name":"Drowsy","desc":"Ability recharges 25% slower","w":1.2,"dom":false},
+    "frail": {"name":"Frail","desc":"-10% max HP","w":1.2,"dom":false},
+    "clumsy": {"name":"Clumsy","desc":"-10% move speed","w":1.2,"dom":false},
+    "twin": {"name":"Twin Eggs","desc":"As a mother, 25% chance her clutch is two eggs","w":1.2,"dom":false},
+    "strongblood": {"name":"Strong Blood","desc":"Passes its better stat allele 75% of the time","w":1.2,"dom":false},
+    "ricochet": {"name":"Ricochet","desc":"Its shots bounce off walls once","w":1.5,"dom":false},
+    "thrifty": {"name":"Thrifty","desc":"Eats no food on days it works in the hideout","w":1.5,"dom":true},
+    "brittle": {"name":"Brittle","desc":"Defect: takes 20% more damage","w":0,"dom":false,"defect":true},
+    "shortlived": {"name":"Short-lived","desc":"Defect: can only breed twice","w":0,"dom":false,"defect":true}
   },
   "NEG_TRAITS": [
     "lazy",
     "frail",
-    "clumsy"
+    "clumsy",
+    "brittle",
+    "shortlived"
   ]
 }

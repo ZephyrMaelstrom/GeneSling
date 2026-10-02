@@ -1,7 +1,7 @@
 /* ================= Raid engine ================= */
 import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
-import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GUNS,GUN_IDS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
+import {ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
 import {save} from './save.js';
 import {S,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
@@ -142,9 +142,11 @@ function damageCrack(i,dmg){
 }
 
 /* ---------- raid setup ---------- */
+// Size from genes nudges the hitbox.
+const hitboxMul=c=>GENETICS.EFFECTS.sizeHitbox[c.looks?c.looks.size:1];
 function makeComp(c){
   const st=stats(c),mh=Math.round(st.hp*(secTier('spring')>=4?1.1:1)*(res('bond',1)?1.1:1));
-  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:12,hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
+  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
     cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:rand()*9,lastStand:st.star>=5};
 }
 function pickBoss(set){return pick(BOSS_IDS.filter(b=>BOSSES[b].set===set))}
@@ -237,7 +239,7 @@ function spawnWild(pos,species,room,level){
   const c=makeCreature(species,'wild',lv,{floor:f,stage});const st=stats(c);
   const fire=WILD_FIRE[c.type];const hp=Math.round(st.hp*.7*hpMods());
   dexForm(species,stage,'seen');
-  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:14,hp,maxHp:hp,dmg:st.atk*.6*R.mods.dmg,spd:st.spd*.65,
+  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:Math.round(14*hitboxMul(c)),hp,maxHp:hp,dmg:st.atk*.6*R.mods.dmg,spd:st.spd*.65,
     fire,every:fire.every/Math.max(.6,st.rate),cd:rnd(.8,1.8),melee:fire.kind==='charge'||c.type==='warden',bcol:SPECIES[c.species].col}));
   return R.enemies[R.enemies.length-1];
 }
@@ -362,6 +364,8 @@ function playerDown(){
 function shoot(team,x,y,ang,speed,dmg,o={}){
   const b={team,x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:o.r||5,dmg,life:o.life||2.6,age:0,col:o.col||'#ff5c7a',slow:o.slow||0,
     pierce:o.pierce||0,hit:o.pierce?new Set():null,bounce:o.bounce||0,explode:o.explode||0,split:o.split||0,homing:o.homing||0,src:o.src||null,elem:o.elem||null,lob:o.lob||null,orbit:o.orbit||null,cloud:o.cloud||0};
+  // Ricochet trait: a companion's shots bounce off a wall once.
+  if(o.src&&o.src.c&&o.src.c.traits.includes('ricochet'))b.bounce=Math.max(b.bounce,1);
   R.bullets.push(b);return b;
 }
 const critMul=st=>st&&st.crit&&rand()<st.crit?2:1;

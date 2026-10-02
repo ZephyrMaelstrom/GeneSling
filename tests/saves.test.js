@@ -14,10 +14,24 @@ let srv, browser;
 before(async () => { srv = await startServer(); browser = await launch(); });
 after(async () => { await browser.close(); srv.server.close(); });
 
-// Everything in the v5 save must come through unchanged, apart from the version number.
+// Everything in the v5 save must come through. Creatures gain a genome (their v5 genes and
+// traits as matching allele pairs), lineage fields, and expressed genes under the new names.
+const NEW_NAMES = {vig: 'vig', pow: 'pow', swf: 'swf', hst: 'tem', tmp: 'foc'};
+const stripCreature = c => { const {genome, genes, traits, looks, mom, dad, pure, bred, ...rest} = c; return rest; };
+const strip = s => ({...s, v: 0, tree: undefined, settings: {...s.settings, genes: undefined},
+  creatures: s.creatures.map(stripCreature), eggs: s.eggs.map(e => ({...e, child: stripCreature(e.child)}))});
 function assertSameSave(loaded, v5) {
-  assert.equal(loaded.v, 6);
-  assert.deepEqual({...loaded, v: 5}, v5);
+  assert.equal(loaded.v, 7);
+  assert.deepEqual(strip(loaded), strip(v5));
+  for (const [i, old] of v5.creatures.entries()) {
+    const c = loaded.creatures[i];
+    assert.deepEqual(c.traits, old.traits, `${old.name} keeps its traits`);
+    for (const [k, n] of Object.entries(NEW_NAMES)) {
+      assert.equal(c.genes[n], old.genes[k], `${old.name} keeps ${k} as ${n}`);
+      assert.deepEqual(c.genome[n], [old.genes[k], old.genes[k]]);
+    }
+    assert.deepEqual(c.looks, {hue: 0, pat: 0, size: 1, shine: 0});
+  }
 }
 
 test('a v5 save loads without loss and moves into IndexedDB', async () => {
@@ -36,7 +50,7 @@ test('a v5 save loads without loss and moves into IndexedDB', async () => {
     db.close();
     return {rec, legacy: localStorage.getItem('genesling-save-v5')};
   });
-  assert.equal(stored.rec.v, 6);
+  assert.equal(stored.rec.v, 7);
   assertSameSave(JSON.parse(stored.rec.data), v5);
   assert.deepEqual(JSON.parse(stored.legacy), v5);
 
@@ -85,8 +99,8 @@ test('migrations run in order and refuse what they cannot read', async () => {
   const {context, page} = await openGame(browser, srv.url);
   const r = await page.evaluate(() => {
     const tryM = d => { try { return migrate(d).v; } catch (e) { return 'error'; } };
-    return {v5: tryM({v: 5, opts: {}}), v6: tryM({v: 6}), v4: tryM({v: 4}), v99: tryM({v: 99}), junk: tryM('x'), version: SAVE_VERSION};
+    return {v5: tryM({v: 5, opts: {}}), v6: tryM({v: 6}), v7: tryM({v: 7}), v4: tryM({v: 4}), v99: tryM({v: 99}), junk: tryM('x'), version: SAVE_VERSION};
   });
-  assert.deepEqual(r, {v5: 6, v6: 6, v4: 'error', v99: 'error', junk: 'error', version: 6});
+  assert.deepEqual(r, {v5: 7, v6: 7, v7: 7, v4: 'error', v99: 'error', junk: 'error', version: 7});
   await context.close();
 });

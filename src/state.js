@@ -1,16 +1,16 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
-import {clamp,pick,ri} from './util.js';
-import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,FOE_IDS,GENES,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {clamp,pick} from './util.js';
+import {ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
+import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,express,genomeFrom,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
-  lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'0'}};
+  lab:{species:'bastion',origin:'wild',sex:'R',level:10,max:false,proven:false,t1:'',t2:'',t3:''},gl:{id:'',gene:'vig'},tt:{id:'',slot:'t1'},sim:{}};
 
-function randGenes(min,max){const g={};for(const k in GENES)g[k]=ri(min,max);return g}
 const lineOf=c=>LINES[c.species];
 const formOf=c=>lineOf(c)[Math.min(c.stage||0,lineOf(c).length-1)];
 const nextForm=c=>lineOf(c)[(c.stage||0)+1]||null;
@@ -19,6 +19,14 @@ function wildStageFor(species,level,floor){
   const L=LINES[species],cap=floor>=4?2:floor>=2?1:0;let s=0;
   for(let i=1;i<L.length&&i<=cap;i++)if(level>=L[i].lv)s=i;return s;
 }
+// o.genome sets the whole genome. Otherwise one is rolled, and o.genes / o.traits (expressed
+// values, as in v5) override the stats and trait slots with matching allele pairs.
+function makeGenome(wild,o){
+  if(o.genome)return o.genome;
+  const G=rollGenome(rand,wild?'wild':'bred',o.floor||1);
+  if(o.genes||o.traits){const L=genomeFrom(o.genes||{},o.traits||[]);if(o.genes)for(const k of GRADE_LOCI)G[k]=L[k];if(o.traits)for(const k of TRAIT_LOCI)G[k]=L[k]}
+  return G;
+}
 function makeCreature(species,origin,level,o={}){
   const sp=SPECIES[species];
   const type=o.type||(sp.hybrid?sp.types[0]:sp.type);
@@ -26,25 +34,27 @@ function makeCreature(species,origin,level,o={}){
   const wild=origin==='wild';
   const c={id:S.nextId++,species,type,type2,sex:o.sex||(rand()<.5?'F':'M'),name:o.name||makeName(type),origin,
     proven:!wild||!!o.proven,stage:o.stage||0,pers:o.pers||pick(PERS_IDS),
-    genes:o.genes||(wild?randGenes(Math.min(6,2+Math.ceil((o.floor||1)/2)),10):randGenes(2,7)),
-    traits:o.traits||rollTraits(wild?(rand()<.5?2:1):2),
+    genome:makeGenome(wild,o),
     level:level||1,xp:0,bondXp:o.bondXp!=null?o.bondXp:(wild?0:30),gen:o.gen||0,raids:0,
-    captureRaid:o.captureRaid!=null?o.captureRaid:-1};
-  c.hp=stats(c).hp;return c;
+    captureRaid:o.captureRaid!=null?o.captureRaid:-1,mom:o.mom??null,dad:o.dad??null,pure:o.pure||1,bred:0};
+  express(c);c.hp=stats(c).hp;return c;
 }
 const bondStar=c=>BOND_TH.filter(t=>(c.bondXp||0)>=t).length;
 function addBond(c,n){const before=bondStar(c);c.bondXp=(c.bondXp||0)+Math.round(n*(c.pers==='loyal'?1.5:1)*(res('bond',0)?1.5:1));return bondStar(c)>before}
 function stats(c){
   const B=TYPES[c.type].base,m=SPECIES[c.species].mods,g=c.genes,l=1+.07*(c.level-1),has=k=>c.traits.includes(k),st=c.stage||0;
+  const E=GENETICS.EFFECTS,n=E.neutral,size=c.looks?c.looks.size:1;
   const bs=bondStar(c),bm=bs>=4?1.12:bs>=2?1.05:1;
-  let hp=B.hp*m.hp*(.6+g.vig*.08)*l*(1+.15*st)*bm,atk=B.atk*m.atk*(.6+g.pow*.08)*l*(1+.15*st)*bm,spd=B.spd*m.spd*(.85+g.swf*.03)*(1+.03*st),rate=m.rate*(.8+g.hst*.04);
+  let hp=B.hp*m.hp*(.6+g.vig*.08)*l*(1+.15*st)*bm,atk=B.atk*m.atk*(.6+g.pow*.08)*l*(1+.15*st)*bm,spd=B.spd*m.spd*(.85+g.swf*.03)*(1+.03*st),rate=m.rate*(.8+g.tem*.04);
+  hp*=E.sizeHp[size];
   if(has('thick'))hp*=1.12;if(has('frail'))hp*=.9;if(has('glow'))atk*=1.1;if(has('quick'))spd*=1.12;if(has('clumsy'))spd*=.9;if(has('rapid'))rate*=1.15;
   const p=c.pers;if(p==='brave')atk*=1.1;if(p==='playful')spd*=1.15;
-  const obey=c.origin==='bred'||p==='loyal'?1:clamp(.4+g.tmp*.03+(bs-1)*.1+(c.proven?.1:0),.2,1);
+  const obey=c.origin==='bred'||p==='loyal'?1:clamp(.4+g.foc*.03+(bs-1)*.1+(c.proven?.1:0),.2,1);
   const f=formOf(c);
   return{hp:Math.round(hp),atk:Math.round(atk*10)/10,spd:Math.round(spd),rate:Math.round(rate*100)/100,obey,
-    taken:(has('sturdy')?.85:1)*(p==='timid'?.85:1),regen:has('regen')?.015:0,reach:has('reach')?1.3:1,
-    abil:(has('focus')?.8:1)*(has('lazy')?1.25:1)*(p==='calm'?.85:1)*(res('bond',3)?.9:1),crit:(has('keen')?.15:0)+(p==='fierce'?.1:0),vamp:has('vamp')?.08:0,
+    taken:(has('sturdy')?.85:1)*(p==='timid'?.85:1)*(1+(n-g.grt)*E.gritTaken)*(has('brittle')?E.brittleTaken:1),regen:has('regen')?.015:0,reach:has('reach')?1.3:1,
+    abil:(has('focus')?.8:1)*(has('lazy')?1.25:1)*(p==='calm'?.85:1)*(res('bond',3)?.9:1)*(1+(n-g.foc)*E.focusAbil),
+    crit:(has('keen')?.15:0)+(p==='fierce'?.1:0)+Math.max(0,g.foc-n)*E.focusCrit,vamp:has('vamp')?.08:0,
     atkId:f.atk,abilId:f.abil,star:bs};
 }
 const xpNeed=c=>25*c.level;
@@ -60,10 +70,17 @@ function evolve(c){
   if(!canEvolve(c))return false;const k=evolveCost(c);
   if(S.coin<k.coin||S.ore<k.ore||S.shards<k.shard)return false;
   S.coin-=k.coin;S.ore-=k.ore;S.shards-=k.shard;
-  const old=formName(c);c.stage=(c.stage||0)+1;c.hp=stats(c).hp;
+  const old=formName(c);c.stage=(c.stage||0)+1;const bonus=grantBonusSlot(c);express(c);c.hp=stats(c).hp;
+  if(bonus)addLog(`${c.name} is cut free and fully evolved, and gained a fourth trait slot: ${TRAITS[bonus].name}.`);
   dexForm(c.species,c.stage,'owned');bump('evolutions');
   addLog(`${c.name} evolved from ${old} into ${formName(c)}!`);
   return old;
+}
+// A cut-free creature in its final form gains a fourth trait slot, rolled once and then inherited.
+function grantBonusSlot(c){
+  const G=c.genome;if(!bonusSlotOpen(c)||G.t4[0]||G.t4[1])return null;
+  const t=GOOD_TRAITS.filter(x=>!c.traits.includes(x)),pick1=t[Math.floor(rand()*t.length)];
+  G.t4=[pick1,pick1];return pick1;
 }
 function defaultOpts(){return{stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false}}
 function newGame(){
@@ -73,7 +90,7 @@ function newGame(){
     dex:{forms:{},foes:{},claimed:0},npc:{},journalRead:0,tutorialDone:false,introSeen:false,memorial:[],
     loadout:{guns:['revolver','sword'],slots:[null,null,null]},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
-    settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true},opts:defaultOpts(),nextId:1};
+    settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},opts:defaultOpts(),nextId:1};
   const a=makeCreature('pyrrox','bred',4,{name:'Cinder',sex:'M',pers:'brave',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
   const b=makeCreature('puffcap','bred',4,{name:'Morel',sex:'F',pers:'calm',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
   const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',pers:'curious',proven:true,bondXp:70,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
@@ -96,7 +113,7 @@ function whereIs(c){
   return{kind:'idle'};
 }
 function unplace(c){for(const k in S.sections)S.sections[k].ids=S.sections[k].ids.filter(x=>x!==c.id);S.loadout.slots=S.loadout.slots.map(x=>x===c.id?null:x)}
-function killCreature(c,how){unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++;S.memorial.unshift({name:c.name,form:formName(c),species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,level:c.level,day:S.day,how:how||'Lost in the Bloom'});S.memorial=S.memorial.slice(0,40)}
+function killCreature(c,how){unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++;S.memorial.unshift({name:c.name,form:formName(c),species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,looks:c.looks,gen:c.gen,level:c.level,day:S.day,how:how||'Lost in the Bloom'});S.memorial=S.memorial.slice(0,40)}
 const typeTier=c=>Math.max(...typesOf(c).map(t=>TYPES[t].tier));
 function sellValue(c){return Math.round((12*typeTier(c)**2+c.level*5)*(c.type2?1.5:1)*(1+.4*(c.stage||0)))}
 const sexSym=s=>s==='F'?'♀':'♂';
@@ -125,7 +142,7 @@ function giveReward(r){
   if(r.shard){S.shards+=r.shard;out.push(`${r.shard} memory shard${r.shard>1?'s':''}`)}
   if(r.blueprint){S.blueprints[r.blueprint]=1;out.push(`${GUNS[r.blueprint].name} blueprint`)}
   if(r.weapon){S.guns[r.weapon]=(S.guns[r.weapon]||0)+1;S.blueprints[r.weapon]=1;out.push(GUNS[r.weapon].name)}
-  if(r.egg){const sp=pick(BASE_SPECIES.filter(k=>SPECIES[k].w===1));const ch=makeCreature(sp,'bred',1,{genes:randGenes(5,9),traits:rollTraits(2,[],true)});S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#ffcf4a'],parents:'Ilsa’s last nest',hybrid:true});out.push('a mysterious egg')}
+  if(r.egg){const sp=pick(BASE_SPECIES.filter(k=>SPECIES[k].w===1));const G=rollGenome(rand,'wild',6),T=genomeFrom({},rollTraits(2,[],true));TRAIT_LOCI.forEach(k=>G[k]=T[k]);const ch=makeCreature(sp,'bred',1,{genome:G});S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#ffcf4a'],parents:'Ilsa’s last nest',hybrid:true});out.push('a mysterious egg')}
   return out.join(', ');
 }
 
@@ -173,11 +190,12 @@ function addKeeperXp(n){
 }
 
 /* ---------- days ---------- */
-function hatchEgg(e){S.creatures.push(e.child);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
+function hatchEgg(e){const c=e.child;if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
-  S.day++;const notes=[];
+  S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;
-  const n=S.creatures.length+trainees;
+  const thrifty=S.creatures.filter(c=>c.traits.includes('thrifty')&&whereIs(c).kind==='section').length;
+  const n=S.creatures.length+trainees-thrifty;
   if(S.food>=n)S.food-=n;
   else{const short=n-S.food;S.food=0;S.creatures.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.9))});notes.push(`Food ran short by ${short}. Creatures went hungry.`)}
   const gt=secTier('garden');let g=[0,3,6,10,15,22][gt]+(res('economy',3)?3:0);if(g){S.food+=g;notes.push(`The Garden grew ${g} food.`)}
@@ -192,9 +210,48 @@ function processDay(){
     const hatched=[];
     S.eggs.forEach(e=>{e.days--;if(e.days<=0){hatchEgg(e);hatched.push(e.child)}});
     S.eggs=S.eggs.filter(e=>e.days>0);
-    hatched.forEach(c=>notes.push(`An egg hatched: ${c.name}, a ${sexSym(c.sex)} ${SPECIES[c.species].name}${c.type2?' (hybrid!)':''}.`));
+    hatched.forEach(c=>notes.push(`An egg hatched: ${c.name}, a ${sexSym(c.sex)} ${SPECIES[c.species].name}${c.type2?' (hybrid!)':''}.${hatchNotes(c)}`));
   }else if(S.eggs.length)notes.push('Eggs are waiting. The Nursery needs Wardens to keep incubating.');
   addLog(`Day ${S.day}. `+(notes.join(' ')||'A quiet day at the hideout.'));
+}
+
+/* ---------- breeding rules ---------- */
+// Extra mutation chance per gene from research and the Nursery.
+const mutBonus=()=>(res('breeding',0)?GENETICS.MUTATION.research:0)+(secTier('nursery')>=4?GENETICS.MUTATION.nursery:0);
+const breedsLeft=c=>c.traits.includes('shortlived')?Math.max(0,GENETICS.SHORT_LIVED_BREEDS-(c.bred||0)):Infinity;
+// Why a pair can't breed, or '' if they can.
+function breedBlock(mom,dad){
+  if(!mom||!dad)return'Choose a mother and a father.';
+  if(mom.sex!=='F'||dad.sex!=='M')return'Pair a female with a male.';
+  if(!mom.proven||!dad.proven)return'Both parents must be proven.';
+  if(!breedsLeft(mom)||!breedsLeft(dad))return`${!breedsLeft(mom)?mom.name:dad.name} is Short-lived and can't breed again.`;
+  return'';
+}
+
+/* ---------- lineage ---------- */
+// S.tree keeps a small record for every creature that has had or been a child, so family trees,
+// inbreeding checks and pedigrees survive after a creature dies or is sold.
+function recordLineage(c){S.tree[c.id]={name:c.name,species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,sex:c.sex,gen:c.gen||0,mom:c.mom??null,dad:c.dad??null,looks:c.looks,origin:c.origin}}
+const lineage=id=>{const c=byId(id);if(c)return c;const e=S.eggs.find(x=>x.child.id===id);return e?e.child:S.tree[id]};
+function inbred(mom,dad){return isInbred(mom.id,dad.id,lineage)}
+// Drop records more than LINEAGE.treeDepth generations above every living creature and egg.
+function pruneTree(){
+  const keep=new Set(),depth=GENETICS.LINEAGE.treeDepth-1;
+  for(const c of [...S.creatures,...S.eggs.map(e=>e.child)]){keep.add(c.id);ancestors(c.id,depth,lineage).forEach(x=>keep.add(x))}
+  for(const id in S.tree)if(!keep.has(+id))delete S.tree[id];
+}
+const LOCUS_NAME=k=>GENES[k]||({hue:'Hue',pat:'Pattern',size:'Size',shine:'Shine'})[k]||'Trait slot';
+// What a hatchling's egg hid, told when it hatches.
+function hatchNotes(c){
+  const out=[],m=c.birth||{};
+  if(m.defect)out.push(`The close bloodline left a defect: ${TRAITS[m.defect].name}`);
+  for(const x of m.mutations||[]){
+    if(x.to===GENETICS.GRADE.apex)out.push(`a mutation gave it an Apex ${GENES[x.locus]} allele`);
+    else if(x.locus==='shine'&&x.to===2)out.push('a mutation scarred it with Bloomscar');
+    else if(TRAIT_LOCI.includes(x.locus)||x.locus==='t4')out.push(`a mutation wrote ${TRAITS[x.to].defect?'a defect':'a new trait'} into its genes`);
+  }
+  if(c.looks.shine===1)out.push('it shimmers Prismatic');
+  return out.length?' '+out.join('; ').replace(/^./,ch=>ch.toUpperCase())+'.':'';
 }
 
 /* ---------- breeding ---------- */
@@ -202,34 +259,34 @@ function hybridChance(mom,dad){
   if(SPECIES[mom.species].hybrid||SPECIES[dad.species].hybrid)return{id:null,p:0};
   const id=hybridFor(mom.type,dad.type),t=secTier('nursery');return{id,p:id?(t>=5?.2:t>=4?.15:.1)+(res('breeding',2)?.05:0):0};
 }
-const mutChance=()=>(secTier('nursery')>=4?.25:.12)+(res('breeding',0)?.05:0);
+// Lays one clutch (one egg, two with Twin Eggs). Returns the eggs laid, or null.
 function breed(){
   const mom=byId(+ui.mom),dad=byId(+ui.dad);
-  if(!mom||!dad||mom.sex!=='F'||dad.sex!=='M'||!mom.proven||!dad.proven)return;
+  if(breedBlock(mom,dad))return null;
   const t=secTier('nursery');
-  if(!t||S.coin<20||S.food<3||S.eggs.length>=eggCap())return;
+  if(!t||S.coin<20||S.food<3||S.eggs.length>=eggCap())return null;
   S.coin-=20;S.food-=3;
-  const mc=mutChance();
-  let species=mom.species,type=mom.type,type2=mom.type2;
-  const h=hybridChance(mom,dad);let isHybrid=false;
-  if(h.id&&rand()<h.p){species=h.id;type=mom.type;type2=dad.type;isHybrid=true}
-  const genes={};
-  for(const k in GENES){let v=rand()<.7?dad.genes[k]:mom.genes[k];if(rand()<mc)v+=pick([-2,-1,1,1,2]);genes[k]=clamp(v,1,10)}
-  const traits=[];
-  for(let i=0;i<2;i++){
-    let tr=null;
-    if(rand()<.08)tr=rollTraits(1,traits)[0];
-    else{const src=rand()<.6?dad:mom;const pool=src.traits.filter(x=>!traits.includes(x));const alt=(src===dad?mom:dad).traits.filter(x=>!traits.includes(x));tr=pool.length?pick(pool):alt.length?pick(alt):rollTraits(1,traits)[0]}
-    traits.push(tr);
+  recordLineage(mom);recordLineage(dad);
+  const isIn=inbred(mom,dad),rate=mutationRate(mom,dad,mutBonus()),h=hybridChance(mom,dad);
+  const twins=mom.traits.includes('twin')&&rand()<GENETICS.TWIN_CHANCE;
+  const laid=[];
+  for(let i=0;i<(twins?2:1);i++){
+    let species=mom.species,type=mom.type,type2=mom.type2,isHybrid=false;
+    if(h.id&&rand()<h.p){species=h.id;type=mom.type;type2=dad.type;isHybrid=true}
+    const got=inherit(mom,dad,{rate,inbred:isIn},rand);
+    const child=makeCreature(species,'bred',t>=5||res('breeding',4)?5:1,{type,type2,genome:got.genome,pers:inheritPersonality(mom,dad,rand),
+      gen:Math.max(mom.gen||0,dad.gen||0)+1,mom:mom.id,dad:dad.id,pure:pureRun(species,mom,dad)});
+    child.birth={mutations:got.mutations,defect:got.defect,inbred:isIn};
+    recordLineage(child);
+    const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
+    S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});
+    bump('eggs');if(isHybrid)S.stats.hybrids++;laid.push(child);
   }
-  const r=rand(),pers=r<.5?mom.pers:r<.75?dad.pers:pick(PERS_IDS);
-  const child=makeCreature(species,'bred',t>=5||res('breeding',4)?5:1,{type,type2,genes,traits,pers,gen:Math.max(mom.gen,dad.gen)+1});
-  const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
-  S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});
-  bump('eggs');
-  if(isHybrid){S.stats.hybrids++;addLog(`${mom.name} and ${dad.name} produced a shimmering egg. Something unusual is inside.`)}
-  else addLog(`${mom.name} and ${dad.name} produced an egg.`);
+  mom.bred=(mom.bred||0)+1;dad.bred=(dad.bred||0)+1;
+  const odd=laid.some(c=>c.type2);
+  addLog(`${mom.name} and ${dad.name} produced ${twins?'twin eggs':'an egg'}.${odd?' Something unusual is inside.':''}${isIn?' They share close family, so a defect is possible.':''}`);
   sfx('pickup');ui.mom='';ui.dad='';save();renderAll();
+  return laid;
 }
 
-export {S,setS,ui,randGenes,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,mutChance,breed};
+export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,breed};

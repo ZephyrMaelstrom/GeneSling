@@ -30,11 +30,14 @@ npm test           # build, then run every tests/*.test.js in headless Chrome
 | `src/shell.html` | The page: all CSS, HTML layout, HUD, touch controls, modals. The build appends the bundled script to it. |
 | `src/main.js` | Entry point. Imports every module, exposes their top-level names on `window` (for tests and the console), and boots. `window.gameReady` resolves once the save is loaded. |
 | `src/data/*.json` | All content tables: `species` (types, species, hybrids, evolution lines, names), `attacks` (attacks, abilities, elements, reactions, combos), `creatures` (personalities, bond, genes, traits), `items` (guns, weapon costs, run buffs), `dungeon` (curses, room modifiers, modes), `enemies`, `bosses`, `hideout` (sections, armory, Keeper perks, research), `story` (intro, journal, NPCs and their quests). |
+| `src/data/genetics.json` | Every genetics number: loci, expression weights, inheritance and mutation odds, wild gene ranges by floor, stat effects of Grit, Focus and size, look names, tool unlocks, and the simulator's defaults. |
 | `src/content.js` | Loads the JSON tables and derives id lists and lookups (`SPECIES_IDS`, `LINES`, `comboFor`, `foePool`, ...). |
 | `src/rng.js` | The seeded random number generator. |
 | `src/util.js` | Small helpers: `$`, `rnd`, `ri`, `pick`, `clamp`, `shuffle`, and their visual-only `fx` versions. |
+| `src/genetics.js` | Genetics 2.0, all pure functions: rolling genomes, expression (`express(c)`), inheritance, mutation, lineage checks (inbreeding, pedigree), exact breeding odds, and the Test Lab simulator. |
+| `src/geneui.js` | Genetics screens: what the Keeper's eye, Sequencer and Gene Lens show on creature cards, the breeding preview, the family tree, and the simulator panel. |
 | `src/save.js` | Versioned IndexedDB saves and migrations. |
-| `src/state.js` | Save state `S`, creature creation and `stats()`, evolution, research, codex (dex), rewards, NPC quests, hideout sections, Keeper rank, day processing, hatching, breeding, deaths and the memorial. |
+| `src/state.js` | Save state `S`, creature creation and `stats()`, breeding and lineage records (`S.tree`), evolution, research, codex (dex), rewards, NPC quests, hideout sections, Keeper rank, day processing, hatching, breeding, deaths and the memorial. |
 | `src/sprites.js` | Procedural canvas sprites: a body drawer per species and hybrid, evolution dressing, eggs, NPCs, and the DOM sprite painter. |
 | `src/audio.js` | WebAudio sound effects and generative music. |
 | `src/map.js` | The illustrated hideout map canvas. |
@@ -51,6 +54,15 @@ Modules import what they use from each other. Modules that need each other at ru
 
 Tunable numbers and content live in `src/data/*.json`, not in code. Adding a species, gun, enemy or boss is a data change, plus a sprite drawer in `sprites.js` or `draw.js` when it has a new body. NPC arrival rules are data too: `arrive: {always: true}`, `{keeper: 2}`, or `{keeper: 4, section: "nursery", tier: 1}` (any one condition is enough).
 
+## Genetics
+
+- A creature's genome is `c.genome`: `{locus: [fromMother, fromFather]}` for the stats (`pow vig swf tem foc grt kn yld`), trait slots (`t1 t2 t3`, plus the bonus slot `t4`) and looks (`hue pat size shine`).
+- `c.genes` (expressed grades), `c.traits` (expressed traits) and `c.looks` are derived. Call `express(c)` after changing a genome; loading a save rebuilds them for every creature.
+- `makeCreature(species, origin, level, o)` rolls a genome, or takes `o.genome`. `o.genes` and `o.traits` (v5-style expressed values) set matching allele pairs, which is handy for starters and tests.
+- `S.tree` holds small lineage records (name, species, parents, looks) for parents and children, so family trees and inbreeding checks work after a creature is gone. Records more than five generations above every living creature are pruned each day.
+- What the player sees depends on `geneSight()`: `stars`, `grades` (Sequencer) or `alleles` (Gene Lens, or the Test Lab's "Reveal genomes" switch).
+- Run the simulator from the Test Lab, or call `simulate(options, seed)` from the console.
+
 ## Randomness
 
 - All gameplay randomness goes through `rand()` in `rng.js` (and the helpers `rnd`, `ri`, `pick`, `wpick`, `shuffle` built on it). Never call `Math.random()` in gameplay code.
@@ -61,7 +73,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 ## Saves
 
 - The save lives in IndexedDB (database `genesling`, store `saves`, key `main`) as `{v, saved, data}`, with `data` the JSON of `S`. If IndexedDB isn't available, it falls back to `localStorage` under `genesling-save`.
-- `SAVE_VERSION` in `save.js` is the current format (6). `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
+- `SAVE_VERSION` in `save.js` is the current format (7). Version 7 added genomes: v5 genes and traits became matching allele pairs. `MIGRATIONS[n]` upgrades a version-n save to n+1, and loading runs them in order.
 - **Never reset saves.** Any change to the save format bumps `SAVE_VERSION` and adds a migration, plus a test that an old save loads.
 - A save that can't be read or migrated (corrupt, or from a newer build) is copied to a `backup-<time>` key before a new game starts.
 - On first load, the v5 save (`localStorage` key `genesling-save-v5`) is migrated into IndexedDB. The v5 copy stays where it is as a backup.
@@ -71,7 +83,7 @@ Tunable numbers and content live in `src/data/*.json`, not in code. Adding a spe
 
 - Tests drive the game through its globals (`startRaid`, `hurtEnemy`, `useCage`, `act(...)`, `S`, `R`) and fail on any page error.
 - `tests/helpers.js` serves the repo over HTTP and gives each `openGame()` a fresh browser context with empty storage. Await `window.gameReady` before touching the game (the helper does).
-- `parity.test.js` checks every content table and creature stats against the archived v5 build; `saves.test.js` loads the v5 fixture; `seed.test.js` checks seeded floors.
+- `parity.test.js` checks every content table and creature stats against the archived v5 build, allowing only the listed Phase 1 changes; `saves.test.js` loads the v5 fixture through every migration; `seed.test.js` checks seeded floors; `genetics.test.js` checks expression, inheritance odds, mutation, inbreeding, breeding rules and the simulator's Apex pace.
 
 ## What v5 has
 

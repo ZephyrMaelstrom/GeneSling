@@ -35,14 +35,14 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 1 · Genetics 2.0 (weeks 3 to 6)
 
-- [ ] Build the 14-locus genome and its data model
-- [ ] Add inheritance: one allele from each parent, the father's 65% bias, recessive carriers and personality
-- [ ] Add mutation, defects, inbreeding risk, generations and the cut-free rule
-- [ ] Draw hue, pattern, size and shine on every species and evolution sprite
-- [ ] Add the first 20 traits
-- [ ] Build the Sequencer, Gene Lens, breeding outcome preview and family tree
-- [ ] Add a genetics simulator to the Test Lab
-- [ ] Exit test: Apex in 10 to 14 generations, and five generations feel worth planning
+- [x] Build the 14-locus genome and its data model (15 with Shine; see DESIGN.md)
+- [x] Add inheritance: one allele from each parent, the father's 65% bias, recessive carriers and personality
+- [x] Add mutation, defects, inbreeding risk, generations and the cut-free rule
+- [x] Draw hue, pattern, size and shine on every species and evolution sprite
+- [x] Add the first 20 traits
+- [x] Build the Sequencer, Gene Lens, breeding outcome preview and family tree
+- [x] Add a genetics simulator to the Test Lab
+- [ ] Exit test: Apex in 10 to 14 generations, and five generations feel worth planning (simulator median 13; the hand test is still to do)
 
 ### Phase 2 · Jobs and production (weeks 7 to 10)
 

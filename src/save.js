@@ -11,8 +11,9 @@
    - The v5 prototype's localStorage save is read once on first load and left in
      place as a backup. */
 import {S,defaultOpts} from './state.js';
+import {genomeFrom,express} from './genetics.js';
 
-const SAVE_VERSION=6;
+const SAVE_VERSION=7;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const FALLBACK_KEY='genesling-save';     // used only when IndexedDB is unavailable
 const DB_NAME='genesling',STORE='saves',SLOT='main';
@@ -21,6 +22,16 @@ const DB_NAME='genesling',STORE='saves',SLOT='main';
 const MIGRATIONS={
   // v6: storage moved from localStorage to IndexedDB. The data itself is unchanged.
   5:d=>d,
+  // v7 (Genetics 2.0): every creature gets a genome. Its v5 genes and traits become matching
+  // allele pairs, so it looks and fights the same; Haste becomes Tempo and Temper becomes Focus.
+  // New loci (Grit, Knack, Yield) start at the neutral grade, looks at the species default.
+  // Parents of v5 creatures were never recorded, so their family trees start with them.
+  6:d=>{
+    const fix=c=>{if(!c||c.genome)return;c.genome=genomeFrom(c.genes||{},c.traits||[]);c.mom=c.mom??null;c.dad=c.dad??null;c.pure=c.pure||1;c.bred=c.bred||0};
+    (d.creatures||[]).forEach(fix);(d.eggs||[]).forEach(e=>fix(e.child));
+    d.tree=d.tree||{};d.settings=Object.assign({genes:false},d.settings||{});
+    return d;
+  },
 };
 
 function migrate(d){
@@ -31,6 +42,8 @@ function migrate(d){
     const from=d.v;d=step(d);d.v=from+1;
   }
   d.opts=Object.assign(defaultOpts(),d.opts||{});
+  // Expressed genes, traits and looks are derived from the genome; rebuild them on every load.
+  (d.creatures||[]).forEach(express);(d.eggs||[]).forEach(e=>express(e.child));
   return d;
 }
 
