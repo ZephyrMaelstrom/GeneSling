@@ -8,6 +8,14 @@ import {sfx} from './audio.js';
 import {openIntro,renderAll} from './ui.js';
 import {CU,R,RH,RW,TS,applyBuff,applyCurse,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 let ctx,cv,mini,mctx;
+// Pins the page while a raid is on screen and restores the hideout's scroll position after.
+let pageScroll=0;
+function lockPage(on){
+  const h=document.documentElement;if(on===h.classList.contains('raiding'))return;
+  if(on){pageScroll=window.scrollY;h.classList.add('raiding')}else{h.classList.remove('raiding');window.scrollTo(0,pageScroll)}
+}
+// Belt and braces for browsers that still scroll a pinned page: swallow every touch drag mid-raid.
+document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
 function resize(){
   const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
@@ -330,4 +338,4 @@ function boot(){
   return new Promise(res=>{const go=d=>res(start(d));if(window.claude?.hot?.ready)window.claude.hot.ready(go);else go(window.claude?.hot?.data??{})});
 }
 
-export {ctx,cv,mini,mctx,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};
+export {ctx,cv,mini,mctx,lockPage,resize,drawFoeBody,drawBossBody,lightning,draw,drawPeddler,drawShrine,hpOver,pips,drawPlayer,drawComp,drawEnemy,drawMini,updHud,hudT,raf,startLoop,stopLoop,loop,showOverlay,setPause,bindCanvas,start,boot};

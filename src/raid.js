@@ -7,7 +7,7 @@ import {S,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEv
 import {sfx} from './audio.js';
 import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
-import {resize,showOverlay,startLoop,stopLoop} from './draw.js';
+import {lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -187,7 +187,7 @@ function startRaid(mode,startFloor,seed){
   if(mode==='raid'&&(secTier('warroom')>=5||res('combat',4)))applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true);
   if(tut)tutEnter(0);
   save();
-  $('#app').hidden=true;$('#raid').hidden=false;$('#actCol').hidden=!TOUCH;$('#hudKeys').hidden=TOUCH;
+  lockPage(true);$('#app').hidden=true;$('#raid').hidden=false;$('#actCol').hidden=!TOUCH;$('#hudKeys').hidden=TOUCH;
   $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
   $('#pause').hidden=true;$('#bossBar').hidden=true;$('#tutBox').hidden=!tut;$('#roomMod').hidden=true;
   applyOpts();
@@ -1072,7 +1072,7 @@ function endRaid(outcome,via){
     <div class="row"><button class="btn primary" data-act="close">Back to the hideout</button></div>`);
 }
 function exitRaid(){
-  $('#raid').hidden=true;$('#app').hidden=false;
+  $('#raid').hidden=true;$('#app').hidden=false;lockPage(false);
   ui.tab=R&&R.mode==='arena'?'lab':R&&R.mode==='tutorial'?'hideout':'raid';
   const done=R;renderAll();
   setTimeout(()=>{if(R===done){R=null;if(ui.tab==='hideout')startHideoutMap()}},0);
