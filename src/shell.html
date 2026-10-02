@@ -25,13 +25,15 @@ h2{font-size:1.25rem}
 h3{font-size:1.05rem}
 p{margin:0}
 .app{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--night);padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:2px solid var(--line)}
+/* The resource header and the tab rail stay pinned together at the top of every hideout screen */
+.topbar{position:sticky;top:0;z-index:10;background:var(--night);padding-top:env(safe-area-inset-top,0px);border-bottom:2px solid var(--line);margin-inline:-16px;padding-inline:16px}
+header.top{padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:1px solid var(--line)}
 .brand{font-family:var(--display);font-size:1.7rem;font-weight:700;color:var(--gold);text-shadow:2px 2px 0 var(--rose),4px 4px 0 var(--deep);letter-spacing:.04em}
 .res{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
 .pill{font-family:var(--display);font-size:.92rem;background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:3px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pill b{color:var(--gold);font-weight:600}
 .pill small{color:var(--muted);font-family:var(--body);font-size:.78rem}
-nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:12px 4px;scrollbar-width:none}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:8px 8px;padding-inline:2px;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 .tab{font-family:var(--display);background:var(--panel);border:0;box-shadow:0 0 0 2px var(--line);padding:7px 14px;cursor:pointer;white-space:nowrap;color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--gold);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
@@ -40,6 +42,8 @@ main{padding-top:12px}
 .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
 .cols{display:grid;gap:16px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
 @media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+/* Phones: one compact row of resources that scrolls sideways, so the pinned bar stays short */
+@media (max-width:700px){header.top{flex-wrap:nowrap;gap:10px;padding-block:8px 6px}.brand{font-size:1.15rem;flex:none}.res{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0;padding:2px}.res::-webkit-scrollbar{display:none}.pill{font-size:.82rem;padding:2px 8px}.tab{padding:6px 11px}}
 .card{background:var(--panel);box-shadow:0 0 0 2px var(--line),5px 5px 0 0 var(--deep);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .hint{color:var(--muted);font-size:.95rem;max-width:65ch}
 .btn{font-family:var(--display);background:var(--panel2);border:0;box-shadow:0 0 0 2px var(--line),0 3px 0 2px var(--deep);padding:7px 12px;cursor:pointer;transition:transform .05s}
@@ -327,11 +331,13 @@ input[type=range]{accent-color:var(--gold);width:100%}
 </style>
 
 <div class="app" id="app">
-  <header class="top">
-    <div class="brand">GeneSling</div>
-    <div class="res" id="res"></div>
-  </header>
-  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <div class="topbar">
+    <header class="top">
+      <div class="brand">GeneSling</div>
+      <div class="res" id="res"></div>
+    </header>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </div>
   <main id="main"></main>
 </div>
 
