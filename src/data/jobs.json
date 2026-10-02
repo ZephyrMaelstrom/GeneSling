@@ -72,7 +72,7 @@
     "striker": {"name":"Striker","desc":"Hits hardest: +20% damage, and its combos hit 30% harder.","dmg":0.2,"combo":0.3,"combat":true},
     "bulwark": {"name":"Bulwark","desc":"+25% HP, and you take 15% less damage while it fights near you.","hp":0.25,"shield":0.15,"range":140,"combat":true},
     "medic": {"name":"Medic","desc":"Heals you and the party 0.8% a second, and 4% a second for 3s after its ability.","regen":0.008,"burst":0.04,"burstTime":3,"combat":true},
-    "scout": {"name":"Scout","desc":"Reveals the map, secret rooms and rare creatures.","combat":false},
+    "scout": {"name":"Scout","desc":"Reveals the map, hidden doors and rare creatures.","combat":false},
     "hauler": {"name":"Hauler","desc":"+4 bag slots.","bag":4,"combat":false},
     "catcher": {"name":"Catcher","desc":"Cage radius +30% and +10% catch chance on weakened wilds.","radius":0.3,"catch":0.1,"combat":false}
   },

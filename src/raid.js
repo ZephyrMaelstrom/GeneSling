@@ -125,13 +125,15 @@ function buildMap(rooms,grid,Gx,Gy,floor,arena,start){
     const k=Math.min(a.idx,b.idx)+'-'+Math.max(a.idx,b.idx);if(done.has(k))continue;done.add(k);
     const[p,q2]=(a.gx<b.gx||a.gy<b.gy)?[a,b]:[b,a];
     const sec=p.kind==='secret'?p:q2.kind==='secret'?q2:null,host=sec?(sec===p?q2:p):null;
-    const crack=sec?{hp:60+floor*20,tiles:[],room:sec,broken:false}:null;
-    const door=(i,r)=>{if(sec){if(r===host){tiles[i]=4;crack.tiles.push(i);cracks.set(i,crack)}else tiles[i]=1;return}tiles[i]=3;doorOwner.set(i,r);r.doors.push(i)};
+    const crack=sec?{hp:60+floor*20,max:60+floor*20,tiles:[],room:sec,broken:false,area:new Set()}:null;
+    // A secret room's hallway and the room itself stay hidden (unpainted) until its cracked wall is broken.
+    const floorT=i=>{tiles[i]=1;if(crack)crack.area.add(i)};
+    const door=(i,r)=>{if(sec){if(r===host){tiles[i]=4;crack.tiles.push(i);cracks.set(i,crack)}else floorT(i);return}tiles[i]=3;doorOwner.set(i,r);r.doors.push(i)};
     if(p.gy===q2.gy){const cy=p.oy+(RH>>1);
-      for(let x=p.ox+RW;x<q2.ox;x++)for(let y=cy-1;y<=cy+1;y++)tiles[y*W+x]=1;
+      for(let x=p.ox+RW;x<q2.ox;x++)for(let y=cy-1;y<=cy+1;y++)floorT(y*W+x);
       for(let y=cy-1;y<=cy+1;y++){door(y*W+p.ox+RW,p);door(y*W+q2.ox-1,q2)}
     }else{const cx=p.ox+(RW>>1);
-      for(let y=p.oy+RH;y<q2.oy;y++)for(let x=cx-1;x<=cx+1;x++)tiles[y*W+x]=1;
+      for(let y=p.oy+RH;y<q2.oy;y++)for(let x=cx-1;x<=cx+1;x++)floorT(y*W+x);
       for(let x=cx-1;x<=cx+1;x++){door((p.oy+RH)*W+x,p);door((q2.oy-1)*W+x,q2)}
     }
   }
@@ -146,7 +148,10 @@ function buildMap(rooms,grid,Gx,Gy,floor,arena,start){
     if(r.kind==='chest'||r.kind==='lair')r.chest={x:r.cx,y:r.cy,open:false};
     if(r.kind==='secret'){r.chest.x=r.cx;r.chest.y=r.cy}
   }
-  return{G:Math.max(Gx,Gy),Gx,Gy,W,H,tiles,doorOwner,cracks,rooms,grid,start,floor,arena:!!arena};
+  const hidden=new Set();
+  // (The cracked wall itself is never hidden: it's drawn as an ordinary wall.)
+  for(const cr of new Set(cracks.values())){for(let j=0;j<RH;j++)for(let i=0;i<RW;i++)cr.area.add((cr.room.oy+j)*W+cr.room.ox+i);cr.tiles.forEach(t=>cr.area.delete(t));cr.area.forEach(t=>hidden.add(t))}
+  return{G:Math.max(Gx,Gy),Gx,Gy,W,H,tiles,doorOwner,cracks,hidden,rooms,grid,start,floor,arena:!!arena};
 }
 function solidAt(M,tx,ty){if(tx<0||ty<0||tx>=M.W||ty>=M.H)return true;const i=ty*M.W+tx,t=M.tiles[i];if(t===1)return false;if(t===3)return M.doorOwner.get(i).locked;return true}
 function hitsWall(x,y,r){const M=R.map;const x0=Math.floor((x-r)/TS),x1=Math.floor((x+r)/TS),y0=Math.floor((y-r)/TS),y1=Math.floor((y+r)/TS);
@@ -160,7 +165,9 @@ const PALS={1:{a:'#2c4a55',b:'#284450',fl:'#3a6070',wall:'#336b66',top:'#5fb3a0'
   4:{a:'#4a2a2a',b:'#432626',fl:'#5e3434',wall:'#8a3a3a',top:'#ff8a5c',edge:'#240f0f'},5:{a:'#3a1f2f',b:'#341b2a',fl:'#4f2a3f',wall:'#7a2a4f',top:'#ff5ca8',edge:'#1f0a14'},6:{a:'#1f1f2f',b:'#1b1b2a',fl:'#2f2f45',wall:'#3a3a5a',top:'#ffa04f',edge:'#0a0a14'},
   arena:{a:'#4a2f3f',b:'#43293a',fl:'#5e3c50',wall:'#7a3f5a',top:'#ff8fb1',edge:'#24101c'}};
 function paintTile(g,M,x,y,pal){
-  const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const t=M.tiles[y*M.W+x];return t===1||t===3};
+  const hid=i=>M.hidden&&M.hidden.has(i);
+  const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const i=y*M.W+x,t=M.tiles[i];return(t===1||t===3)&&!hid(i)};
+  if(hid(y*M.W+x))return;
   if(walk(x,y)){g.fillStyle=(x+y)%2?pal.a:pal.b;g.fillRect(x*TS,y*TS,TS,TS);if(fxRand()<.18){g.fillStyle=pal.fl;g.fillRect(x*TS+fxRi(4,24),y*TS+fxRi(4,24),fxRi(2,5),fxRi(2,4))}return}
   let near=false;for(let dy=-1;dy<=1&&!near;dy++)for(let dx=-1;dx<=1;dx++)if(walk(x+dx,y+dy)){near=true;break}
   if(!near&&M.tiles[y*M.W+x]!==4)return;
@@ -169,7 +176,9 @@ function paintTile(g,M,x,y,pal){
   g.fillStyle=pal.edge;g.fillRect(x*TS,y*TS+TS-4,TS,4);
   if(walk(x,y+1)){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x*TS,(y+1)*TS,TS,6)}
   g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x*TS+(y%2?4:18),y*TS+12,10,2);
-  if(M.tiles[y*M.W+x]===4){g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1.5;g.beginPath();g.moveTo(x*TS+8,y*TS+8);g.lineTo(x*TS+15,y*TS+16);g.lineTo(x*TS+11,y*TS+24);g.moveTo(x*TS+15,y*TS+16);g.lineTo(x*TS+24,y*TS+19);g.stroke()}
+  // A hidden door looks like any wall until it's struck; then it cracks a little more with each blow.
+  const cr=M.tiles[y*M.W+x]===4&&M.cracks.get(y*M.W+x);
+  if(cr&&cr.hp<cr.max){const k=1-cr.hp/cr.max;g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.5;g.beginPath();g.moveTo(x*TS+8,y*TS+8);g.lineTo(x*TS+15,y*TS+16);if(k>.3){g.lineTo(x*TS+11,y*TS+24)}if(k>.6){g.moveTo(x*TS+15,y*TS+16);g.lineTo(x*TS+24,y*TS+19)}g.stroke()}
 }
 // Each vein has a palette per floor (in bloom.json); the arena keeps its own.
 const palFor=M=>M.arena?PALS.arena:BLOOM.VEINS[(M.plan&&M.plan.vein)||veinOfFloor(M.floor)].pals[localFloor(M.floor)-1];
@@ -182,11 +191,14 @@ function renderMapCanvas(M){
 }
 function damageCrack(i,dmg){
   const M=R.map,cr=M.cracks.get(i);if(!cr||cr.broken)return;
+  const g=R.mapCv.getContext('2d'),pal=palFor(M),stage=k=>Math.floor(3*(1-k/cr.max)),was=stage(cr.hp);
   cr.hp-=dmg;R.fx.push({x:(i%M.W+.5)*TS,y:(Math.floor(i/M.W)+.5)*TS,r:10,t:.2,max:.2,col:'#c9b48a'});
-  if(cr.hp>0)return;
-  cr.broken=true;const g=R.mapCv.getContext('2d'),pal=palFor(M);
-  cr.tiles.forEach(t=>{M.tiles[t]=1;M.cracks.delete(t)});
-  cr.tiles.forEach(t=>{const x=t%M.W,y=Math.floor(t/M.W);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)paintTile(g,M,x+dx,y+dy,pal)});
+  if(cr.hp>0){if(stage(cr.hp)!==was||was===0)cr.tiles.forEach(t=>paintTile(g,M,t%M.W,Math.floor(t/M.W),pal));return}
+  cr.broken=true;
+  // The wall gives way: the hallway and the room behind it appear, as plain floor.
+  cr.tiles.forEach(t=>{M.tiles[t]=1;M.cracks.delete(t);M.hidden.delete(t)});
+  const near=new Set();for(const t of [...cr.area,...cr.tiles]){M.hidden.delete(t);const x=t%M.W,y=Math.floor(t/M.W);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)near.add((y+dy)*M.W+x+dx)}
+  near.forEach(t=>{const x=t%M.W,y=Math.floor(t/M.W);g.fillStyle='#0d0a1c';g.fillRect(x*TS,y*TS,TS,TS);paintTile(g,M,x,y,pal)});
   cr.room.hidden=false;R.fx.push({x:(cr.tiles[1]%M.W+.5)*TS,y:(Math.floor(cr.tiles[1]/M.W)+.5)*TS,r:60,t:.5,max:.5,col:'#ffcf4a'});
   msg('The wall crumbles. A secret room!');sfx('door');R.kxp+=20;
 }
@@ -760,6 +772,7 @@ function tutUpdate(){
 }
 
 /* ---------- update ---------- */
+const STRAY_T=1.5;
 function update(dt){
   R.t+=dt;const p=R.p;
   if(R.mode!=='arena'&&R.mode!=='tutorial'&&!S.settings.noTimer){R.time-=dt;if(R.time<=0){endRaid('collapse');return}}
@@ -800,7 +813,13 @@ function update(dt){
   const r=roomAt(p.x,p.y,22);
   if(r){if(r!==R.cur&&r.mod&&r.spawned&&!R.enemies.some(e=>e.room===r))0;R.cur=r;if(!r.spawned)enterRoom(r);r.visited=true;if(r.hidden){r.hidden=false}}
   else{const r2=roomAt(p.x,p.y,0);if(r2)R.cur=r2}
-  R.map.rooms.forEach(rm=>{if(rm.tutLock)return;if(rm.locked&&!R.enemies.some(e=>e.room===rm)){rm.locked=false;rm.cleared=true;sfx('door');if(rm.kind!=='boss')msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
+  // A locked room's enemy that ends up outside it (pushed by wind or water, split into a wall) is put back
+  // inside after a moment, so it can always be fought and the doors can always open.
+  for(const e of R.enemies){if(!e.room||e.hp<=0||e.kind==='boss'||e.rival)continue;const rm=e.room;
+    const inside=e.x>rm.ox*TS&&e.x<(rm.ox+RW)*TS&&e.y>rm.oy*TS&&e.y<(rm.oy+RH)*TS&&!hitsWall(e.x,e.y,Math.max(4,e.r-4));
+    if(inside){e.stray=0;continue}e.stray=(e.stray||0)+dt;
+    if(e.stray>STRAY_T){const q=spawnPos(rm);e.x=q.x;e.y=q.y;e.stray=0}}
+  R.map.rooms.forEach(rm=>{if(rm.tutLock)return;if(rm.locked&&!R.enemies.some(e=>e.room===rm&&e.hp>0)){rm.locked=false;rm.cleared=true;sfx('door');if(rm.kind!=='boss')msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
   R.map.rooms.forEach(rm=>{if(rm.chest&&!rm.chest.open&&!rm.locked&&dist(p,rm.chest)<34)openChest(rm)});
   lorePick();
   for(let i=R.items.length-1;i>=0;i--){const it=R.items[i];if((it.kind==='buff'||it.kind==='loot')&&dist(it,p)<26){R.items.splice(i,1);if(it.kind==='buff')applyBuff(it.id);else takeLoot(it)}}

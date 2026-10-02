@@ -17,7 +17,7 @@ const PHASE1 = {
 // Phase 2 (jobs and production): every station's contribution now grows with Yield, the Garden's
 // tiers boost its production instead of adding flat food, and five blurbs mention what they make.
 const PHASE2 = {
-  SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } t.garden.tiers = now.garden.tiers; return t; },
+  SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } t.garden.tiers = now.garden.tiers; t.roost.tiers[2] = now.roost.tiers[2]; return t; },
 };
 // Phase 5 (the Bloom expands) only adds: the Venom type and its species, lines and names, the poison
 // element and its reactions, new weapons, foes, bosses and the Apothecary. Every v5 entry must be unchanged,
