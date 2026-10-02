@@ -30,7 +30,9 @@ function goLandscape(){
   }catch(e){}
 }
 // Belt and braces for browsers that still scroll a pinned page: swallow every touch drag mid-raid.
-document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
+// Menus in a raid (the ⚙ menu, the peddler, shrines, the vein choice, the arena panel and pop-ups) still scroll.
+const SCROLLERS='#pauseBox,#modalBox,#arenaPanel';
+document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding')&&!(e.target.closest&&e.target.closest(SCROLLERS)))e.preventDefault()},{passive:false});
 function resize(){
   const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
