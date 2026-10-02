@@ -57,13 +57,13 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 3 · The Exchange (weeks 11 to 14)
 
-- [ ] Build the order book for commodities
-- [ ] Add auctions with buyout for creatures, eggs, weapons and prints
-- [ ] Add genetic bounties
-- [ ] Build the six trader archetypes and run about 60 traders in a background worker
-- [ ] Add market shocks, fees, sales tax, price charts and the news ticker
-- [ ] Build the Economy Sandbox in the Test Lab
-- [ ] Exit test: a 90-day sandbox run meets all three economy targets
+- [x] Build the order book for commodities
+- [x] Add auctions with buyout for creatures, eggs, weapons and prints
+- [x] Add genetic bounties
+- [x] Build the six trader archetypes and run about 60 traders in a background worker
+- [x] Add market shocks, fees, sales tax, price charts and the news ticker
+- [x] Build the Economy Sandbox in the Test Lab
+- [x] Exit test: a 90-day sandbox run meets all three economy targets
 
 ### Phase 4 · Hideout builder and demo (weeks 15 to 17)
 

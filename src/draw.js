@@ -7,6 +7,7 @@ import {OL,drawCreature} from './sprites.js';
 import {sfx} from './audio.js';
 import {openIntro,renderAll} from './ui.js';
 import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
+import {startMarket} from './exchange/market.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -330,7 +331,7 @@ async function start(data){
   if(!loaded)loaded=await loadSave();
   setS(loaded);
   let fresh=false;if(!S){newGame();fresh=true}
-  save();renderAll();
+  save();startMarket();renderAll();
   if(fresh||!S.introSeen){S.introSeen=true;save();openIntro(true)}
 }
 function boot(){

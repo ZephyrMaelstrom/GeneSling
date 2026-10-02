@@ -71,6 +71,38 @@ canvas.spr{image-rendering:pixelated;background:var(--deep);box-shadow:0 0 0 2px
 .stats div{background:var(--deep);padding:3px 6px}
 .stats dt{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .stats dd{margin:0;font-family:var(--display)}
+/* The Exchange: news ticker, commodity rows, books, auctions, charts */
+.ticker{overflow:hidden;background:var(--deep);box-shadow:0 0 0 1.5px var(--line);margin:4px 0 8px}
+.ticker-track{display:inline-flex;gap:28px;white-space:nowrap;padding:6px 0;animation:tick 60s linear infinite}
+.ticker-track span{font-size:.85rem}.ticker-track small{color:var(--gold);margin-right:6px}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ticker-track{animation:none;flex-wrap:wrap;white-space:normal}}
+.goods{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.goodrow{display:grid;grid-template-columns:minmax(0,1.3fr) auto minmax(0,.8fr) minmax(0,.8fr);gap:8px;align-items:center;background:var(--deep);border:0;box-shadow:0 0 0 1.5px var(--line);padding:6px 8px;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.goodrow.on{box-shadow:0 0 0 2px var(--gold)}
+.goodrow small{display:block;color:var(--muted);font-size:.74rem}
+.goodrow .gprice b{font-family:var(--display);color:var(--gold)}
+.goodrow small.up{color:var(--mint)}.goodrow small.down{color:var(--rose)}
+.spark path{fill:none;stroke:var(--sky);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.gooddetail{background:var(--panel);box-shadow:0 0 0 1.5px var(--line);padding:10px;display:flex;flex-direction:column;gap:8px}
+.books{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.books table{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums}
+.books th{text-align:left;color:var(--muted);font-weight:500;font-size:.76rem}
+.books td{padding:2px 4px;border-top:1px solid var(--line)}.books tr.mine td{color:var(--gold)}
+.auctions{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));margin-top:8px}
+.auction{background:var(--deep);box-shadow:0 0 0 1.5px var(--line);padding:8px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.auction small{display:block;color:var(--ink);font-size:.8rem;overflow-wrap:anywhere}.auction small.status{color:var(--muted)}
+.lchart{position:relative;margin:4px 0}
+.lchart svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.lc-grid{stroke:var(--line);stroke-width:1}.lc-ref{stroke:var(--muted);stroke-width:1;stroke-dasharray:0}
+.lc-axis{fill:var(--muted);font-size:10px;font-family:var(--body)}
+.lc-line{fill:none;stroke:var(--sky);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.lc-dot,.lc-hot{fill:var(--sky);stroke:var(--deep);stroke-width:2}
+.lc-end{fill:var(--ink);font-size:11px;font-family:var(--display)}
+.lc-cross{stroke:var(--ink);stroke-width:1;opacity:.6}.lc-hit{fill:transparent;cursor:crosshair}
+.lc-tip{position:absolute;top:2px;background:var(--night);box-shadow:0 0 0 1.5px var(--line);padding:3px 8px;font-size:.78rem;pointer-events:none;display:flex;gap:6px;align-items:baseline}
+.lc-tip[hidden]{display:none!important}.lc-tip b{font-family:var(--display);color:var(--ink)}.lc-tip span{color:var(--muted)}
+.lc-table summary{cursor:pointer;color:var(--muted);font-size:.78rem}.lc-table table{font-size:.78rem;border-collapse:collapse}.lc-table td,.lc-table th{padding:1px 8px;text-align:right}
 /* Jobs and production: quality, durability, fatigue, stores, memorial, gear */
 .chip.q0{color:var(--muted)}.chip.q1{color:var(--ink)}.chip.q2{color:var(--mint);box-shadow:0 0 0 1.5px #1f7a62}.chip.q3{color:var(--sky);box-shadow:0 0 0 1.5px var(--sky)}.chip.q4{color:var(--gold);box-shadow:0 0 0 1.5px var(--gold-d)}
 .chip.role{color:var(--sky)}

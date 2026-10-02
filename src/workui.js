@@ -5,10 +5,10 @@
    screen promises is what the day delivers. */
 import {esc} from './util.js';
 import {JOBS as J,SECTIONS,TYPES,TRAITS,GUNS,GUN_IDS,SCRAP_ORE,DONATE_PTS,ARMORY_TH,ARMORY_TIERS,PERS} from './content.js';
-import {S,armoryTier,byId,cageCap,canCraft,formName,priceMul,secContribution,secTier,sectionUnlockedArmory,whereIs} from './state.js';
+import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sectionUnlockedArmory,whereIs} from './state.js';
 import {spr} from './sprites.js';
 import {simulateSupply} from './supply.js';
-import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale,sellPrice} from './jobs.js';
+import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale} from './jobs.js';
 
 const f1=v=>(Math.round(v*10)/10).toString();
 const outName=k=>Object.keys(J.STATIONS[k].out).map(m=>matName(m).toLowerCase()).join(', ');
@@ -86,9 +86,9 @@ const oddsBar=o=>`<div class="qodds" title="Quality odds">${o.map((p,i)=>p?`<i c
 const qChip=it=>`<span class="chip q q${it.q}">${QN[it.q]}</span>`;
 function durBar(it){return`<div class="bar dur" title="Durability ${it.dur}/${it.max}"><i style="width:${it.dur/it.max*100}%"></i></div>`}
 function workshopView(ui){
-  const ft=secTier('forge'),at=armoryTier(),un=sectionUnlockedArmory(),pm=priceMul(),need=[0,1,2,4,5];
+  const ft=secTier('forge'),at=armoryTier(),un=sectionUnlockedArmory(),need=[0,1,2,4,5];
   const mats=Object.keys(J.MATERIALS).map(m=>`<div class="matrow"><span><b>${matName(m)}</b> <small>${esc(J.MATERIALS[m].desc)}</small></span><span class="num">${amt(m)}</span>
-    <span class="row" style="gap:4px">${sellPrice(m)?`<button class="btn small" data-act="sellmat" data-k="${m}" data-n="1" ${amt(m)>=1?'':'disabled'}>Sell 1 · ${sellPrice(m)}c</button><button class="btn small" data-act="sellmat" data-k="${m}" data-n="10" ${amt(m)>=10?'':'disabled'}>10</button>`:''}</span></div>`).join('');
+    <span class="row" style="gap:4px"><button class="btn small" data-act="mktrade" data-k="${m}">Trade on the Exchange</button></span></div>`).join('');
   const comp=Object.entries(J.RECIPES).filter(([,R])=>R.kind==='component').map(([k,R])=>`<div class="recipe"><div class="row" style="justify-content:space-between"><b>${R.name}</b><small>made ${S.mastery[k]||0}×</small></div>
     <small>${have(recipeCost(k))}</small><button class="btn small" data-act="make" data-k="${k}" ${canPay(recipeCost(k))?'':'disabled'}>Make</button></div>`).join('');
   const fin=Object.entries(J.RECIPES).filter(([,R])=>R.kind==='finished').map(([k,R])=>{const lock=R.needForge&&ft<R.needForge;
@@ -109,7 +109,6 @@ function workshopView(ui){
       <span class="row" style="gap:4px">${rc?`<button class="btn small" data-act="repair" data-uid="${it.uid}" ${canPay(rc)?'':'disabled'}>Repair · ${costText(rc)}</button>`:''}
       ${it.kind==='gun'?`<button class="btn small ${arm?'danger':''}" data-act="scrapitem" data-uid="${it.uid}">${arm?'Confirm scrap':'Scrap · +'+Math.round(SCRAP_ORE[tier]*(ft>=3?1.5:1))+' ore'}</button>
       <button class="btn small" data-act="donateitem" data-uid="${it.uid}" ${un?'':'disabled'}>Donate · +${DONATE_PTS[tier]}</button>`:''}</span></div>`}).join('');
-  const P=n=>Math.round(n*pm);
   return`<div class="cols"><section class="card"><h2>Workshop</h2>
     <p class="hint">Stations turn raw finds into refined goods each day. Here you turn those into parts, then into gear that carries your maker’s mark. Quality comes from the station’s Knack, its foreman and how often you’ve made the recipe.</p>
     <h3>Components</h3><div class="recipes">${comp}</div>
@@ -121,9 +120,9 @@ function workshopView(ui){
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
   <section class="card"><h2>Stores</h2><div class="mats">${mats}</div>
     <p class="status">Cages: ${S.cages.basic} basic, ${S.cages.gilded} gilded · you carry up to ${cageCap()} into a raid.</p></section>
-  <section class="card"><h2>Market</h2>
-    <div class="row"><button class="btn small" data-act="buy" data-k="food1" ${S.coin>=P(5)?'':'disabled'}>1 food · ${P(5)}c</button><button class="btn small" data-act="buy" data-k="food10" ${S.coin>=P(42)?'':'disabled'}>10 food · ${P(42)}c</button><button class="btn small" data-act="buy" data-k="cage" ${S.coin>=P(15)?'':'disabled'}>Cage · ${P(15)}c</button><button class="btn small" data-act="buy" data-k="ore" ${S.coin>=P(18)?'':'disabled'}>Ore · ${P(18)}c</button></div>
-    <p class="hint">A fixed-price trader until the Exchange opens. Sell from your stores above.</p></section>
+  <section class="card"><h2>Buying and selling</h2>
+    <p class="hint">Food, cages, materials and gear trade on the Exchange, where prices move with supply and demand.</p>
+    <div class="row"><button class="btn small primary" data-act="mktrade" data-k="food">Buy food</button><button class="btn small" data-act="mktrade" data-k="cage">Buy cages</button><button class="btn small" data-act="mktrade" data-k="ore">Ore</button></div></section>
   <section class="card"><h2>Armory ${un?`<span class="chip tier t${at}">T${at}</span>`:''}</h2>
     ${un?`<p class="hint">Donate weapons to fill the Armory. Each tier is a permanent bonus.</p>
     <div class="meter"><i style="width:${Math.min(100,S.armory/ARMORY_TH[ARMORY_TH.length-1]*100)}%"></i></div>
