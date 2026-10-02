@@ -22,7 +22,7 @@ const PHASE2 = {
 // Phase 5 (the Bloom expands) only adds: the Venom type and its species, lines and names, the poison
 // element and its reactions, new weapons, foes, bosses and the Apothecary. Every v5 entry must be unchanged,
 // apart from the vein each foe and boss now belongs to.
-const GROWN = ['TYPES', 'SPECIES', 'LINES', 'TYPE_ABIL', 'ELEM', 'BOND_PASSIVE', 'GUNS', 'SECTIONS', 'FOES', 'WILD_FIRE', 'BOSSES', 'SYL', 'REACTIONS'];
+const GROWN = ['HYBRIDS', 'TYPES', 'SPECIES', 'LINES', 'TYPE_ABIL', 'ELEM', 'BOND_PASSIVE', 'GUNS', 'SECTIONS', 'FOES', 'WILD_FIRE', 'BOSSES', 'SYL', 'REACTIONS'];
 const v5Only = (now, v5) => Array.isArray(v5) ? now.filter(x => v5.some(y => y.name === x.name)) : Object.fromEntries(Object.keys(v5).map(k => [k, now[k]]));
 const noVein = t => { for (const k in t) if (t[k] && typeof t[k] === 'object') delete t[k].vein; return t; };
 const CHANGED = ['GENES', 'GENE_HINT', 'TRAITS', 'NEG_TRAITS'];   // compared separately below

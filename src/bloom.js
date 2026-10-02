@@ -14,10 +14,12 @@ import {pick,ri,wpick} from './util.js';
 import {S,addKeeperXp,addLog,secTier} from './state.js';
 import {GRADE_LOCI} from './genetics.js';
 import {canPay,costText,give,pay} from './jobs.js';
+import {seasonTypeMul,tierTwists,unboundBoss} from './endgame.js';
 
 const VEIN_IDS=Object.keys(B.VEINS),DEEP=B.VEIN_ORDER,LAYOUT_IDS=Object.keys(B.LAYOUTS),EVENT_IDS=Object.keys(B.EVENTS.list);
 const veinIdx=v=>VEIN_IDS.indexOf(v);
-const veinOfFloor=(f,deep)=>f<=3?'rootworks':(deep||'ember');
+// Floors 1-3 the Rootworks, 4-6 the chosen vein, 7-9 the Underheart, 10 the Heart (Unbound raids pass their own vein).
+const veinOfFloor=(f,deep)=>deep==='unbound'?'unbound':f<=3?'rootworks':f<=6?(deep||'ember'):f<=9?'underheart':'heart';
 const isBoss=f=>f%3===0;
 
 /* ---------- floor plans ---------- */
@@ -27,6 +29,7 @@ function raidEvent(seed){
 }
 // One floor's layout. Boss floors only use layouts that can hold a boss room.
 function floorLayout(seed,f,vein){
+  if(vein==='heart')return'heart';
   return withSeed(mixSeed(seed,7000+f*16+veinIdx(vein)),()=>{
     const ok=LAYOUT_IDS.filter(k=>!isBoss(f)||B.LAYOUTS[k].boss);
     const prev=f>1?floorLayout(seed,f-1,veinOfFloor(f-1,vein)):null;
@@ -34,9 +37,10 @@ function floorLayout(seed,f,vein){
     return wpick(pool,k=>B.LAYOUTS[k].w[vein]||.5);
   });
 }
-function floorPlan(seed,f,vein){
-  vein=veinOfFloor(f,vein);const ev=raidEvent(seed);
-  return{vein,layout:floorLayout(seed,f,vein),event:ev&&ev.floor===f?ev.id:null};
+// tier: the Unbound tier (0 outside Unbound), whose rules and twists ride along on the plan.
+function floorPlan(seed,f,vein,tier=0){
+  vein=veinOfFloor(f,vein);const ev=vein==='heart'||tier?null:raidEvent(seed);
+  return{vein,layout:floorLayout(seed,f,vein),event:ev&&ev.floor===f?ev.id:null,tier,twists:tier?tierTwists(tier):[]};
 }
 // What a raid would look like down to the floor it reaches, through a vein: [{f, vein, layout, event}].
 function raidPlans(seed,deepest,vein){const out=[];for(let f=1;f<=deepest;f++)out.push({f,...floorPlan(seed,f,vein)});return out}
@@ -66,7 +70,7 @@ function rememberSeed(seed){
 
 /* ---------- veins ---------- */
 const veinBlock=(vein,partyTypes)=>{const k=B.VEINS[vein].key;return k&&!partyTypes.includes(k)?`Needs a ${TYPES[k].name} in your party`:''};
-function pickBoss(vein){return pick(BOSS_IDS.filter(b=>(BOSSES[b].vein||'rootworks')===vein))}
+function pickBoss(vein,tier){return vein==='unbound'?unboundBoss(tier||1):pick(BOSS_IDS.filter(b=>(BOSSES[b].vein||'rootworks')===vein))}
 // Wild creatures in a vein lean toward its types; Venom only lives in the Sump (or wherever the Apothecary's T2 lets it).
 function wildTypeWeight(t,floor,vein,lair,mapMul){
   const T=TYPES[t],rareMul=(floor===1?1:floor===2?2:floor>=4?3.5:3)*(lair?2:1);
@@ -74,7 +78,7 @@ function wildTypeWeight(t,floor,vein,lair,mapMul){
   if(t==='venom')w=vein==='sump'?0:secTier('apothecary')>=2?.8:0;
   // A vein's signature types: at least an average type's weight, multiplied.
   const vw=(B.VEINS[vein].types||{})[t];if(vw)w=Math.max(w,12)*vw*(mapMul||1);
-  return w;
+  return w*seasonTypeMul(t);
 }
 function rollWildIn(floor,vein,lair,mapMul){
   const type=wpick(TYPE_IDS,t=>wildTypeWeight(t,floor,vein||veinOfFloor(floor),lair,mapMul));

@@ -16,10 +16,11 @@
 import {genomeFrom,express} from './genetics.js';
 import {pridify,placeStation} from './hideout.js';
 import {bloomify} from './bloom.js';
+import {endgamify} from './endgame.js';
 import {S,setS,defaultOpts} from './state.js';
 import {DEMO} from './flags.js';
 
-const SAVE_VERSION=11;
+const SAVE_VERSION=12;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
 const OWN=DEMO?NAMES.demo:NAMES.full;
@@ -71,6 +72,9 @@ const MIGRATIONS={
     if(d.layout){const keep=S;setS(d);try{placeStation('apothecary')}finally{setS(keep)}}
     return bloomify(d);
   },
+  // v12 (Underheart and endgame): the story (Ilsa, the Heart, the ending), Unbound progress, the Archive,
+  // the Mutation Lab, shows and ribbons, the Deepening, seasons, Keeper titles and the Renown log.
+  11:endgamify,
 };
 
 function migrate(d){

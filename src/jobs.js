@@ -179,7 +179,7 @@ function craftWeapon(id,printIdx){
   if(!pay(weaponCost(id)))return null;
   if(usePrint)S.prints.splice(printIdx,1);
   const key='gun:'+id;S.mastery[key]=(S.mastery[key]||0)+1;
-  const q=rollQuality(key,'forge',usePrint);addKeeperXp(XP.craft[q]);
+  const q=rollQuality(key,'forge',usePrint);addKeeperXp(XP.craft[q]);if(q>=4&&S.renownLog)S.renownLog.legendary=(S.renownLog.legendary||0)+1;
   return newItem('gun',id,q,{...stamp('forge'),src:usePrint?'print':'crafted'});
 }
 

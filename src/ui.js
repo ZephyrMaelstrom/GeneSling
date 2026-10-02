@@ -14,6 +14,8 @@ import {openShare,shareGo} from './share.js';
 import {demoGoalsHtml,feedbackHtml,sendFeedback,setStats,statsPanel} from './demo.js';
 import {mapH} from './map.js';
 import {contractBoard,labBloom,mapPicker,veinCodex} from './bloomui.js';
+import {archivePanel,bloomBelow,breedingTools,labEndgamePanel,ribbonChips} from './endgameui.js';
+import {enterShow,labEndgame,setMutlab,splice,story,weekOf} from './endgame.js';
 import {craftMap,dropContract,takeContract,varietyRun} from './bloom.js';
 import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
 import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
@@ -89,7 +91,7 @@ function viewRaid(){
   const risk=slots.filter(Boolean).map(c=>esc(c.name));[...L.guns,L.satchel].forEach(uid=>{const it=itemByUid(uid);if(it)risk.push(esc(itemName(it)))});if(L.tonics)risk.push(`${L.tonics} tonic${L.tonics>1?'s':''}`);
   const vt=secTier('vault');const keeps=[vt>=1&&'slot 3 creature',vt>=2&&'held weapons',vt>=4&&'slot 1 companion',vt>=5?'60% of coin and all ore':vt>=3&&'30% of coin',armoryTier()>=4&&vt<2&&'primary weapon'].filter(Boolean);
   const modes=Object.entries(MODES).map(([k,m])=>{const un=modeUnlocked(k);return`<label class="toggle ${un?'':'locked'}"><input type="checkbox" id="mode-${k}" data-act="mode" data-k="${k}" ${S.modes[k]&&un?'checked':''} ${un?'':'disabled'}> <span><b style="font-family:var(--display)">${m.name}</b>${un?'':' · locked'}<br><small class="status">${un?m.desc:`Reach War Room tier ${m.need[1]} to unlock.`}</small></span></label>`}).join('');
-  const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.vein&&B.vein!=='rootworks'?BLOOM.VEINS[B.vein].short:'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
+  const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.vein==='bloomlord'?'Bloomlord':B.vein&&B.vein!=='rootworks'&&BLOOM.VEINS[B.vein]?BLOOM.VEINS[B.vein].short:'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
   const kn=keeperNeed();
   return`<div class="cols">
   <section class="card"><h2>Loadout</h2>
@@ -108,6 +110,7 @@ function viewRaid(){
     <div class="bar"><i style="width:${S.keeper.xp/kn*100}%;background:var(--gold)"></i></div>
     <p class="status">${S.keeper.xp}/${kn} XP. Every raid earns Keeper XP, even ones you lose. Each rank pays coin and a cage, unlocks a page of Ilsa's journal, and some open new sections.</p>
     <h3>Bosses</h3><div class="trophies">${bossRow}</div>
+    ${bloomBelow()}
     <p class="status">One of four bosses waits at the end of Floor 3 (best faced with companions around Lv 10). Beating it opens the five veins below: the Ember Abyss, the Drowned Galleries, the Hollow Choir, the Glasswind Spires and the Sump, each with its own twist and three bosses (around Lv 25). First victories give memory shards.</p>
     <h3>How raids work</h3>
     <ul class="plain">
@@ -193,7 +196,7 @@ function creCard(c){
   return`<article class="cre">${spr(c,72)}<div class="cre-main">
     <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
     <div class="status">${esc(formName(c))} · ${sp.blurb}</div>${bredBy(c)}
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
+    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${ribbonChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
     ${hpBar(c)}
     <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
     <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
@@ -206,6 +209,7 @@ function creCard(c){
     <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
     <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button>
     <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button>
+    ${amt('bloomscar')>0&&c.genome.shine[0]!==2&&c.genome.shine[1]!==2?`<button class="btn small" data-act="bloomscar" data-id="${c.id}">Bloomscar serum (${amt('bloomscar')})</button>`:''}
     ${amt('serum')>0&&serumLocus(c)?`<button class="btn small" data-act="serum" data-id="${c.id}" title="Raises the weaker copy of its lowest gene by 1">Gene serum (${amt('serum')})</button>`:''}</div>
   </div></article>`;
 }
@@ -247,7 +251,8 @@ function viewBreeding(){
   </section>
   <section class="card"><h2>Incubator</h2>${eggs||'<p class="empty">No eggs yet.</p>'}
     <h3>Known hybrid pairings</h3><p class="hint">Rare when the parents' types match a pairing, in either order. Hybrids have both types, +20% HP and attack, and one evolution at Lv 20.</p>
-    <ul class="plain">${HYBRIDS.map(h=>`<li><b>${h.name}</b>: ${TYPES[h.types[0]].name} + ${TYPES[h.types[1]].name}</li>`).join('')}</ul></section></div>`;
+    <ul class="plain">${HYBRIDS.map(h=>`<li><b>${h.name}</b>: ${TYPES[h.types[0]].name} + ${TYPES[h.types[1]].name}</li>`).join('')}</ul></section></div>
+  <div class="cols" style="margin-top:16px">${breedingTools()}</div>`;
 }
 
 function viewResearch(){
@@ -256,7 +261,7 @@ function viewResearch(){
     const afford=k&&S.coin>=k.coin&&S.ore>=k.ore&&S.shards>=k.shard;
     return`<section class="card rescol" style="--rc:${R0.col}"><h3>${R0.name} <small class="status">${lv}/5</small></h3><ol class="resnodes">${nodes}</ol>
       ${k?`<button class="btn small ${afford?'primary':''}" data-act="research" data-k="${b}" ${afford?'':'disabled'}>Research · ${k.coin}c ${k.ore} ore${k.shard?' '+k.shard+' shard':''}</button>`:'<span class="chip good">Complete</span>'}</section>`}).join('');
-  return`<section class="card" style="margin-bottom:16px"><h2>Archive research</h2><p class="hint">Permanent upgrades, paid in coin, ore and memory shards. Shards come from bosses, secret rooms, quests and Codex milestones. Each branch unlocks in order.</p>
+  return`${archivePanel()}<section class="card" style="margin-bottom:16px"><h2>Archive research</h2><p class="hint">Permanent upgrades, paid in coin, ore and memory shards. Shards come from bosses, secret rooms, quests and Codex milestones. Each branch unlocks in order.</p>
     <p class="status">You have ${S.coin} coin, ${S.ore} ore and ${S.shards} shards.</p></section><div class="resgrid">${cols}</div>`;
 }
 
@@ -329,6 +334,7 @@ function viewLab(){
     <h3>Jump into a raid</h3>
     <div class="row">${[1,2,3,4,5,6].map(f=>`<button class="btn small" data-act="lab-floor" data-k="${f}">Floor ${f}</button>`).join('')}<button class="btn small" data-act="tutorial">Tutorial</button></div>
     ${labBloom(ui)}
+    ${labEndgamePanel()}
     <h3>Arena</h3>
     <p class="hint">One room with your loadout and endless cages. Spawn any enemy, boss, wild species, weapon, buff, curse or room twist. Nothing dies for real.</p>
     <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
@@ -523,6 +529,14 @@ function act(a,d){
     case'serum':{const c=byId(+d.id);if(c&&useSerum(c)){sfx('level');save();renderAll()}break}
     case'lab-vein':startRaid('raid',4,null,d.k);break;
     case'lab-variety':ui.variety=varietyRun(20,Date.now()%100000);renderMain();break;
+    case'unbound':startRaid('raid',7,null,'unbound',{tier:+d.k});break;
+    case'deepening':startRaid('raid',1,null,null,{deepening:weekOf(S.day)});break;
+    case'splice':{const dn=byId(+ui.spDonor);if(!dn)break;if(ui.spArm!==dn.id){ui.spArm=dn.id;renderMain();break}ui.spArm=null;if(splice(+ui.spDonor,+ui.spRecip,ui.spLocus||'pow')){ui.spDonor='';sfx('evolve');save();renderAll()}break}
+    case'bloomscar':{const c=byId(+d.id);if(c&&amt('bloomscar')>0){give('bloomscar',-1);c.genome.shine[c.genome.shine[0]<=c.genome.shine[1]?0:1]=2;express(c);addLog(`A Bloomscar serum scarred ${c.name}'s shine gene.`);sfx('evolve');save();renderAll()}break}
+    case'lab-endgame':labEndgame();save();renderAll();break;
+    case'lab-deep':startRaid('raid',+d.k,null,'ember');break;
+    case'lab-unbound':story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;startRaid('raid',7,null,'unbound',{tier:+d.k});break;
+    case'lab-ending':story().ilsa=true;story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;save();renderAll();break;
     case'reset':if(!ui.resetArm){ui.resetArm=true;renderMain();break}ui.resetArm=false;newGame();save();startMarket();ui.tab='raid';renderAll();openIntro(true);break;
   }
 }
@@ -542,6 +556,14 @@ document.addEventListener('change',e=>{
   else if(a==='expsel'){ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()}
   else if(a==='expdest'){ui.exp.dest=el.dataset.k;renderSecPanel()}
   else if(a==='mom'){ui.mom=el.value;renderMain()}
+  else if(a==='tiersel'){ui.tier=el.value;renderMain()}
+  else if(a==='spdonor'){ui.spDonor=el.value;ui.spArm=null;renderMain()}
+  else if(a==='sprecip'){ui.spRecip=el.value;renderMain()}
+  else if(a==='splocus'){ui.spLocus=el.value;renderMain()}
+  else if(a==='mutlab'){const ids=(S.mutlab||[]).slice();ids[+el.dataset.i]=el.value?+el.value:null;const c=byId(+el.value);if(c)unplace(c);setMutlab(ids.filter(Boolean));save();renderMain()}
+  else if(a==='apexlocus'){ui.apexLocus=el.value||'';renderMain()}
+  else if(a==='showenter'){enterShow(+el.dataset.i,el.value?+el.value:null);save()}
+  else if(a==='archivist'){S.archive.archivist=el.value?+el.value:null;save();renderMain()}
   else if(a==='mapsel'){S.loadout.map=el.value?+el.value:null;save()}
   else if(a==='mapvein'){ui.mapVein=el.value;renderMain()}
   else if(a==='retiresel'){ui.retire=el.value;ui.retireArm=null;renderSecPanel()}

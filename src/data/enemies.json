@@ -44,6 +44,20 @@
     "plaguelich": {"name":"Plague Lich","set":1,"intro":6,"body":"skull","col":"#4a6a2a","bcol":"#c8ff6a","hp":280,"spd":55,"r":16,"dmg":16,"fire":{"kind":"fan","n":6,"spread":1,"spd":205,"every":2.9,"waves":2},"vein":"sump","lore":"It brews. Nobody knows for whom."},
     "lostkeeper": {"name":"Lost Keeper","set":1,"intro":99,"body":"knight","col":"#c8c0e0","bcol":"#9fe8ff","hp":900,"spd":75,"r":17,"dmg":14,"fire":{"kind":"fan","n":5,"spread":0.7,"spd":220,"every":2.2},"vein":"event","lore":"The echo of a Keeper who never came home. It still carries its gear."},
     "rival": {"name":"Rival Raider","set":1,"intro":99,"body":"imp","col":"#c98a2b","bcol":"#ffcf4a","hp":220,"spd":120,"r":14,"dmg":10,"melee":true,"fire":{"kind":"fan","n":3,"spread":0.3,"spd":230,"every":2.4},"vein":"event","lore":"Raiders from the Exchange, after the same extract you are."},
+    "tetherling": {"name":"Tetherling","set":1,"intro":4,"body":"wisp","col":"#ff5ca8","bcol":"#ffd0e8","hp":160,"spd":130,"r":14,"dmg":15,"fire":{"kind":"homing","n":2,"spd":140,"turn":1.7,"every":2.4},"vein":"underheart","lore":"A loose tether still looking for something to hold."},
+    "hymnknight": {"name":"Hymn Knight","set":1,"intro":4,"body":"knight","col":"#e8d8ff","bcol":"#ff5ca8","hp":340,"spd":80,"r":17,"dmg":19,"fire":{"kind":"charge","every":2.4,"cspd":460,"fan":8},"vein":"underheart","lore":"It sings while it charges. The song is the same one the Keepers sang."},
+    "heartgrub": {"name":"Heartgrub","set":1,"intro":4,"body":"grub","col":"#c04a6a","bcol":"#ff8fb1","hp":220,"spd":105,"r":16,"dmg":17,"fire":{"kind":"charge","every":2.2,"cspd":470,"ring":10,"rspd":150},"vein":"underheart","lore":"Lives in the walls of the Heart's arteries."},
+    "dreameye": {"name":"Dream Eye","set":1,"intro":5,"body":"eye","col":"#9b7bff","bcol":"#ff5ca8","hp":300,"spd":35,"r":17,"dmg":16,"fire":{"kind":"spiral","n":5,"spd":145,"every":0.55,"step":0.2},"vein":"underheart","lore":"An eye the Bloom opens while it dreams."},
+    "chorusslime": {"name":"Chorus Slime","set":1,"intro":5,"body":"slime","col":"#ff8fe0","bcol":"#fff3a8","hp":280,"spd":55,"r":17,"dmg":15,"fire":{"kind":"ring","n":12,"spd":140,"every":2.8,"waves":2,"rot":0.2},"vein":"underheart","split":{"n":2,"id":"slimeling"},"lore":"Every voice it swallowed is still singing inside it."},
+    "keeperwraith": {"name":"Keeper Wraith","set":1,"intro":6,"body":"skull","col":"#fff3a8","bcol":"#ff5ca8","hp":380,"spd":60,"r":17,"dmg":19,"fire":{"kind":"fan","n":7,"spread":1.1,"spd":220,"every":2.7,"waves":3},"vein":"underheart","lore":"An Old Keeper who forgot why she stayed."},
+    "bloomcolossus": {"name":"Bloom Colossus","set":1,"intro":6,"body":"brute","col":"#ff5ca8","bcol":"#fff3a8","hp":800,"spd":50,"r":22,"dmg":22,"fire":{"kind":"brute","n":16,"spd":160,"every":2.4},"vein":"underheart","lore":"The Bloom's own fist."},
+    "pulsebat": {"name":"Pulse Bat","set":1,"intro":4,"body":"bat","col":"#c04a6a","bcol":"#ff8fb1","hp":140,"spd":140,"r":13,"dmg":13,"fire":{"kind":"ring","n":10,"spd":155,"every":3,"waves":2,"rot":0.3},"vein":"underheart","lore":"It beats in time with the Heart."},
+    "heartspore": {"name":"Heartspore","set":1,"intro":99,"body":"totem","col":"#ff5ca8","bcol":"#fff3a8","hp":260,"spd":0,"r":16,"dmg":16,"fire":{"kind":"spiral","n":4,"spd":140,"every":0.5,"step":0.22},"vein":"event","lore":"The Heart grows these to guard itself."},
+    "unboundhusk": {"name":"Unbound Husk","set":1,"intro":5,"body":"blob","col":"#3a3050","bcol":"#ff5ca8","hp":300,"spd":80,"r":16,"dmg":18,"fire":{"kind":"fan","n":5,"spread":0.6,"spd":240,"every":2.2},"vein":"unbound","lore":"What the Bloom grows when it no longer dreams of anything."},
+    "unboundimp": {"name":"Unbound Imp","set":1,"intro":5,"body":"imp","col":"#2a2040","bcol":"#ffcf4a","hp":240,"spd":130,"r":15,"dmg":16,"fire":{"kind":"ring","n":8,"spd":170,"every":2.5,"blink":true},"vein":"unbound","lore":"It blinks between the tiers."},
+    "unboundknight": {"name":"Unbound Knight","set":1,"intro":6,"body":"knight","col":"#1f1830","bcol":"#ff5ca8","hp":520,"spd":85,"r":18,"dmg":22,"fire":{"kind":"charge","every":2.2,"cspd":500,"fan":9},"vein":"unbound","lore":"A knight of no order at all."},
+    "unboundeye": {"name":"Unbound Eye","set":1,"intro":6,"body":"eye","col":"#2a2040","bcol":"#fff3a8","hp":420,"spd":30,"r":18,"dmg":18,"fire":{"kind":"spiral","n":6,"spd":150,"every":0.5,"step":0.18},"vein":"unbound","lore":"Watches the tier counter."},
+    "bloomspawn": {"name":"Bloomspawn","set":1,"intro":4,"body":"slime","col":"#ff8fb1","bcol":"#ffffff","hp":180,"spd":70,"r":15,"dmg":14,"fire":{"kind":"ring","n":9,"spd":140,"every":2.8},"vein":"unbound","lore":"Fresh growth from a Bloom that has nothing left to fear."},
     "slimeling": {"name":"Slimeling","set":0,"intro":99,"body":"slime","col":"#a8ff8a","bcol":"#c8ff8a","hp":12,"spd":80,"r":9,"dmg":5,"melee":true,"fire":{"kind":"none","every":9},"vein":"rootworks"},
     "acidling": {"name":"Acidling","set":1,"intro":99,"body":"slime","col":"#e8ff7a","bcol":"#f0ff7a","hp":40,"spd":90,"r":10,"dmg":9,"melee":true,"fire":{"kind":"none","every":9},"vein":"ember"},
     "dummy": {"name":"Training Dummy","set":0,"intro":99,"body":"totem","col":"#c9b48a","bcol":"#c9b48a","hp":30,"spd":0,"r":14,"dmg":0,"fire":{"kind":"none","every":9},"vein":"rootworks"}
@@ -56,6 +70,7 @@
     "crystal": {"kind":"ring","n":6,"spd":150,"every":3,"rot":0.25},
     "gale": {"kind":"charge","every":2.3,"cspd":460},
     "warden": {"kind":"ring","n":8,"spd":120,"every":3.3},
-    "venom": {"kind":"fan","n":3,"spread":0.5,"spd":200,"every":2.6}
+    "venom": {"kind":"fan","n":3,"spread":0.5,"spd":200,"every":2.6},
+    "lumen": {"kind":"ring","n":7,"spd":140,"every":3}
   }
 }

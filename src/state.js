@@ -1,15 +1,16 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
 import {clamp,pick} from './util.js';
-import {PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
-import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,cutFree,express,genomeFrom,hasPedigree,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
+import {isApex,GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,cutFree,express,genomeFrom,hasPedigree,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
 import {breederMark,comfort,perk,pridify} from './hideout.js';
 import {DEMO} from './flags.js';
 import {bloomify} from './bloom.js';
-import {give,expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
+import {applyChamber,chamberBlock,endgameDay,endgamify,mutlabBonus} from './endgame.js';
+import {pay,give,expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
@@ -102,7 +103,7 @@ function newGame(){
   const d=makeCreature('cindlet','bred',2,{name:'Kindle',sex:'F',traits:['worker','quick']});
   const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
   const f=makeCreature('coralisk','bred',2,{name:'Shoal',sex:'M',traits:['worker','thick']});
-  pridify(S);bloomify(S);
+  pridify(S);bloomify(S);endgamify(S);
   S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
@@ -118,9 +119,10 @@ function whereIs(c){
   for(const k in S.sections){const i=S.sections[k].ids.indexOf(c.id);if(i>=0)return{kind:'section',key:k,slot:i}}
   const j=S.loadout.slots.indexOf(c.id);if(j>=0)return{kind:'loadout',slot:j};
   const e=(S.expeditions||[]).find(x=>x.team.includes(c.id));if(e)return{kind:'expedition',dest:e.dest};
+  if((S.mutlab||[]).includes(c.id))return{kind:'mutlab'};
   return{kind:'idle'};
 }
-function unplace(c){for(const k in S.sections)S.sections[k].ids=S.sections[k].ids.filter(x=>x!==c.id);S.loadout.slots=S.loadout.slots.map(x=>x===c.id?null:x)}
+function unplace(c){for(const k in S.sections)S.sections[k].ids=S.sections[k].ids.filter(x=>x!==c.id);if(S.mutlab)S.mutlab=S.mutlab.filter(x=>x!==c.id);S.loadout.slots=S.loadout.slots.map(x=>x===c.id?null:x)}
 function killCreature(c,how){recordLineage(c);const leg=passLegacy(c);if(leg)addLog(`${leg.heir.name} carries on ${c.name}’s line and inherits ${leg.n} bond.`);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++;S.memorial.unshift({name:c.name,form:formName(c),species:c.species,stage:c.stage||0,type:c.type,type2:c.type2,looks:c.looks,gen:c.gen,level:c.level,raids:c.raids||0,
     titles:[cutFree(c)&&'Cut free',hasPedigree(c)&&'Pedigree',c.origin==='bred'&&'Gen '+(c.gen||0)].filter(Boolean),heir:leg?leg.heir.name:null,day:S.day,how:how||'Lost in the Bloom'});S.memorial=S.memorial.slice(0,200)}
 const typeTier=c=>Math.max(...typesOf(c).map(t=>TYPES[t].tier));
@@ -209,7 +211,7 @@ function expeditionEgg(team){
   const ch=makeCreature(sp,'bred',1,{genome:rollGenome(rand,'wild',5)});recordLineage(ch);
   S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#9fe8ff'],parents:'an expedition nest',hybrid:false});
 }
-function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(perk('bond'))c.bondXp=(c.bondXp||0)+perk('bond');if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
+function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(isApex(c.genome))S.renownLog.apex=(S.renownLog.apex||0)+1;if(perk('bond'))c.bondXp=(c.bondXp||0)+perk('bond');if(grantBonusSlot(c))express(c);S.creatures.push(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
   S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;
@@ -236,12 +238,13 @@ function processDay(){
     S.eggs=S.eggs.filter(e=>e.days>0);
     hatched.forEach(c=>notes.push(`An egg hatched: ${c.name}, a ${sexSym(c.sex)} ${SPECIES[c.species].name}${c.type2?' (hybrid!)':''}.${hatchNotes(c)}`));
   }else if(S.eggs.length)notes.push('Eggs are waiting. The Nursery needs Wardens to keep incubating.');
+  endgameDay(notes);
   addLog(`Day ${S.day}. `+(notes.join(' ')||'A quiet day at the hideout.'));
 }
 
 /* ---------- breeding rules ---------- */
 // Extra mutation chance per gene from research and the Nursery.
-const mutBonus=()=>(res('breeding',0)?GENETICS.MUTATION.research:0)+(secTier('nursery')>=4?GENETICS.MUTATION.nursery:0);
+const mutBonus=()=>(res('breeding',0)?GENETICS.MUTATION.research:0)+(secTier('nursery')>=4?GENETICS.MUTATION.nursery:0)+mutlabBonus();
 const breedsLeft=c=>c.traits.includes('shortlived')?Math.max(0,GENETICS.SHORT_LIVED_BREEDS-(c.bred||0)):Infinity;
 // Why a pair can't breed, or '' if they can.
 function breedBlock(mom,dad){
@@ -303,6 +306,8 @@ function breed(){
     const child=makeCreature(species,'bred',t>=5||res('breeding',4)?5:1,{type,type2,genome:got.genome,pers:inheritPersonality(mom,dad,rand),
       gen:Math.max(mom.gen||0,dad.gen||0)+1,mom:mom.id,dad:dad.id,pure:pureRun(species,mom,dad)});
     child.birth={mutations:got.mutations,defect:got.defect,inbred:isIn};child.by=breederMark();
+    // The Apex Chamber: a guaranteed pass of both parents' better allele on one gene, for the first egg.
+    if(i===0&&ui.apexLocus&&!chamberBlock(mom,dad)){pay(ENDGAME.TOOLS.apex.cost);applyChamber(child,mom,dad,ui.apexLocus);child.birth.chamber=ui.apexLocus}
     recordLineage(child);
     const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
     S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});

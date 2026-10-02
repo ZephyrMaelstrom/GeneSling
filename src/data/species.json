@@ -7,7 +7,8 @@
     "gale": {"name":"Gale","color":"#4fe0c8","acc":"#fff6a8","tier":3,"base":{"hp":135,"atk":17,"spd":220},"elem":"gust","support":"Unlocks cliff extracts, +10% move speed","weight":5},
     "crystal": {"name":"Crystal","color":"#ff8fe0","acc":"#ffffff","tier":3,"base":{"hp":150,"atk":12,"spd":150},"elem":"brittle","support":"20% chance to block a hit","weight":3.5},
     "warden": {"name":"Warden","color":"#e3b04b","acc":"#ffcf4a","tier":4,"base":{"hp":260,"atk":12,"spd":135},"elem":"stagger","support":"+15% max HP for you","weight":1.5},
-    "venom": {"name":"Venom","color":"#9be35a","acc":"#e6ff6a","tier":3,"base":{"hp":150,"atk":15,"spd":160},"elem":"poison","support":"Your bullets sometimes poison","weight":0}
+    "venom": {"name":"Venom","color":"#9be35a","acc":"#e6ff6a","tier":3,"base":{"hp":150,"atk":15,"spd":160},"elem":"poison","support":"Your bullets sometimes poison","weight":0},
+    "lumen": {"name":"Lumen","color":"#fff3a8","acc":"#ffffff","tier":4,"base":{"hp":170,"atk":15,"spd":155},"elem":"glare","support":"Lights the dark and the Underheart's hidden walls","weight":0}
   },
   "TIER": [
     "",
@@ -40,7 +41,10 @@
     "monolord": {"name":"Monolord","type":"warden","col":"#7a6a5a","shade":"#3a3028","size":1.15,"mods":{"hp":1.15,"atk":1.25,"spd":0.9,"rate":1},"w":1,"blurb":"A floating monolith with a crown."},
     "toxlet": {"name":"Toxlet","type":"venom","col":"#8fd14f","shade":"#4f7a2a","size":0.85,"mods":{"hp":0.9,"atk":1,"spd":1.1,"rate":1.05},"w":6,"blurb":"A bog newt with a dripping frill."},
     "fangmire": {"name":"Fangmire","type":"venom","col":"#6fae3a","shade":"#3a5a1f","size":1,"mods":{"hp":1.05,"atk":1.1,"spd":1,"rate":1},"w":3,"blurb":"A coiled marsh serpent whose fangs glow green."},
-    "hydravine": {"name":"Hydravine","type":"venom","col":"#5a9a4a","shade":"#2a4a24","size":1.1,"mods":{"hp":1.3,"atk":1.15,"spd":0.9,"rate":0.95},"w":1,"blurb":"A three-headed vine hydra from the deep Sump."}
+    "hydravine": {"name":"Hydravine","type":"venom","col":"#5a9a4a","shade":"#2a4a24","size":1.1,"mods":{"hp":1.3,"atk":1.15,"spd":0.9,"rate":0.95},"w":1,"blurb":"A three-headed vine hydra from the deep Sump."},
+    "glimmet": {"name":"Glimmet","type":"lumen","col":"#fff3a8","shade":"#c9a84a","size":0.85,"mods":{"hp":0.9,"atk":1,"spd":1.15,"rate":1.1},"w":6,"blurb":"A lantern moth that drinks the dark."},
+    "halowing": {"name":"Halowing","type":"lumen","col":"#ffe7c2","shade":"#b88a4a","size":1,"mods":{"hp":1.1,"atk":1.05,"spd":1.05,"rate":1},"w":3,"blurb":"A ringed seraph-bird that hums at dawn."},
+    "solaryx": {"name":"Solaryx","type":"lumen","col":"#ffd27a","shade":"#c27a2a","size":1.15,"mods":{"hp":1.25,"atk":1.2,"spd":0.95,"rate":1},"w":1,"blurb":"A sun-maned beast from the Underheart's deepest hall."}
   },
   "HYBRIDS": [
     {"id":"blazewing","name":"Blazewing","types":["ember","gale"],"col":"#ff8a3d","shade":"#1f9585"},
@@ -49,7 +53,18 @@
     {"id":"forgeheart","name":"Forgeheart","types":["warden","ember"],"col":"#e39a3b","shade":"#7a2316"},
     {"id":"squallfin","name":"Squallfin","types":["gale","tide"],"col":"#3fd8e8","shade":"#1a3a9a"},
     {"id":"duskcap","name":"Duskcap","types":["fungal","echo"],"col":"#9a4ad8","shade":"#3a1a5a"},
-    {"id":"gemguard","name":"Gemguard","types":["crystal","warden"],"col":"#f0a0c8","shade":"#9a7220"}
+    {"id":"gemguard","name":"Gemguard","types":["crystal","warden"],"col":"#f0a0c8","shade":"#9a7220"},
+    {"id":"steamfin","name":"Steamfin","types":["ember","tide"],"col":"#ff9a7a","shade":"#3f7aa9"},
+    {"id":"kilnspark","name":"Kilnspark","types":["ember","crystal"],"col":"#ff8fa8","shade":"#c2561d"},
+    {"id":"mossguard","name":"Mossguard","types":["fungal","warden"],"col":"#9ac86a","shade":"#9a7220"},
+    {"id":"deepsinger","name":"Deepsinger","types":["tide","echo"],"col":"#5a8aff","shade":"#3a2f5e"},
+    {"id":"glasswing","name":"Glasswing","types":["gale","crystal"],"col":"#9ff0e0","shade":"#c88ab8"},
+    {"id":"wailwind","name":"Wailwind","types":["gale","echo"],"col":"#7fd0c8","shade":"#5d43a3"},
+    {"id":"blightcap","name":"Blightcap","types":["venom","fungal"],"col":"#9ac84a","shade":"#9c2c4f"},
+    {"id":"mirefang","name":"Mirefang","types":["venom","tide"],"col":"#5aa07a","shade":"#2a4a6a"},
+    {"id":"dawnsong","name":"Dawnsong","types":["lumen","echo"],"col":"#fff0c8","shade":"#7a5ab8"},
+    {"id":"prismheart","name":"Prismheart","types":["lumen","crystal"],"col":"#ffe0f0","shade":"#c27aa8"},
+    {"id":"eclipsar","name":"Eclipsar","types":["venom","lumen"],"col":"#c8d87a","shade":"#3a2a4a"}
   ],
   "LINE_DATA": {
     "cindlet": [["Cindlet",1,"ember1","flameRing"],["Cinderpup",10,"ember2","flameRing"],["Blazehound",20,"flamethrower","meteorShower"],["Infernox",30,"emberBurst","infernoNova",["pow",7]]],
@@ -76,13 +91,27 @@
     "toxlet": [["Toxlet",1,"spore1","rotCloud"],["Toxfrill",10,"spore2","rotCloud"],["Blightnewt",20,"sporeFan","rotCloud"],["Plaguewyrm",30,"seedHoming","rotCloud",["pow",7]]],
     "fangmire": [["Fangmire",1,"spore2","sporeField"],["Venomcoil",18,"sporeStream","rotCloud"],["Basilurk",30,"sporeMortar","rotCloud",["vig",7]]],
     "hydravine": [["Hydravine",1,"sporeFan","rotCloud"],["Hydrabloom",25,"thornRing","rotCloud",["pow",8]]],
+    "glimmet": [["Glimmet",1,"pulse2","echoPing"],["Glimlace",12,"pulseHoming","prismWard"],["Lanternmoth",24,"prismBeam","mirrorField",["foc",7]]],
+    "halowing": [["Halowing",1,"orbit","prismWard"],["Haloseraph",22,"shardSplit","mirrorField",["vig",7]]],
+    "solaryx": [["Solaryx",1,"prismBeam","mirrorField"],["Solarch",28,"pulse4","shardStorm",["pow",8]]],
     "blazewing": [["Blazewing",1,"emberFan","gustDash"],["Phoenixwing",20,"foxfire","skyStrike"]],
     "bogbloom": [["Bogbloom",1,"bubbleBounce","sporeField"],["Mirelord",20,"whirlpool","rotCloud"]],
     "resonyx": [["Resonyx",1,"shard5","echoPing"],["Harmonyx",20,"prismBeam","stormCall"]],
     "forgeheart": [["Forgeheart",1,"slamShock","flameRing"],["Anvilheart",20,"quakeSlam","infernoNova"]],
     "squallfin": [["Squallfin",1,"diveFast","tideShield"],["Stormfin",20,"diveRing","deluge"]],
     "duskcap": [["Duskcap",1,"sporeFan","echoPing"],["Nightbloom",20,"sporeMortar","sonicBoom"]],
-    "gemguard": [["Gemguard",1,"shard5p","taunt"],["Jewelward",20,"orbit","fortress"]]
+    "gemguard": [["Gemguard",1,"shard5p","taunt"],["Jewelward",20,"orbit","fortress"]],
+    "steamfin": [["Steamfin",1,"emberFan","flameRing"],["Steamfin Ascendant",20,"bubbleBounce","tideShield"]],
+    "kilnspark": [["Kilnspark",1,"ember2","flameRing"],["Kilnspark Ascendant",20,"shard5","prismWard"]],
+    "mossguard": [["Mossguard",1,"sporeMortar","sporeField"],["Mossguard Ascendant",20,"slamShock","taunt"]],
+    "deepsinger": [["Deepsinger",1,"bubblePierce","tidalSurge"],["Deepsinger Ascendant",20,"sonicRing","echoPing"]],
+    "glasswing": [["Glasswing",1,"featherFan","gustDash"],["Glasswing Ascendant",20,"shardSplit","shardStorm"]],
+    "wailwind": [["Wailwind",1,"tornado","cyclone"],["Wailwind Ascendant",20,"screech","sonicBoom"]],
+    "blightcap": [["Blightcap",1,"sporeFan","rotCloud"],["Blightcap Ascendant",20,"sporeMortar","healBloom"]],
+    "mirefang": [["Mirefang",1,"spore2","rotCloud"],["Mirefang Ascendant",20,"geyser","deluge"]],
+    "dawnsong": [["Dawnsong",1,"pulse3","echoPing"],["Dawnsong Ascendant",20,"chainShock","stormCall"]],
+    "prismheart": [["Prismheart",1,"prismBeam","prismWard"],["Prismheart Ascendant",20,"shard5p","mirrorField"]],
+    "eclipsar": [["Eclipsar",1,"sporeStream","rotCloud"],["Eclipsar Ascendant",20,"pulseHoming","mirrorField"]]
   },
   "SYL": {
     "ember": ["Cin","Ash","Kin","Pyr","Scor","Em","Vol"],
@@ -92,7 +121,8 @@
     "gale": ["Zeph","Aer","Gus","Kes","Sky","Fal","Wisp"],
     "crystal": ["Pris","Gem","Qua","Opa","Lum","Shar","Glim"],
     "warden": ["Gra","Bas","Tor","Mon","Ked","Ore","Hul"],
-    "venom": ["Tox","Ven","Bli","Mir","Sep","Fang","Ich"]
+    "venom": ["Tox","Ven","Bli","Mir","Sep","Fang","Ich"],
+    "lumen": ["Lum","Sol","Hal","Dawn","Ray","Gil","Aur"]
   },
   "END": [
     "der",

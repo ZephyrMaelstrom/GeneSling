@@ -201,7 +201,7 @@ function simulate(opts={},seed=1){
     const weigh=list=>{const t=tensIn(list);scarce={};for(const k of STAT_LOCI)scarce[k]=t[k]<4?P.tenWeight*4:P.tenWeight;return t};
     const score=c=>STAT_LOCI.reduce((a,k)=>a+c.genome[k][0]+c.genome[k][1]+(scarce[k]||P.tenWeight)*((c.genome[k][0]>=10)+(c.genome[k][1]>=10)),0)-(c.traits.some(t=>TRAITS[t].defect)?100:0);
     let pool=[];for(let i=0;i<P.wildPerGen*2;i++)pool.push(wild());
-    let found=null,mutations=0,defects=0;
+    let found=null,mutations=0,defects=0,chambered=0;
     for(let g=1;g<=P.maxGens&&!found;g++){
       // Of wildSeen catches, keep the wildPerGen that best fill loci the pool lacks 10s at.
       const tens=weigh(pool);
@@ -214,11 +214,17 @@ function simulate(opts={},seed=1){
       const pairs=[];
       for(const f of F.slice(0,P.pairs)){const m=M.find(x=>!isInbred(f.id,x.id,get))||M[0];if(m)pairs.push([f,m])}
       if(!pairs.length){pool=pool.concat([wild(),wild()]);continue}
-      const kids=[];
+      const kids=[];let chamberUses=0;
       for(let e=0;e<P.eggsPerGen;e++){
         const [mom,dad]=pairs[e%pairs.length];mom.bred=(mom.bred||0)+1;dad.bred=(dad.bred||0)+1;
         const res=inherit(mom,dad,{rate:mutationRate(mom,dad),inbred:isInbred(mom.id,dad.id,get)},r);
         mutations+=res.mutations.length;if(res.defect)defects++;
+        // The Apex Chamber (opts.apexChamber): when both parents carry an Apex allele, up to chamberPerGen eggs a
+        // generation get both parents' better allele on the gene the pool is shortest of 10s in.
+        if(P.apexChamber&&chamberUses<(P.chamberPerGen||1)&&hasApexAllele(mom.genome)&&hasApexAllele(dad.genome)){
+          const k=STAT_LOCI.slice().sort((a,b)=>Math.min(...res.genome[a])-Math.min(...res.genome[b]))[0];
+          res.genome[k]=[Math.max(...mom.genome[k]),Math.max(...dad.genome[k])];chamberUses++;chambered++;
+        }
         const kid=add(res.genome,Math.max(mom.gen,dad.gen)+1,mom,dad);kids.push(kid);
         if(isApex(kid.genome)&&!found)found={cycle:g,gen:kid.gen};
       }
@@ -229,7 +235,7 @@ function simulate(opts={},seed=1){
     }
     const fixed=c=>STAT_LOCI.filter(k=>c.genome[k][0]>=10&&c.genome[k][1]>=10).length;
     const best=pool.reduce((a,c)=>Math.max(a,fixed(c)),0);
-    results.push({cycles:found?found.cycle:null,gen:found?found.gen:null,mutations,defects,best});
+    results.push({cycles:found?found.cycle:null,gen:found?found.gen:null,mutations,defects,best,chambered});
   }
   // Percentiles count unfinished runs as never (null), so a median can't hide failures.
   const ok=results.filter(x=>x.cycles!=null).map(x=>x.cycles).sort((a,b)=>a-b);

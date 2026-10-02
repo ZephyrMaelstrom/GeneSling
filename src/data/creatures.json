@@ -24,7 +24,8 @@
     "gale": {"name":"Tailwind","desc":"You move 8% faster while it fights beside you."},
     "crystal": {"name":"Facet Guard","desc":"10% chance to block a hit aimed at you."},
     "warden": {"name":"Bulwark","desc":"Enemies prefer to attack it over you."},
-    "venom": {"name":"Lingering","desc":"Its poison lasts twice as long."}
+    "venom": {"name":"Lingering","desc":"Its poison lasts twice as long."},
+    "lumen": {"name":"Beacon","desc":"Its glare stuns for twice as long."}
   },
   "BOND_PERKS": [
     "Bonded",

@@ -20,6 +20,8 @@ import * as prideui from './prideui.js';
 import * as bloom from './bloom.js';
 import * as veins from './veins.js';
 import * as bloomui from './bloomui.js';
+import * as endgame from './endgame.js';
+import * as endgameui from './endgameui.js';
 import * as exchange from './exchange/engine.js';
 import * as market from './exchange/market.js';
 import * as xclient from './exchange/client.js';
@@ -31,7 +33,7 @@ import * as ui from './ui.js';
 import * as raid from './raid.js';
 import * as draw from './draw.js';
 
-for(const mod of [rng,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
+for(const mod of [rng,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,endgame,endgameui,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
   for(const k of Object.keys(mod)){
     // Getters, so values a module reassigns (S, R, ...) always read live.
     try{Object.defineProperty(window,k,{get:()=>mod[k],configurable:true,enumerable:false})}catch(e){}

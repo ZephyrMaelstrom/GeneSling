@@ -67,7 +67,7 @@ test('every v5 system runs without errors', {timeout: 120000}, async () => {
  assert.ok(has(/^evolved \S+ -> \S+ atk \w+/) && !has(/^evolved (\S+) -> \1 /), 'evolution changes the form');
  assert.ok(has(/^research \{"combat":3,"capture":3,"breeding":3,"economy":3,"bond":3\}$/));
  assert.ok(has(/^brannoc q 1 blueprint carbine true$/));
- assert.ok(has(/^forms tested 100 /));   // 91 v5 forms plus Phase 5's nine Venom forms
+ assert.ok(has(/^forms tested 129 /));   // 91 v5 forms, 9 Venom (Phase 5), 7 Lumen and 22 new hybrid forms (Phase 6)
  assert.ok(has(/^combos used 12 /));
  assert.ok(has(/^curses 6 /));
  assert.ok(has(/^bosses ok$/));

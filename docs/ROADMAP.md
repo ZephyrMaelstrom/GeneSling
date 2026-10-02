@@ -90,14 +90,14 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 6 · Underheart and endgame (weeks 26 to 31)
 
-- [ ] Build floors 7 to 9, the cut-free entry rule and the Lumen type
-- [ ] Build the Floor 9 fight to free Ilsa
-- [ ] Build the Heart and the three endings
-- [ ] Add Unbound tiers 1 to 20 and the four Bloomlords
-- [ ] Add the Splicer, the Mutation Lab and the Apex Chamber
-- [ ] Add Renown, weekly shows, the weekly Deepening and seasons
-- [ ] Fill content to the 1.0 counts
-- [ ] Exit test: the Heart, all endings and Unbound tiers 1 to 5 are playable
+- [x] Build floors 7 to 9, the cut-free entry rule and the Lumen type
+- [x] Build the Floor 9 fight to free Ilsa
+- [x] Build the Heart and the three endings
+- [x] Add Unbound tiers 1 to 20 and the four Bloomlords
+- [x] Add the Splicer, the Mutation Lab and the Apex Chamber
+- [x] Add Renown, weekly shows, the weekly Deepening and seasons
+- [x] Fill content to the 1.0 counts
+- [x] Exit test: the Heart, all endings and Unbound tiers 1 to 5 are playable (`tests/endgame.test.js` from a Test Lab endgame save; the simulator median stays at 13 generations with the Apex Chamber)
 
 ### Phase 7 · Lore (weeks 18 to 31, alongside 5 and 6)
 

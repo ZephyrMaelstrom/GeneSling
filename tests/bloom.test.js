@@ -20,15 +20,15 @@ before(async () => {
 });
 after(async () => { await browser.close(); srv.server.close(); });
 
-test('content: 8 types, 24 species, about 45 enemies, 15+ bosses and 32 weapons', async () => {
+test('content: at least 8 types, 24 species, about 45 enemies, 15+ bosses and 32 weapons', async () => {
   const r = await run(() => ({types: TYPE_IDS.length, species: BASE_SPECIES.length, foes: Object.keys(FOES).length, bosses: BOSS_IDS.length, guns: GUN_IDS.length,
     perVein: Object.fromEntries(['rootworks', ...BLOOM.VEIN_ORDER].map(v => [v, BOSS_IDS.filter(b => BOSSES[b].vein === v).length])),
     venom: speciesOf('venom').length, sections: SECTION_IDS.includes('apothecary')}));
-  assert.equal(r.types, 8);
-  assert.equal(r.species, 24);
+  assert.ok(r.types >= 8);
+  assert.ok(r.species >= 24);
   assert.ok(r.foes >= 45, `${r.foes} enemies`);
   assert.ok(r.bosses >= 15, `${r.bosses} bosses`);
-  assert.equal(r.guns, 32);
+  assert.ok(r.guns >= 32);
   for (const v of ['ember', 'drowned', 'choir', 'spires', 'sump']) assert.equal(r.perVein[v], 3, `${v} has three bosses`);
   assert.equal(r.venom, 3);
   assert.equal(r.sections, true);
@@ -263,7 +263,7 @@ test('Venom: poison, its reactions, Sump-only wilds, the Apothecary and gene ser
   assert.equal(r.serum, true, 'a serum raises the lowest gene');
 });
 
-test('a v10 save loads into v11 with the Apothecary on the map', async () => {
+test('a v10 save loads into the current version with the Apothecary on the map', async () => {
   const ctx = await browser.createBrowserContext();
   const {page: p2, errors: e2} = await openGame(browser, srv.url, {context: ctx});
   await p2.evaluate(async () => {
@@ -275,7 +275,7 @@ test('a v10 save loads into v11 with the Apothecary on the map', async () => {
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, sec: !!S.sections.apothecary, placed: S.layout.some(i => i.key === 'apothecary'), bloom: !!S.bloom && Array.isArray(S.bloom.maps), map: S.loadout.map}));
-  assert.deepEqual(s, {v: 11, sec: true, placed: true, bloom: true, map: null});
+  assert.deepEqual(s, {v: 12, sec: true, placed: true, bloom: true, map: null});
   assert.deepEqual(e2, []);
   await ctx.close();
 });
