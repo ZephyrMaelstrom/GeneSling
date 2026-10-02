@@ -78,15 +78,15 @@ Ten phases take GeneSling from the v5 prototype to a paid 1.0 in about 42 weeks.
 
 ### Phase 5 · The Bloom expands (weeks 18 to 25)
 
-- [ ] Build the eight floor layouts
-- [ ] Add the five events, contracts and vein maps
-- [ ] Add the vein choice at the bottom of the Rootworks and the vein keys
-- [ ] Build the Drowned Galleries
-- [ ] Build the Hollow Choir
-- [ ] Rework the Ember Abyss into a full vein
-- [ ] Build the Glasswind Spires
-- [ ] Build the Sump, the Venom type and the Apothecary
-- [ ] Exit test: 20 raids in a row with no repeated vein, layout and event combination
+- [x] Build the eight floor layouts
+- [x] Add the five events, contracts and vein maps
+- [x] Add the vein choice at the bottom of the Rootworks and the vein keys
+- [x] Build the Drowned Galleries
+- [x] Build the Hollow Choir
+- [x] Rework the Ember Abyss into a full vein
+- [x] Build the Glasswind Spires
+- [x] Build the Sump, the Venom type and the Apothecary
+- [x] Exit test: 20 raids in a row with no repeated vein, layout and event combination (tested by `tests/bloom.test.js` and the Test Lab's variety check; the key-type half needs testers)
 
 ### Phase 6 · Underheart and endgame (weeks 26 to 31)
 

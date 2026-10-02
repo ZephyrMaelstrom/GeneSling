@@ -9,6 +9,7 @@ import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sect
 import {spr} from './sprites.js';
 import {simulateSupply} from './supply.js';
 import {decorRecipes} from './prideui.js';
+import {mapRecipes} from './bloomui.js';
 import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale} from './jobs.js';
 
 const f1=v=>(Math.round(v*10)/10).toString();
@@ -118,6 +119,7 @@ function workshopView(ui){
     <h3>Weapons · Forge T${ft}</h3><div class="recipes">${guns}</div>${unknown?`<p class="status">${unknown} more blueprint${unknown>1?'s':''} to find. Bring a weapon home from a raid to learn it.</p>`:''}
     ${prints?`<h3>Prints</h3>${prints}`:''}
     <h3>Decor</h3><p class="hint">Place decor in the Hideout’s build mode. It raises Comfort, which cuts fatigue and speeds bond, up to +20%.</p><div class="recipes">${decorRecipes()}</div>
+    ${mapRecipes(ui)}
     <h3>Your gear</h3>${gear||'<p class="empty">Only the Scav Pistol. Find more in raids or forge some.</p>'}
   </section>
   <div style="display:flex;flex-direction:column;gap:16px;min-width:0">

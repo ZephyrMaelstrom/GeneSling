@@ -9,6 +9,7 @@ import {auVol,sfx} from './audio.js';
 import {openIntro,renderAll,weaponLine} from './ui.js';
 import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,releaseCreature,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
 import {startMarket} from './exchange/market.js';
+import {chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
@@ -29,7 +30,9 @@ function goLandscape(){
   }catch(e){}
 }
 // Belt and braces for browsers that still scroll a pinned page: swallow every touch drag mid-raid.
-document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding'))e.preventDefault()},{passive:false});
+// Menus in a raid (the ⚙ menu, the peddler, shrines, the vein choice, the arena panel and pop-ups) still scroll.
+const SCROLLERS='#pauseBox,#modalBox,#arenaPanel';
+document.addEventListener('touchmove',e=>{if(document.documentElement.classList.contains('raiding')&&!(e.target.closest&&e.target.closest(SCROLLERS)))e.preventDefault()},{passive:false});
 function resize(){
   const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
   if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
@@ -107,7 +110,7 @@ function draw(){
       const col={gate:'#ffcf4a',rift:'#9b7bff',cliff:'#4fe0c8'}[r.kind];zone(r.cx,r.cy,col,{gate:`GATE · ${M.floor>=4?40:20} COIN`,rift:'RIFT',cliff:'CLIFF · NEEDS GALE'}[r.kind]);
       if(R.cur===r&&R.ext>0){g.strokeStyle='#fff';g.lineWidth=5;g.beginPath();g.arc(r.cx,r.cy,52,-Math.PI/2,-Math.PI/2+R.ext/2.5*Math.PI*2);g.stroke()}
     }
-    if(r.kind==='portal'){zone(r.cx-80,r.cy,'#9b7bff','RIFT HOME');if(r.deep)zone(r.cx+80,r.cy,'#ff5c7a','EMBER ABYSS ↓')}
+    if(r.kind==='portal'){zone(r.cx-80,r.cy,'#9b7bff','RIFT HOME');if(r.deep)zone(r.cx+80,r.cy,'#ff5c7a','THE VEINS ↓')}
     if(r.kind==='shop'){drawPeddler(g,r.cx,r.cy,t);g.fillStyle='#ffcf4a';g.fillText('PEDDLER',r.cx,r.cy-34)}
     if(r.kind==='shrine'){drawShrine(g,r.cx,r.cy,t,r.used);g.fillStyle=r.used?'#b4a9d8':'#5de8b0';g.fillText(r.used?'SHRINE (USED)':'SHRINE',r.cx,r.cy-36)}
     if(r.chest){const c=r.chest;g.fillStyle=c.open?'#5c4a2a':c.rich?'#ffcf4a':'#c98a2b';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(c.x-14,c.y-10,28,20);g.strokeRect(c.x-14,c.y-10,28,20);g.fillStyle=c.open?'#3a2e1a':c.rich?'#fff6c8':'#ffcf4a';g.fillRect(c.x-14,c.y-10,28,6);g.fillRect(c.x-3,c.y-4,6,6)}
@@ -120,6 +123,7 @@ function draw(){
     else if(it.kind==='buff'){g.fillStyle='#5de8b0';g.strokeStyle=OL;g.lineWidth=2;g.beginPath();g.arc(it.x,it.y+b,8,0,7);g.fill();g.stroke();g.fillStyle='#fff';g.fillRect(it.x-1.5,it.y+b-5,3,10);g.fillRect(it.x-5,it.y+b-1.5,10,3)}
     else{const col={cage:'#d8d0f0',food:'#7fd860',ore:'#c9b48a',hide:'#b07a4a',dust:'#ff8fe0',print:'#9fe8ff'}[it.id]||'#fff';g.fillStyle=col;g.strokeStyle=OL;g.lineWidth=2;g.fillRect(it.x-6,it.y+b-6,12,12);g.strokeRect(it.x-6,it.y+b-6,12,12)}
   });
+  drawTwists(g,t);
   R.fields.forEach(f=>{g.globalAlpha=.2+.06*Math.sin(t*6);g.fillStyle=f.col||'#e0527a';g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill();g.globalAlpha=.6;
     if(f.spin){g.strokeStyle=f.col;g.lineWidth=2;for(let k=0;k<3;k++){g.beginPath();g.arc(f.x,f.y,f.r*(.35+k*.22),t*4+k*2,t*4+k*2+2.2);g.stroke()}}g.globalAlpha=1});
   if(R.fortress>0){g.strokeStyle='rgba(227,176,75,.7)';g.lineWidth=3;g.setLineDash([10,6]);g.beginPath();g.arc(p.x,p.y,60,0,7);g.stroke();g.setLineDash([])}
@@ -144,6 +148,7 @@ function draw(){
   R.floats.forEach(f=>{g.globalAlpha=clamp(f.t*1.5,0,1);g.fillStyle=OL;g.fillText(f.text,f.x+1,f.y+1);g.fillStyle=f.col;g.fillText(f.text,f.x,f.y)});g.globalAlpha=1;
   g.setTransform(dpr,0,0,dpr,0,0);
   if(modOn('fog')){g.fillStyle=`rgba(90,200,80,${.1+.04*Math.sin(t*2)})`;g.fillRect(0,0,R.vw,R.vh)}
+  drawDark(g,s);
   if(modOn('dark')){const cx=R.vw/2,cy=R.vh/2,gr=g.createRadialGradient(cx,cy,90*s,cx,cy,190*s);gr.addColorStop(0,'rgba(5,3,15,0)');gr.addColorStop(1,'rgba(5,3,15,.95)');g.fillStyle=gr;g.fillRect(0,0,R.vw,R.vh)}
   if(TOUCH){
     const rr=stickR(),fixed=S.opts.stick==='fixed',bases=stickBases();
@@ -205,6 +210,9 @@ function drawEnemy(g,e){
   if(e.wind>0){const k=1-e.wind/.7;g.fillStyle=`rgba(255,${e.fire&&e.fire.kind==='charge'?90:220},90,${.25+.35*k})`;g.beginPath();g.arc(e.x,e.y,e.r+6+k*8,0,7);g.fill()}
   if(e.burn){g.fillStyle=`rgba(255,122,61,${.3+.2*Math.sin(t*12)})`;g.beginPath();g.arc(e.x,e.y-e.r*.6,e.r*.5,0,7);g.fill()}
   if(e.kind==='boss'){drawBossBody(g,e.def,e.x,e.y,e.r/40,t,e.flash>0);pips(g,e,e.y+e.r+10);return}
+  if(e.poison){g.fillStyle=`rgba(155,227,90,${.3+.2*Math.sin(t*9)})`;g.beginPath();g.arc(e.x,e.y+e.r*.4,e.r*.55,0,7);g.fill()}
+  if(e.dormant){g.fillStyle='rgba(200,168,255,.8)';g.font='700 11px "Pixelify Sans",monospace';g.textAlign='center';g.fillText('z',e.x+e.r,e.y-e.r-((t*20)%12))}
+  if(e.shadow){drawShadow(g,e,t);hpOver(g,e.x,e.y-30,30,e.hp/e.maxHp,"#b4a9d8");return}
   if(e.kind==='wild'){
     drawCreature(g,e.c,e.x+(e.wind>0?fxRnd(-1,1):0),e.y,.9,t,{face:e.face,flash:e.flash>0,seed:e.seed});
     const f=e.hp/e.maxHp,weak=isWeak(e);hpOver(g,e.x,e.y-30,30,f,weak?'#ffcf4a':'#ff6688');pips(g,e,e.y-38);
@@ -338,6 +346,7 @@ function menuOptions(){
 $('#pauseBox').addEventListener('click',e=>{
   const b=e.target.closest('[data-p]');if(!b||!R||b.disabled)return;const k=b.dataset.p;sfx('ui');
   if(k==='resume'){R.abandonArm=false;setPause(false)}
+  if(k==='vein'){chooseVein(b.dataset.k);return}
   if(k==='mtab'){R.menuTab=b.dataset.k;R.releaseArm=null;setPause(true)}
   if(k==='swap'){swapSlot3(+b.dataset.i);setPause(true)}
   if(k==='switch'){switchGun();setPause(true)}

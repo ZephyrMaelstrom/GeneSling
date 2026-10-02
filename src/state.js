@@ -8,7 +8,8 @@ import {renderAll} from './ui.js';
 import {GOOD_TRAITS,GRADE_LOCI,TRAIT_LOCI,ancestors,bonusSlotOpen,cutFree,express,genomeFrom,hasPedigree,inherit,inheritPersonality,isInbred,mutationRate,pureRun,rollGenome} from './genetics.js';
 import {breederMark,comfort,perk,pridify} from './hideout.js';
 import {DEMO} from './flags.js';
-import {expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
+import {bloomify} from './bloom.js';
+import {give,expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
@@ -91,7 +92,7 @@ function newGame(){
   S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
     creatures:[],eggs:[],sections:secs,armory:0,keeper:{level:1,xp:0},progress:{bosses:{},deepest:0,memories:{}},modes:{},research:{combat:0,capture:0,breeding:0,economy:0,bond:0},
     dex:{forms:{},foes:{},claimed:0},npc:{},journalRead:0,tutorialDone:false,introSeen:false,memorial:[],
-    loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0},
+    loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0,map:null},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
     settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},
     mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,opts:defaultOpts(),nextId:1};
@@ -101,7 +102,7 @@ function newGame(){
   const d=makeCreature('cindlet','bred',2,{name:'Kindle',sex:'F',traits:['worker','quick']});
   const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
   const f=makeCreature('coralisk','bred',2,{name:'Shoal',sex:'M',traits:['worker','thick']});
-  pridify(S);
+  pridify(S);bloomify(S);
   S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
@@ -217,6 +218,8 @@ function processDay(){
   else{const short=n-S.food;S.food=0;S.creatures.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.9))});notes.push(`Food ran short by ${short}. Creatures went hungry.`)}
   if(res('economy',3))S.food+=3;
   S.food+=perk('food');
+  // Venom legends brew a little serum every day.
+  if(perk('serum')){const k='legend:serum',v=(S.prod[k]||0)+perk('serum'),n=Math.floor(v+1e-9);S.prod[k]=v-n;if(n)give('serum',n)}
   runStations(notes);
   tickExpeditions(notes,expeditionEgg);
   tickFatigue();

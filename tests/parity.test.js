@@ -19,6 +19,12 @@ const PHASE1 = {
 const PHASE2 = {
   SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } t.garden.tiers = now.garden.tiers; return t; },
 };
+// Phase 5 (the Bloom expands) only adds: the Venom type and its species, lines and names, the poison
+// element and its reactions, new weapons, foes, bosses and the Apothecary. Every v5 entry must be unchanged,
+// apart from the vein each foe and boss now belongs to.
+const GROWN = ['TYPES', 'SPECIES', 'LINES', 'TYPE_ABIL', 'ELEM', 'BOND_PASSIVE', 'GUNS', 'SECTIONS', 'FOES', 'WILD_FIRE', 'BOSSES', 'SYL', 'REACTIONS'];
+const v5Only = (now, v5) => Array.isArray(v5) ? now.filter(x => v5.some(y => y.name === x.name)) : Object.fromEntries(Object.keys(v5).map(k => [k, now[k]]));
+const noVein = t => { for (const k in t) if (t[k] && typeof t[k] === 'object') delete t[k].vein; return t; };
 const CHANGED = ['GENES', 'GENE_HINT', 'TRAITS', 'NEG_TRAITS'];   // compared separately below
 const TABLES = ['TYPES', 'TIER', 'SPECIES', 'HYBRIDS', 'LINES', 'ATTACKS', 'ABILITIES', 'TYPE_ABIL', 'ELEM', 'REACTIONS', 'COMBOS',
   'PERS', 'BOND_TH', 'BOND_PASSIVE', 'BOND_PERKS', 'GENES', 'GENE_HINT', 'TRAITS', 'NEG_TRAITS', 'GUNS', 'WEAPON_COST',
@@ -38,7 +44,7 @@ const snapshot = page => page.evaluate(tables => {
   const genes = typeof GRADE_LOCI === 'undefined' ? {vig: 7, pow: 6, swf: 5, hst: 8, tmp: 5} : {vig: 7, pow: 6, swf: 5, tem: 8, foc: 5, grt: 5};
   // In this build, pin the whole genome so looks (size changes HP) stay at the species default.
   const o = typeof genomeFrom === 'undefined' ? {genes, traits: ['keen']} : {genome: genomeFrom(genes, ['keen'])};
-  out.stats = Object.keys(SPECIES).map(sp => stats(makeCreature(sp, 'bred', 12, {...o, pers: 'brave', sex: 'F', name: 'X'})));
+  out.stats = Object.fromEntries(Object.keys(SPECIES).map(sp => [sp, stats(makeCreature(sp, 'bred', 12, {...o, pers: 'brave', sex: 'F', name: 'X'}))]));
   return out;
 }, TABLES);
 
@@ -50,11 +56,12 @@ test('content and stats match the v5 build', async () => {
     if (CHANGED.includes(t)) continue;
     let want = PHASE1[t] ? PHASE1[t](structuredClone(a[t])) : a[t];
     if (PHASE2[t]) want = PHASE2[t](structuredClone(want), b[t]);
-    assert.deepEqual(b[t], want, `${t} differs from v5`);
+    const got = GROWN.includes(t) ? noVein(structuredClone(v5Only(b[t], a[t]))) : b[t];
+    assert.deepEqual(got, want, `${t} differs from v5`);
   }
   // Every v5 trait is still there with the same name, effect and weight; it now also has a dominance flag.
   for (const [k, t] of Object.entries(a.TRAITS)) assert.deepEqual({...b.TRAITS[k], dom: undefined}, {...t, dom: undefined}, `trait ${k}`);
-  assert.deepEqual(b.stats, a.stats, 'stats differ from v5');
+  assert.deepEqual(v5Only(b.stats, a.stats), a.stats, 'stats differ from v5');
   assert.deepEqual(v5.errors, []);
   assert.deepEqual(now.errors, []);
 });

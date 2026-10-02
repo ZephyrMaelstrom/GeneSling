@@ -6,7 +6,8 @@
     "echo": {"name":"Echo","color":"#9b7bff","acc":"#e8c8ff","tier":2,"base":{"hp":130,"atk":13,"spd":190},"elem":"static","support":"Reveals the floor map and hollow walls","weight":14},
     "gale": {"name":"Gale","color":"#4fe0c8","acc":"#fff6a8","tier":3,"base":{"hp":135,"atk":17,"spd":220},"elem":"gust","support":"Unlocks cliff extracts, +10% move speed","weight":5},
     "crystal": {"name":"Crystal","color":"#ff8fe0","acc":"#ffffff","tier":3,"base":{"hp":150,"atk":12,"spd":150},"elem":"brittle","support":"20% chance to block a hit","weight":3.5},
-    "warden": {"name":"Warden","color":"#e3b04b","acc":"#ffcf4a","tier":4,"base":{"hp":260,"atk":12,"spd":135},"elem":"stagger","support":"+15% max HP for you","weight":1.5}
+    "warden": {"name":"Warden","color":"#e3b04b","acc":"#ffcf4a","tier":4,"base":{"hp":260,"atk":12,"spd":135},"elem":"stagger","support":"+15% max HP for you","weight":1.5},
+    "venom": {"name":"Venom","color":"#9be35a","acc":"#e6ff6a","tier":3,"base":{"hp":150,"atk":15,"spd":160},"elem":"poison","support":"Your bullets sometimes poison","weight":0}
   },
   "TIER": [
     "",
@@ -36,7 +37,10 @@
     "geodon": {"name":"Geodon","type":"crystal","col":"#8a6fb3","shade":"#3a2a5a","size":1.15,"mods":{"hp":1.35,"atk":1,"spd":0.85,"rate":0.95},"w":1,"blurb":"A tortoise carrying a geode."},
     "pebblet": {"name":"Pebblet","type":"warden","col":"#b8b0a0","shade":"#6a6458","size":0.85,"mods":{"hp":0.9,"atk":0.95,"spd":1.15,"rate":1.05},"w":6,"blurb":"A pebble that rolls everywhere."},
     "bastion": {"name":"Bastion","type":"warden","col":"#e3b04b","shade":"#9a7220","size":1,"mods":{"hp":1.3,"atk":0.95,"spd":0.95,"rate":1},"w":3,"blurb":"A living fortress wall."},
-    "monolord": {"name":"Monolord","type":"warden","col":"#7a6a5a","shade":"#3a3028","size":1.15,"mods":{"hp":1.15,"atk":1.25,"spd":0.9,"rate":1},"w":1,"blurb":"A floating monolith with a crown."}
+    "monolord": {"name":"Monolord","type":"warden","col":"#7a6a5a","shade":"#3a3028","size":1.15,"mods":{"hp":1.15,"atk":1.25,"spd":0.9,"rate":1},"w":1,"blurb":"A floating monolith with a crown."},
+    "toxlet": {"name":"Toxlet","type":"venom","col":"#8fd14f","shade":"#4f7a2a","size":0.85,"mods":{"hp":0.9,"atk":1,"spd":1.1,"rate":1.05},"w":6,"blurb":"A bog newt with a dripping frill."},
+    "fangmire": {"name":"Fangmire","type":"venom","col":"#6fae3a","shade":"#3a5a1f","size":1,"mods":{"hp":1.05,"atk":1.1,"spd":1,"rate":1},"w":3,"blurb":"A coiled marsh serpent whose fangs glow green."},
+    "hydravine": {"name":"Hydravine","type":"venom","col":"#5a9a4a","shade":"#2a4a24","size":1.1,"mods":{"hp":1.3,"atk":1.15,"spd":0.9,"rate":0.95},"w":1,"blurb":"A three-headed vine hydra from the deep Sump."}
   },
   "HYBRIDS": [
     {"id":"blazewing","name":"Blazewing","types":["ember","gale"],"col":"#ff8a3d","shade":"#1f9585"},
@@ -69,6 +73,9 @@
     "pebblet": [["Pebblet",1,"slam","taunt"],["Rollstone",10,"slam","taunt"],["Boulderling",20,"rollBoulder","quake"],["Avalanchion",30,"boulderLob","fortress",["vig",7]]],
     "bastion": [["Bastion",1,"slam","taunt"],["Bulwark",12,"slamShock","taunt"],["Rampart",22,"slamShock","quake"],["Citadelion",32,"quakeSlam","fortress",["foc",7]]],
     "monolord": [["Monolord",1,"runeBolt","taunt"],["Obelord",15,"runeHoming","quake"],["Pantheon",28,"boulderLob","fortress",["pow",7]]],
+    "toxlet": [["Toxlet",1,"spore1","rotCloud"],["Toxfrill",10,"spore2","rotCloud"],["Blightnewt",20,"sporeFan","rotCloud"],["Plaguewyrm",30,"seedHoming","rotCloud",["pow",7]]],
+    "fangmire": [["Fangmire",1,"spore2","sporeField"],["Venomcoil",18,"sporeStream","rotCloud"],["Basilurk",30,"sporeMortar","rotCloud",["vig",7]]],
+    "hydravine": [["Hydravine",1,"sporeFan","rotCloud"],["Hydrabloom",25,"thornRing","rotCloud",["pow",8]]],
     "blazewing": [["Blazewing",1,"emberFan","gustDash"],["Phoenixwing",20,"foxfire","skyStrike"]],
     "bogbloom": [["Bogbloom",1,"bubbleBounce","sporeField"],["Mirelord",20,"whirlpool","rotCloud"]],
     "resonyx": [["Resonyx",1,"shard5","echoPing"],["Harmonyx",20,"prismBeam","stormCall"]],
@@ -84,7 +91,8 @@
     "echo": ["Ech","Vesp","Nox","Chir","Dus","Umb","Lur"],
     "gale": ["Zeph","Aer","Gus","Kes","Sky","Fal","Wisp"],
     "crystal": ["Pris","Gem","Qua","Opa","Lum","Shar","Glim"],
-    "warden": ["Gra","Bas","Tor","Mon","Ked","Ore","Hul"]
+    "warden": ["Gra","Bas","Tor","Mon","Ked","Ore","Hul"],
+    "venom": ["Tox","Ven","Bli","Mir","Sep","Fang","Ich"]
   },
   "END": [
     "der",

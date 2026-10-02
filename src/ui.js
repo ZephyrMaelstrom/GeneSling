@@ -1,6 +1,6 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
 import {save} from './save.js';
 import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
 import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
@@ -13,9 +13,11 @@ import {bredBy,buildPanel,hallPanel,mapTools,openLegend,openTrophy,renderBuildPa
 import {openShare,shareGo} from './share.js';
 import {demoGoalsHtml,feedbackHtml,sendFeedback,setStats,statsPanel} from './demo.js';
 import {mapH} from './map.js';
+import {contractBoard,labBloom,mapPicker,veinCodex} from './bloomui.js';
+import {craftMap,dropContract,takeContract,varietyRun} from './bloom.js';
 import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
 import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
-import {amt,buildPen,craft,craftWeapon,expAway,fatigueMul,give,itemByUid,itemName,makerText,mouths,newItem,overCap,repair,rosterCap,rosterCount,scrapItem,startExpedition,usable} from './jobs.js';
+import {serumLocus,useSerum,amt,buildPen,craft,craftWeapon,expAway,fatigueMul,give,itemByUid,itemName,makerText,mouths,newItem,overCap,repair,rosterCap,rosterCount,scrapItem,startExpedition,usable} from './jobs.js';
 import {candidateOption,expeditionPanel,fatBar,gearPanel,memberRow,memorialView,roleChip,rosterBar,runSupply,stationPanel,supplyPanel,workshopView} from './workui.js';
 import {startMarket,marketDay} from './exchange/market.js';
 import {viewExchange,economyPanel,runEconomy} from './exchangeui.js';
@@ -87,7 +89,7 @@ function viewRaid(){
   const risk=slots.filter(Boolean).map(c=>esc(c.name));[...L.guns,L.satchel].forEach(uid=>{const it=itemByUid(uid);if(it)risk.push(esc(itemName(it)))});if(L.tonics)risk.push(`${L.tonics} tonic${L.tonics>1?'s':''}`);
   const vt=secTier('vault');const keeps=[vt>=1&&'slot 3 creature',vt>=2&&'held weapons',vt>=4&&'slot 1 companion',vt>=5?'60% of coin and all ore':vt>=3&&'30% of coin',armoryTier()>=4&&vt<2&&'primary weapon'].filter(Boolean);
   const modes=Object.entries(MODES).map(([k,m])=>{const un=modeUnlocked(k);return`<label class="toggle ${un?'':'locked'}"><input type="checkbox" id="mode-${k}" data-act="mode" data-k="${k}" ${S.modes[k]&&un?'checked':''} ${un?'':'disabled'}> <span><b style="font-family:var(--display)">${m.name}</b>${un?'':' · locked'}<br><small class="status">${un?m.desc:`Reach War Room tier ${m.need[1]} to unlock.`}</small></span></label>`}).join('');
-  const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.set?'Floor 6':'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
+  const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.vein&&B.vein!=='rootworks'?BLOOM.VEINS[B.vein].short:'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
   const kn=keeperNeed();
   return`<div class="cols">
   <section class="card"><h2>Loadout</h2>
@@ -95,6 +97,7 @@ function viewRaid(){
     <p class="hint">Two companions fight beside you. Slot 3 holds a support creature for its passive, or stays free so a caged catch has somewhere to go.</p>
     <div class="slots">${slotHtml}</div>${combo}
     <h3>Gear</h3>${gearPanel()}
+    ${mapPicker()}${contractBoard()}
     <p class="hint">You'll carry ${Math.min(cageCap(),S.cages.basic+S.cages.gilded)} of up to ${cageCap()} cages. Unused cages come home if you extract.</p>
     <div class="risk"><b>Lost if you die:</b> ${risk.length?risk.join(', '):'nothing of yours'}, plus cages, buffs and loot.${keeps.length?' Your hideout keeps: '+keeps.join(', ')+'.':''}</div>
     ${modes?`<h3>Raid modes</h3><div class="modes">${modes}</div>`:''}
@@ -105,7 +108,7 @@ function viewRaid(){
     <div class="bar"><i style="width:${S.keeper.xp/kn*100}%;background:var(--gold)"></i></div>
     <p class="status">${S.keeper.xp}/${kn} XP. Every raid earns Keeper XP, even ones you lose. Each rank pays coin and a cage, unlocks a page of Ilsa's journal, and some open new sections.</p>
     <h3>Bosses</h3><div class="trophies">${bossRow}</div>
-    <p class="status">One of four bosses waits at the end of Floor 3 (best faced with companions around Lv 10). Beating it opens Floors 4–6, the Ember Abyss, where a second set of bosses waits (around Lv 25). First victories give memory shards.</p>
+    <p class="status">One of four bosses waits at the end of Floor 3 (best faced with companions around Lv 10). Beating it opens the five veins below: the Ember Abyss, the Drowned Galleries, the Hollow Choir, the Glasswind Spires and the Sump, each with its own twist and three bosses (around Lv 25). First victories give memory shards.</p>
     <h3>How raids work</h3>
     <ul class="plain">
       <li>Rooms seal until every enemy is beaten or caught. Enemies glow before they fire.</li>
@@ -202,7 +205,8 @@ function creCard(c){
     <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
     <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
     <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button>
-    <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button></div>
+    <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button>
+    ${amt('serum')>0&&serumLocus(c)?`<button class="btn small" data-act="serum" data-id="${c.id}" title="Raises the weaker copy of its lowest gene by 1">Gene serum (${amt('serum')})</button>`:''}</div>
   </div></article>`;
 }
 function viewRoster(){
@@ -262,7 +266,7 @@ function viewArmory(){return workshopView(ui)}
 const journalNew=()=>JOURNAL.filter(j=>j.rank<=S.keeper.level).length>S.journalRead;
 const milestoneReady=()=>{const m=DEX_MILES[S.dex.claimed];return!!m&&dexScore()>=m.n};
 function viewCodex(){
-  const T=[['creatures','Creatures'],['enemies','Enemies'],['bosses','Boss memories'],['journal','Ilsa’s journal'+(journalNew()?' •':'')],['reactions','Reactions & combos'],['story','The Bloom']];
+  const T=[['creatures','Creatures'],['enemies','Enemies'],['bosses','Boss memories'],['journal','Ilsa’s journal'+(journalNew()?' •':'')],['reactions','Reactions & combos'],['veins','The veins'],['story','The Bloom']];
   const nav=`<div class="filters">${T.map(([k,l])=>`<button class="tab" aria-selected="${ui.codex===k}" data-act="codex" data-k="${k}">${l}</button>`).join('')}</div>`;
   const sc=dexScore(),m=DEX_MILES[S.dex.claimed];
   const head=`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Codex · ${sc}/${DEX_TOTAL()} discovered</h2>
@@ -282,6 +286,8 @@ function viewCodex(){
   }else if(ui.codex==='journal'){
     S.journalRead=JOURNAL.filter(j=>j.rank<=S.keeper.level).length;save();renderTabs();
     body=`<section class="card journal"><p class="hint">Ilsa Marrow kept this journal. A new page turns up with each Keeper rank.</p>${JOURNAL.map(j=>j.rank<=S.keeper.level?`<article class="page"><h3>${j.title}</h3><p>${j.text}</p><small>Keeper rank ${j.rank}</small></article>`:`<article class="page locked"><h3>Missing page</h3><p>Reach Keeper rank ${j.rank} to find it.</p></article>`).join('')}</section>`;
+  }else if(ui.codex==='veins'){
+    body=veinCodex();
   }else if(ui.codex==='reactions'){
     body=`<div class="cols"><section class="card"><h2>Elemental reactions</h2><p class="hint">Companion attacks and some weapons apply an element. Hitting a foe that carries one element with a matching second element sets off a reaction.</p>
       <div class="elemrow">${Object.values(ELEM).map(e=>`<span class="chip" style="box-shadow:0 0 0 1.5px ${e.col};color:${e.col}">${e.name}</span>`).join('')}</div>
@@ -322,6 +328,7 @@ function viewLab(){
     <div class="row"><button class="btn" data-act="lab-evoready">Make loadout ready to evolve</button><button class="btn" data-act="lab-evomax">Fully evolve loadout</button><button class="btn" data-act="lab-bond">Max bond for loadout</button></div>
     <h3>Jump into a raid</h3>
     <div class="row">${[1,2,3,4,5,6].map(f=>`<button class="btn small" data-act="lab-floor" data-k="${f}">Floor ${f}</button>`).join('')}<button class="btn small" data-act="tutorial">Tutorial</button></div>
+    ${labBloom(ui)}
     <h3>Arena</h3>
     <p class="hint">One room with your loadout and endless cages. Spawn any enemy, boss, wild species, weapon, buff, curse or room twist. Nothing dies for real.</p>
     <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
@@ -510,6 +517,12 @@ function act(a,d){
     case'feedback':openModal(feedbackHtml());break;
     case'sendfeedback':{const rate=$('#fb-rate').value,text=$('#fb-text').value;sendFeedback(rate,text).then(how=>{const st=$('#fb-status');if(st)st.textContent=how==='empty'?'Write something first.':how==='firebase'?'Thank you! Sent.':'Thank you! Finish sending it on GitHub.'});break}
     case'stats':setStats(d.k==='1');closeModal();if(ui.tab==='settings')renderMain();break;
+    case'contract':if(takeContract(+d.i)){save();renderMain()}break;
+    case'contractdrop':dropContract();save();renderMain();break;
+    case'makemap':if(craftMap(d.k,ui.mapVein||BLOOM.VEIN_ORDER[0])){sfx('pickup');save();renderAll()}break;
+    case'serum':{const c=byId(+d.id);if(c&&useSerum(c)){sfx('level');save();renderAll()}break}
+    case'lab-vein':startRaid('raid',4,null,d.k);break;
+    case'lab-variety':ui.variety=varietyRun(20,Date.now()%100000);renderMain();break;
     case'reset':if(!ui.resetArm){ui.resetArm=true;renderMain();break}ui.resetArm=false;newGame();save();startMarket();ui.tab='raid';renderAll();openIntro(true);break;
   }
 }
@@ -529,6 +542,8 @@ document.addEventListener('change',e=>{
   else if(a==='expsel'){ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()}
   else if(a==='expdest'){ui.exp.dest=el.dataset.k;renderSecPanel()}
   else if(a==='mom'){ui.mom=el.value;renderMain()}
+  else if(a==='mapsel'){S.loadout.map=el.value?+el.value:null;save()}
+  else if(a==='mapvein'){ui.mapVein=el.value;renderMain()}
   else if(a==='retiresel'){ui.retire=el.value;ui.retireArm=null;renderSecPanel()}
   else if(a==='statsopt'){setStats(el.checked);renderMain()}
   else if(a==='dad'){ui.dad=el.value;renderMain()}

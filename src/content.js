@@ -24,6 +24,7 @@ import GENETICS from './data/genetics.json';
 import JOBS from './data/jobs.json';
 import EXCHANGE_DATA from './data/exchange.json';
 import PRIDE from './data/pride.json';
+import BLOOM from './data/bloom.json';
 
 
 /* ================= Types ================= */
@@ -74,7 +75,12 @@ const RES_IDS=Object.keys(RESEARCH);
 
 /* ================= Enemies ================= */
 const FOE_IDS=Object.keys(FOES).filter(k=>FOES[k].intro<99);
-function foePool(floor){const set=floor<=3?0:1,local=(floor-1)%3+1+set*3;return FOE_IDS.filter(k=>FOES[k].set===set&&FOES[k].intro<=local)}
+// The enemies of a floor: the vein's own, plus a few deep-dwellers it borrows from the Ember Abyss.
+function foePool(floor,vein){
+  vein=floor<=3?'rootworks':vein||'ember';const local=(floor-1)%3+1+(floor<=3?0:3);
+  const own=FOE_IDS.filter(k=>FOES[k].vein===vein&&FOES[k].intro<=local);
+  return[...own,...(BLOOM.VEINS[vein].extraFoes||[]).filter(k=>FOES[k]&&FOES[k].intro<=local)];
+}
 
 /* ================= Bosses ================= */
 const BOSS_IDS=Object.keys(BOSSES);
@@ -83,4 +89,4 @@ const BOSS_IDS=Object.keys(BOSSES);
 const NPC_IDS=Object.keys(NPCS);
 const makeName=t=>pick(SYL[t])+pick(END);
 
-export {PRIDE,EXCHANGE_DATA,JOBS,GENETICS,DEFECTS,TYPES,TIER,SPECIES,HYBRIDS,SYL,END,ATTACKS,ABILITIES,TYPE_ABIL,ELEM,REACTIONS,COMBOS,PERS,BOND_TH,BOND_PASSIVE,BOND_PERKS,GENES,GENE_HINT,TRAITS,NEG_TRAITS,GUNS,WEAPON_COST,SCRAP_ORE,DONATE_PTS,BUFFS,CURSES,ROOM_MODS,MODES,FOES,WILD_FIRE,BOSSES,SEC_TH,SECTIONS,ARMORY_TH,ARMORY_TIERS,KEEPER_PERKS,RESEARCH,RES_COST,LORE_INTRO,JOURNAL,NPCS,TYPE_IDS,SPECIES_IDS,BASE_SPECIES,speciesOf,hybridFor,typesOf,LINES,reactionFor,comboKey,comboFor,PERS_IDS,TRAIT_IDS,rollTraits,GUN_IDS,BUFF_IDS,CURSE_IDS,ROOM_MOD_IDS,SECTION_IDS,RES_IDS,FOE_IDS,foePool,BOSS_IDS,NPC_IDS,makeName};
+export {BLOOM,PRIDE,EXCHANGE_DATA,JOBS,GENETICS,DEFECTS,TYPES,TIER,SPECIES,HYBRIDS,SYL,END,ATTACKS,ABILITIES,TYPE_ABIL,ELEM,REACTIONS,COMBOS,PERS,BOND_TH,BOND_PASSIVE,BOND_PERKS,GENES,GENE_HINT,TRAITS,NEG_TRAITS,GUNS,WEAPON_COST,SCRAP_ORE,DONATE_PTS,BUFFS,CURSES,ROOM_MODS,MODES,FOES,WILD_FIRE,BOSSES,SEC_TH,SECTIONS,ARMORY_TH,ARMORY_TIERS,KEEPER_PERKS,RESEARCH,RES_COST,LORE_INTRO,JOURNAL,NPCS,TYPE_IDS,SPECIES_IDS,BASE_SPECIES,speciesOf,hybridFor,typesOf,LINES,reactionFor,comboKey,comboFor,PERS_IDS,TRAIT_IDS,rollTraits,GUN_IDS,BUFF_IDS,CURSE_IDS,ROOM_MOD_IDS,SECTION_IDS,RES_IDS,FOE_IDS,foePool,BOSS_IDS,NPC_IDS,makeName};

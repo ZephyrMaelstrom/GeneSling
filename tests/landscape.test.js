@@ -120,6 +120,22 @@ test('a released roster creature is gone unless caught again before the raid end
   assert.equal(t, false, 'nothing can be released in the tutorial');
 });
 
+test('raid menus scroll with a finger, while drags on the game stay blocked', async () => {
+  const r = await page.evaluate(async () => {
+    S.settings.god = true; startRaid('raid', 1); await new Promise(res => setTimeout(res, 200));
+    const drag = el => { const t = new Touch({identifier: 7, target: el, clientX: 300, clientY: 200});
+      const ev = new TouchEvent('touchmove', {bubbles: true, cancelable: true, touches: [t], changedTouches: [t]}); el.dispatchEvent(ev); return ev.defaultPrevented; };
+    document.getElementById('btnPause').click(); document.querySelector('[data-p="mtab"][data-k="party"]').click();
+    const box = document.getElementById('pauseBox'), inner = box.querySelector('.mcre') || box;
+    const menu = drag(inner), game = drag(document.getElementById('hudParty')), css = getComputedStyle(box).touchAction;
+    setPause(false); R.enemies = []; endRaid('quit'); closeModal(); S.settings.god = false;
+    return {menu, game, css, scrolls: box.scrollHeight >= box.clientHeight};
+  });
+  assert.equal(r.menu, false, 'a drag inside the menu is left to scroll it');
+  assert.equal(r.game, true, 'a drag elsewhere in the raid is still blocked');
+  assert.equal(r.css, 'pan-y');
+});
+
 test('the hideout’s pinned bar stays compact sideways', async () => {
   const h = await page.evaluate(async () => { ui.tab = 'hideout'; renderAll(); await new Promise(r => setTimeout(r, 100)); return document.querySelector('.topbar').getBoundingClientRect().height; });
   assert.ok(h <= 90, `topbar is ${h}px tall`);

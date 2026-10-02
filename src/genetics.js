@@ -114,6 +114,12 @@ function mutateAllele(r,k,v){
   if(k==='shine')return v===1||r()<M.bloomscar?2:1;
   return v;
 }
+// Mutates n random loci of a genome in place (one allele each), as the Sump does to its creatures. Returns n.
+function mutateGenome(G,n,r){
+  const loci=[...GRADE_LOCI,...TRAIT_LOCI,'hue','pat','size'];
+  for(let i=0;i<n;i++){const k=rpick(r,loci),j=r()<.5?0:1;G[k][j]=mutateAllele(r,k,G[k][j])}
+  return n;
+}
 // Builds a child genome from two parents. Returns {genome, mutations, defect}.
 // o.rate: mutation rate per locus; o.inbred: apply the inbreeding defect roll.
 function inherit(mom,dad,o,r){
@@ -233,7 +239,7 @@ function simulate(opts={},seed=1){
     mean:ok.length?round1(ok.reduce((a,b)=>a+b,0)/ok.length):null,results};
 }
 
-export {STAT_LOCI,WORK_LOCI,TRAIT_LOCI,BONUS_LOCUS,LOOK_LOCI,GRADE_LOCI,ALL_TRAIT_LOCI,ALL_LOCI,GOOD_TRAITS,
+export {mutateGenome,STAT_LOCI,WORK_LOCI,TRAIT_LOCI,BONUS_LOCUS,LOOK_LOCI,GRADE_LOCI,ALL_TRAIT_LOCI,ALL_LOCI,GOOD_TRAITS,
   rollGenome,genomeFrom,expressGrade,expressTrait,expressLooks,express,carriedTraits,isFinal,cutFree,bonusSlotOpen,
   isApex,hasApexAllele,gradeStars,passOdds,mutationRate,mutateAllele,inherit,inheritPersonality,
   ancestors,isInbred,pureRun,hasPedigree,breedOdds,simulate,rtrait};
