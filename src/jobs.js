@@ -203,7 +203,7 @@ function expeditionBlock(dest,ids){
   if(team.length!==J.EXPEDITION_TEAM)return`Choose ${J.EXPEDITION_TEAM} creatures.`;
   if(new Set(ids).size!==ids.length)return'Choose three different creatures.';
   if(team.some(expAway))return'One of them is already away.';
-  if(D.need&&!team.some(c=>D.need.some(t=>c.type===t||c.type2===t)))return`Needs a ${D.need.map(t=>TYPES[t].name).join(' or ')} creature.`;
+  if(D.need&&!team.some(c=>D.need.some(t=>c.type===t||c.type2===t))){const n=D.need.map(t=>TYPES[t].name).join(' or ');return`Needs ${/^[AEIOU]/.test(n)?'an':'a'} ${n} creature.`};
   return'';
 }
 function startExpedition(dest,ids){

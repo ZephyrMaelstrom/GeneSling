@@ -67,7 +67,7 @@ test('Phase 6 exit test: the Heart is playable, every ending can be picked, and 
     }
     return {endings, tiers, all: Object.keys(story().endings).sort(), shards: amt('apexshard')};
   });
-  for (const e of r.endings) assert.deepEqual(e, {k: e.k, shape: 'start,boss', asked: true, chosen: e.k, title: true});
+  for (const e of r.endings) assert.deepEqual(e, {k: e.k, shape: 'start,boss,secret', asked: true, chosen: e.k, title: true});
   assert.deepEqual(r.all, ['sever', 'sing', 'wake']);
   assert.deepEqual(r.tiers.map(t => t.cleared), [1, 2, 3, 4, 5]);
   assert.deepEqual(r.tiers.map(t => t.rules), [1, 2, 3, 4, 5]);
@@ -85,7 +85,7 @@ test('Unbound rules 1 to 5 bite: health, bullet speed, cages, ricochets and heal
     for (let i = 0; i < 200; i++) { const c = makeCreature('pebblet', 'wild', 5); const e = wildEnemy({x: R.p.x, y: R.p.y}, c, R.cur); e.hp = 0.0001 * e.maxHp; if (!tryCapture(e, 'gilded')) fails++; R.slot3 = null; R.enemies = R.enemies.filter(x => x !== e); }
     out.cages = fails > 20 && fails < 90;
     // Ricochet: an enemy bullet into a wall splits.
-    R.bullets = []; const wall = (() => { const r0 = R.cur; return {x: r0.ox * TS - 4, y: r0.cy}; })();
+    R.bullets = []; const wall = (() => { const r0 = R.cur; return {x: r0.ox * TS - 4, y: r0.cy - TS * 3}; })();   // off the door line, so the wall is solid
     shoot('e', wall.x + 30, wall.y, Math.PI, 300, 5, {life: 2}); for (let i = 0; i < 20 && R.bullets.length < 2; i++) updBullets(1 / 30);
     out.rico = R.bullets.length >= 2;
     R.p.hp = 50; healPlayer(10); out.thin = Math.abs(R.p.hp - 57) < 1e-6;
@@ -147,10 +147,11 @@ test('the genetics simulator: the Apex Chamber keeps the chase at 10 generations
 
 test('the Archive translates a relic a day with a Lumen archivist', async () => {
   const r = await run(() => {
-    labEndgame(); S.archive.read = 0; S.archive.unread = 3; S.archive.archivist = null; const known0 = knownLetters().size;
+    labEndgame(); const every = LORE.ARCHIVE.odileEvery; LORE.ARCHIVE.odileEvery = 1e9; S.archive.read = 0; S.archive.unread = 3; S.archive.archivist = null; const known0 = knownLetters().size;
     processDay(); const without = S.archive.read;
     S.archive.archivist = S.creatures.find(c => c.type === 'lumen').id;
     processDay(); processDay();
+    LORE.ARCHIVE.odileEvery = every;
     return {without, read: S.archive.read, letters: knownLetters().size > known0, wall: runeWall('KEEP IT ASLEEP')};
   });
   assert.equal(r.without, 0); assert.equal(r.read, 2); assert.equal(r.letters, true);
@@ -203,7 +204,7 @@ test('a v11 save loads into v12', async () => {
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, story: S.story, unbound: S.unbound.cleared, ribbons: S.creatures.every(c => Array.isArray(c.ribbons)), season: S.season.n}));
-  assert.deepEqual(s, {v: 12, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
+  assert.deepEqual(s, {v: 13, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

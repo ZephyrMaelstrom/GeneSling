@@ -3,11 +3,12 @@
    Splicer, Mutation Lab, Apex Chamber and weekly shows on the Breeding tab; the Archive's
    translation work on the Research tab; and the Test Lab's endgame shortcuts. */
 import {esc} from './util.js';
-import {ENDGAME as E,GENES} from './content.js';
+import {LORE,ENDGAME as E,GENES} from './content.js';
+import {wallKnown} from './lore.js';
 import {S,byId,formName,ui} from './state.js';
 import {amt,costText} from './jobs.js';
 import {GRADE_LOCI,STAT_LOCI} from './genetics.js';
-import {archivist,chamberBlock,chamberOpen,eligible,knownLetters,ladder,mutlabBonus,mutlabCreatures,nextTier,renown,rulesFor,runeWall,seasonOf,seasonTwist,showClasses,spliceBlock,story,unboundOpen,weekOf} from './endgame.js';
+import {archivist,chamberBlock,chamberOpen,eligible,knownLetters,ladder,mutlabBonus,mutlabCreatures,nextTier,renown,rulesFor,runeOf,runeWall,seasonOf,seasonTwist,showClasses,spliceBlock,story,unboundOpen,weekOf} from './endgame.js';
 
 const opt=(list,sel,lab)=>`<option value="">${lab}</option>`+list.map(c=>`<option value="${c.id}" ${String(sel)===String(c.id)?'selected':''}>${esc(c.name)} · ${esc(formName(c))} Lv ${c.level}</option>`).join('');
 
@@ -58,12 +59,15 @@ function showsPanel(){
 
 /* ---------- Research tab: the Archive ---------- */
 function archivePanel(){
-  const A=S.archive,lumens=S.creatures.filter(c=>c.type==='lumen'||c.type2==='lumen'),ar=archivist(),k=knownLetters();
+  const walls=LORE.WALLS.filter(w=>wallKnown(w.id)),A=S.archive,lumens=S.creatures.filter(c=>c.type==='lumen'||c.type2==='lumen'),ar=archivist(),k=knownLetters();
   const read=E.RELICS.slice(0,A.read).map(r=>`<li><b>${esc(r.name)}</b>: ${esc(r.text)}</li>`).join('');
   return`<section class="card" style="margin-bottom:16px"><h2>The Archive · rune translation</h2>
     <p class="hint">Old Keeper relics come from the Underheart and the Unbound Bloom. A Lumen creature working in the Archive translates one a day, and each relic teaches a few rune letters. ${A.read}/${E.RELICS.length} relics read, ${A.unread} waiting.</p>
     <div class="row"><select data-act="archivist" aria-label="Archivist">${opt(lumens,A.archivist,lumens.length?'No archivist':'No Lumen creatures yet')}</select><span class="status">${ar?`${esc(ar.name)} is studying.`:'Lumen creatures live only in the Underheart.'}</span></div>
-    <h3>Rune walls · ${k.size}/26 letters known</h3><ul class="plain runes">${E.RUNES.walls.map(w=>`<li>${esc(runeWall(w))}</li>`).join('')}</ul>
+    <h3>Rune walls · ${walls.length}/${LORE.WALLS.length} copied · ${k.size}/26 letters known</h3>
+    <p class="hint">Each rune stands for one letter, always the same one. Walls are copied the moment you walk into their room in the Bloom. Translated letters show in plain text; the rest you can work out yourself.</p>
+    ${walls.length?`<ul class="plain runes">${walls.map(w=>`<li>${esc(runeWall(w.text))}</li>`).join('')}</ul>`:'<p class="status">No walls copied yet. The first ones are on the Rootworks floors.</p>'}
+    <div class="cipher">${[...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map(ch=>`<span><b>${runeOf(ch)}</b>${k.has(ch)?ch:'?'}</span>`).join('')}</div>
     ${read?`<h3>Relics read</h3><ul class="plain">${read}</ul>`:''}</section>`;
 }
 

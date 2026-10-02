@@ -56,7 +56,9 @@ test('content and stats match the v5 build', async () => {
     if (CHANGED.includes(t)) continue;
     let want = PHASE1[t] ? PHASE1[t](structuredClone(a[t])) : a[t];
     if (PHASE2[t]) want = PHASE2[t](structuredClone(want), b[t]);
-    const got = GROWN.includes(t) ? noVein(structuredClone(v5Only(b[t], a[t]))) : b[t];
+    let got = GROWN.includes(t) ? noVein(structuredClone(v5Only(b[t], a[t]))) : b[t];
+    // Phase 7 (lore) adds three residents and a story arc after each v5 resident's quests; the v5 part is unchanged.
+    if (t === 'NPCS') got = Object.fromEntries(Object.keys(a.NPCS).map(k => [k, {...b.NPCS[k], quests: b.NPCS[k].quests.slice(0, a.NPCS[k].quests.length)}]));
     assert.deepEqual(got, want, `${t} differs from v5`);
   }
   // Every v5 trait is still there with the same name, effect and weight; it now also has a dominance flag.
@@ -73,7 +75,7 @@ test('NPCs arrive under the same conditions as v5', async () => {
     for (const lvl of [1, 2, 3, 4, 5]) {
       S.keeper.level = lvl;
       const v5 = {brannoc: true, pip: lvl >= 2, sorrel: lvl >= 4 || secTier('nursery') >= 1};   // the v5 arrive() functions
-      out.push(NPC_IDS.every(id => npcArrives(NPCS[id].arrive) === v5[id]));
+      out.push(Object.keys(v5).every(id => npcArrives(NPCS[id].arrive) === v5[id]));
     }
     return out;
   });

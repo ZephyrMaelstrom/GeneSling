@@ -10,6 +10,7 @@ import {breederMark,comfort,perk,pridify} from './hideout.js';
 import {DEMO} from './flags.js';
 import {bloomify} from './bloom.js';
 import {applyChamber,chamberBlock,endgameDay,endgamify,mutlabBonus} from './endgame.js';
+import {STORY_STATS,lorify} from './lore.js';
 import {pay,give,expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 let S=null;
 const setS=v=>{S=v};
@@ -103,7 +104,7 @@ function newGame(){
   const d=makeCreature('cindlet','bred',2,{name:'Kindle',sex:'F',traits:['worker','quick']});
   const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
   const f=makeCreature('coralisk','bred',2,{name:'Shoal',sex:'M',traits:['worker','thick']});
-  pridify(S);bloomify(S);endgamify(S);
+  pridify(S);bloomify(S);endgamify(S);lorify(S);
   S.creatures.push(a,b,c,d,e,f);S.creatures.forEach(x=>dexForm(x.species,0,'owned'));
   S.sections.forge.ids=[d.id];S.sections.garden.ids=[e.id];S.sections.spring.ids=[f.id];
   S.loadout.slots=[a.id,b.id,c.id];
@@ -158,8 +159,9 @@ function giveReward(r){
 }
 
 /* ---------- NPCs ---------- */
-function npcStat(q){return q.abs?(q.stat==='deepest'?S.progress.deepest||0:S.stats[q.stat]||0):S.stats[q.stat]||0}
-function npcArrives(a){return !!(a.always||(a.keeper!=null&&S.keeper.level>=a.keeper)||(a.section&&secTier(a.section)>=a.tier))}
+// Story counts (relics read, walls copied, pages found, Ilsa freed, an ending chosen, the deepest generation) are always absolute.
+function npcStat(q){if(STORY_STATS[q.stat])return STORY_STATS[q.stat]();return q.abs?(q.stat==='deepest'?S.progress.deepest||0:S.stats[q.stat]||0):S.stats[q.stat]||0}
+function npcArrives(a){return !!(a.always||(a.keeper!=null&&S.keeper.level>=a.keeper)||(a.deepest!=null&&(S.progress.deepest||0)>=a.deepest)||(a.section&&secTier(a.section)>=a.tier))}
 function syncNpcs(){const arrived=[];for(const id of NPC_IDS){if(S.npc[id])continue;if(npcArrives(NPCS[id].arrive)){const q=NPCS[id].quests[0];S.npc[id]={q:0,base:npcStat(q),met:false};arrived.push(id)}}return arrived}
 function npcQuest(id){const st=S.npc[id];if(!st)return null;const q=NPCS[id].quests[st.q];if(!q)return null;const v=q.abs?npcStat(q):npcStat(q)-st.base;return{q,v:Math.min(v,q.n),done:v>=q.n}}
 function npcAttention(id){const st=S.npc[id];if(!st)return false;if(!st.met)return true;const p=npcQuest(id);return!!(p&&p.done)}

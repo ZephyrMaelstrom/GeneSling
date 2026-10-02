@@ -18,6 +18,8 @@ import {enterUnderheart,lordShadows,openEndingChoice} from './veins.js';
 import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
 import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
+import {loreEnd,lorePick,loreRoom,placeLore,restChest} from './lore.js';
+import {LORE} from './content.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -35,6 +37,8 @@ function genMap(floor,arena,bossId,plan){
   const LR=BLOOM.LAYOUT_RULES,lay=plan.layout,vein=plan.vein,tws=new Set([BLOOM.VEINS[vein].twist,...(plan.twists||[])]),tier=plan.tier||0,ub=id=>ruleOn(tier,id);
   // The Heart: one antechamber and the Heart's own room.
   if(lay==='heart'&&!arena){const rooms=[],grid={},a=newRoom(rooms,grid,1,1,'start'),b=newRoom(rooms,grid,2,1,'boss');a.links.push(b);b.links.push(a);a.dist=0;b.dist=1;a.cleared=a.visited=true;b.bossId=bossId;
+    // The Keepers' Rest: a hidden room below the antechamber, given away by one rune wall.
+    const rest=newRoom(rooms,grid,1,2,'secret');rest.hidden=true;rest.host=a;rest.rest=true;rest.links.push(a);a.links.push(rest);rest.chest={x:0,y:0,open:false,rich:true};rest.plan={foes:[],wilds:[]};
     const M=buildMap(rooms,grid,4,4,floor,false,a);M.plan=plan;return M}
   const G=arena?1:4,rooms=[],grid={};const loc=localFloor(floor),set=floor>=4?1:0;
   const add=(gx,gy,kind)=>newRoom(rooms,grid,gx,gy,kind);
@@ -261,6 +265,7 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
   refreshSupport();R.p.hp=R.p.maxHp;
   if(mode==='raid'&&(secTier('warroom')>=5||res('combat',4)))applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true);
   if(tut)tutEnter(0);
+  placeLore(R.map);
   save();
   if(TOUCH)goLandscape();
   lockPage(true);$('#app').hidden=true;$('#raid').hidden=false;$('#actCol').hidden=!TOUCH;$('#hudKeys').hidden=TOUCH;
@@ -344,7 +349,7 @@ function spawnBoss(r,id){
   msg(`${d.name} awakens!`);
 }
 function enterRoom(r){
-  r.visited=true;if(r.spawned)return;r.spawned=true;
+  r.visited=true;loreRoom(r);if(r.spawned)return;r.spawned=true;
   if(r.kind==='boss'){r.locked=true;spawnBoss(r,r.bossId);pullComps();return}
   if(!r.plan)return;
   const f=R.map.floor;
@@ -365,22 +370,15 @@ function pullComps(){R.comps.forEach(m=>{if(m&&!roomAt(m.x,m.y,8)){m.x=R.p.x+rnd
 function buildArenaPanel(){
   R.arenaLv=10;
   const spOpts=TYPE_IDS.map(t=>`<optgroup label="${TYPES[t].name}">${speciesOf(t).map(k=>`<option value="${k}">${SPECIES[k].name}</option>`).join('')}</optgroup>`).join('');
-  $('#arenaPanel').innerHTML=`<details ${TOUCH?'':'open'}><summary>Test spawns</summary><div class="ap">
-  <span class="lab">Enemy</span>
-  <div class="row"><select id="arFoe" aria-label="Enemy">${[0,1].map(s=>`<optgroup label="${s?'Ember Abyss':'Overgrown Depths'}">${FOE_IDS.filter(k=>FOES[k].set===s).map(k=>`<option value="${k}">${FOES[k].name}</option>`).join('')}</optgroup>`).join('')}</select>
-  <select id="arTier" aria-label="Floor">${[1,2,3,4,5,6].map(f=>`<option value="${f}">Floor ${f}</option>`).join('')}</select></div>
-  <div class="row"><button class="btn small" data-spawn="foe">Spawn</button><button class="btn small" data-spawn="elite">Elite</button></div>
-  <span class="lab">Boss</span>
-  <div class="row"><select id="arBoss" aria-label="Boss">${BOSS_IDS.map(k=>`<option value="${k}">${BOSSES[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="boss">Spawn</button></div>
-  <span class="lab">Wild creature · Lv <span id="arenaLv">10</span></span>
-  <div class="row"><select id="arSp" aria-label="Species">${spOpts}</select><button class="btn small" data-spawn="lv-">−</button><button class="btn small" data-spawn="lv+">+</button></div>
-  <div class="row"><button class="btn small" data-spawn="wild">Spawn wild</button></div>
-  <span class="lab">Room twist</span>
-  <div class="row"><select id="arMod" aria-label="Room twist"><option value="">None</option>${ROOM_MOD_IDS.map(k=>`<option value="${k}">${ROOM_MODS[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="mod">Set</button></div>
-  <span class="lab">Curse</span>
-  <div class="row"><select id="arCurse" aria-label="Curse">${CURSE_IDS.map(k=>`<option value="${k}">${CURSES[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="curse">Take</button></div>
-  <div class="row"><button class="btn small" data-spawn="gun">Weapon</button><button class="btn small" data-spawn="buff">Buff</button><button class="btn small" data-spawn="combo">Charge combo</button></div>
-  <div class="row"><button class="btn small" data-spawn="clear">Clear</button><button class="btn small" data-spawn="heal">Heal party</button></div></div></details>`;
+  $('#arenaPanel').innerHTML=`<details ${TOUCH?"":"open"}><summary>Test spawns</summary><div class="ap">
+  <span class="lab">Enemy</span><div class="row"><select id="arFoe" aria-label="Enemy">${[0,1].map(s=>`<optgroup label="${s?'Ember Abyss':'Overgrown Depths'}">${FOE_IDS.filter(k=>FOES[k].set===s).map(k=>`<option value="${k}">${FOES[k].name}</option>`).join('')}</optgroup>`).join('')}</select>
+  <select id="arTier" aria-label="Floor">${[1,2,3,4,5,6].map(f=>`<option value="${f}">F${f}</option>`).join('')}</select><button class="btn small" data-spawn="foe">Spawn</button><button class="btn small" data-spawn="elite">Elite</button></div>
+  <span class="lab">Boss</span><div class="row"><select id="arBoss" aria-label="Boss">${BOSS_IDS.map(k=>`<option value="${k}">${BOSSES[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="boss">Spawn</button></div>
+  <span class="lab">Wild Lv <span id="arenaLv">10</span></span><div class="row"><select id="arSp" aria-label="Species">${spOpts}</select><button class="btn small" data-spawn="lv-">−</button><button class="btn small" data-spawn="lv+">+</button><button class="btn small" data-spawn="wild">Spawn</button></div>
+  <span class="lab">Twist</span><div class="row"><select id="arMod" aria-label="Room twist"><option value="">None</option>${ROOM_MOD_IDS.map(k=>`<option value="${k}">${ROOM_MODS[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="mod">Set</button></div>
+  <span class="lab">Curse</span><div class="row"><select id="arCurse" aria-label="Curse">${CURSE_IDS.map(k=>`<option value="${k}">${CURSES[k].name}</option>`).join('')}</select><button class="btn small" data-spawn="curse">Take</button></div>
+  <span class="lab">Give</span><div class="row"><button class="btn small" data-spawn="gun">Weapon</button><button class="btn small" data-spawn="buff">Buff</button><button class="btn small" data-spawn="combo">Combo</button></div>
+  <span class="lab">Room</span><div class="row"><button class="btn small" data-spawn="clear">Clear</button><button class="btn small" data-spawn="heal">Heal party</button></div></div></details>`;
 }
 $('#arenaPanel').addEventListener('click',e=>{
   const b=e.target.closest('[data-spawn]');if(!b||!R)return;const k=b.dataset.spawn;const r=R.map.start;
@@ -655,10 +653,9 @@ function openShop(r){
     R.shops[r.idx]=[{kind:'buff',id:bs[0],price:Math.round((30+15*f)*pm)},{kind:'buff',id:bs[1],price:Math.round((30+15*f)*pm)},{kind:'gun',id:g,price:Math.round(([0,55,85,125,170][gt]+10*f)*pm)},{kind:'heal',price:Math.round((25+5*f)*pm)},{kind:'cage',price:Math.round(30*pm)}];
   }
   const offers=R.shops[r.idx];
-  showOverlay(`<h2>Wandering Peddler</h2><p class="hint">Pays from coin found this raid first, then your bank. You have ${R.bag.coin} raid coin + ${S.coin} banked.</p>
-    <div class="choose-list">${offers.map((o,i)=>{const label=o.kind==='buff'?`${BUFFS[o.id].name}<small>${BUFFS[o.id].desc}</small>`:o.kind==='gun'?`${GUNS[o.id].name}<small>Tier ${GUNS[o.id].tier} ${GUNS[o.id].melee?'melee':'gun'} · ${GUNS[o.id].desc}</small>`:o.kind==='heal'?'Patch Kit<small>Heal yourself and your companions 50%</small>':'Snare Cage<small>One more basic cage for this raid</small>';
-      return`<button class="choice" data-p="buy" data-i="${i}" ${o.sold||R.bag.coin+S.coin<o.price?'disabled':''}><span style="flex:1"><span class="nm">${label}</span></span><b style="font-family:var(--display);color:var(--gold)">${o.sold?'Sold':o.price+'c'}</b></button>`}).join('')}</div>
-    <button class="btn primary" data-p="resume">Back to the raid</button>`);
+  showOverlay(`<div class="ovhead"><h2>Wandering Peddler</h2><span class="status">${R.bag.coin} raid coin + ${S.coin} banked. Raid coin is spent first.</span><button class="btn primary" data-p="resume">Back to the raid</button></div>
+    <div class="ovcols offers">${offers.map((o,i)=>{const [nm,ds]=o.kind==='buff'?[BUFFS[o.id].name,BUFFS[o.id].desc]:o.kind==='gun'?[GUNS[o.id].name,`Tier ${GUNS[o.id].tier} ${GUNS[o.id].melee?'melee':'gun'} · ${GUNS[o.id].desc}`]:o.kind==='heal'?['Patch Kit','Heal yourself and your companions 50%']:['Snare Cage','One more basic cage for this raid'];
+      return`<button class="choice offer" data-p="buy" data-i="${i}" ${o.sold||R.bag.coin+S.coin<o.price?'disabled':''}><span class="nm">${nm}</span><small>${ds}</small><b class="price">${o.sold?'Sold':o.price+'c'}</b></button>`}).join('')}</div>`);
   R.shopRoom=r;
 }
 function buy(i){
@@ -673,9 +670,8 @@ function buy(i){
 function openShrine(r){
   if(r.used){msg('The shrine has gone quiet.');return}
   if(!r.choices){r.cursed=rand()<.5;const bl=shuffle(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena'));r.choices=r.cursed?[...shuffle(CURSE_IDS.filter(k=>!R.curses.has(k))).slice(0,2).map(k=>({curse:k})),{buff:bl[0]}]:bl.slice(0,3).map(k=>({buff:k}))}
-  showOverlay(`<h2>${r.cursed?'Cursed Shrine':'Old Shrine'}</h2><p class="hint">${r.cursed?'Roots coil around this shrine. Its pacts are strong, and they cost something. Choose one gift. It lasts until this raid ends.':'Choose one blessing. It lasts until this raid ends.'}</p>
-    <div class="choose-list">${r.choices.map(c=>c.curse?`<button class="choice cursed" data-p="curse" data-k="${c.curse}"><span class="nm">${CURSES[c.curse].name} <span class="chip bad">Pact</span><small>${CURSES[c.curse].desc}</small></span></button>`:`<button class="choice" data-p="bless" data-k="${c.buff}"><span class="nm">${BUFFS[c.buff].name}<small>${BUFFS[c.buff].desc}</small></span></button>`).join('')}</div>
-    <button class="btn" data-p="resume">Decide later</button>`);
+  showOverlay(`<div class="ovhead"><h2>${r.cursed?'Cursed Shrine':'Old Shrine'}</h2><span class="status">${r.cursed?'Roots coil around this shrine. Its pacts are strong, and they cost something. Choose one gift.':'Choose one blessing.'} It lasts until this raid ends.</span><button class="btn" data-p="resume">Decide later</button></div>
+    <div class="ovcols c3">${r.choices.map(c=>c.curse?`<button class="choice offer cursed" data-p="curse" data-k="${c.curse}"><span class="nm">${CURSES[c.curse].name} <span class="chip bad">Pact</span></span><small>${CURSES[c.curse].desc}</small></button>`:`<button class="choice offer" data-p="bless" data-k="${c.buff}"><span class="nm">${BUFFS[c.buff].name}</span><small>${BUFFS[c.buff].desc}</small></button>`).join('')}</div>`);
   R.shrineRoom=r;
 }
 
@@ -802,6 +798,7 @@ function update(dt){
   else{const r2=roomAt(p.x,p.y,0);if(r2)R.cur=r2}
   R.map.rooms.forEach(rm=>{if(rm.tutLock)return;if(rm.locked&&!R.enemies.some(e=>e.room===rm)){rm.locked=false;rm.cleared=true;sfx('door');if(rm.kind!=='boss')msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
   R.map.rooms.forEach(rm=>{if(rm.chest&&!rm.chest.open&&!rm.locked&&dist(p,rm.chest)<34)openChest(rm)});
+  lorePick();
   for(let i=R.items.length-1;i>=0;i--){const it=R.items[i];if((it.kind==='buff'||it.kind==='loot')&&dist(it,p)<26){R.items.splice(i,1);if(it.kind==='buff')applyBuff(it.id);else takeLoot(it)}}
   if(!R.heardCrack&&R.map.cracks.size){const hear=partyHas('echo')||R.comps.some(m=>m&&!m.downed&&m.c.pers==='curious')||(R.slot3&&R.slot3.c.pers==='curious');
     if(hear){const range=bondComp('echo')?520:260;for(const[i]of R.map.cracks){const cx=(i%R.map.W+.5)*TS,cy=(Math.floor(i/R.map.W)+.5)*TS;if(Math.hypot(cx-p.x,cy-p.y)<range){R.heardCrack=true;msg('Your companion hears a hollow wall nearby.');break}}}}
@@ -1082,6 +1079,9 @@ function dropPrint(x,y){const ids=GUN_IDS.filter(k=>GUNS[k].tier>=JOBS.PRINTS.mi
 function openChest(r){
   r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*(R.fmods?R.fmods.coin:1)*(ruleOn(R.tier,'barren')?.5:1),rich=r.chest.rich;
   if(f>=7&&rand()<(R.tier?BLOOM.VEINS.unbound.rich.relic:ENDGAME.UNDERHEART.relicChest)){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  // In Act II the veins' old camps hold a few relics too, so the Archive's work can start before the Underheart.
+  else if(f>=4&&f<=6&&!R.tier&&rand()<LORE.ARCHIVE.relicChestVeins){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  restChest(r);
   if(r.cache){const E=BLOOM.EVENTS.list.cache,c=Math.round(ri(E.coin[0],E.coin[1])*gm);R.bag.coin+=c;for(let k=0;k<E.prints;k++)dropPrint(r.chest.x+(k?40:-40),r.chest.y+40);msg(`An estate cache! ${c} coin and old blueprints.`)}
   const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3),xm=rand()<.5?'hide':'dust',xn=ri(1,3)+(rich?2:0);R.bag.coin+=coin;
   const go=bagAdd('ore',ore,r.chest.x,r.chest.y),gf=bagAdd('food',food,r.chest.x,r.chest.y),gx=bagAdd(xm,xn,r.chest.x,r.chest.y);
@@ -1124,7 +1124,7 @@ function objectives(dt){
   }
 }
 function descend(f){
-  const{boss,M}=genFloor(R.seed,f,false,R.vein,R.tier);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
+  const{boss,M}=genFloor(R.seed,f,false,R.vein,R.tier);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;placeLore(M);
   R.p.x=M.start.cx;R.p.y=M.start.cy+40;R.trail=[];R.comps.forEach(m=>{if(m){m.x=R.p.x+rnd(-30,30);m.y=R.p.y+rnd(-10,30)}});
   R.enemies=[];R.bullets=[];R.fields=[];R.items=[];R.timers=[];R.stairT=0;R.ext=0;R.heardCrack=false;R.floorsSeen.add(f);sfx('door');
   S.progress.deepest=Math.max(S.progress.deepest||0,f);
@@ -1229,6 +1229,7 @@ function endRaid(outcome,via){
     if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
     const cg=scav?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
   }
+  const ln=loreEnd(outcome==='extract');if(ln)L.notes.push(ln);
   validGuns();
   if(R.deepening!=null){const d=recordDeepening(R.deepening,deepeningScore({deepest,kills:R.kills,coin:R.bag.coin,extracted:outcome==='extract',caught:caughtC.length}));L.notes.push(`Deepening, week ${R.deepening}: ${d.score} points, rank ${d.rank} of 100. Your best this week: ${d.best}.`)}
   if(R.mode==='raid'||scav){const cr=settleContract({extracted:outcome==='extract',bagCoin:R.bag.coin,bagOre:R.bag.ore,kills:R.kills,eliteKills:R.eliteKills||0,deepest,caught:caughtC});if(cr)L.notes.push(cr.text)}
@@ -1239,13 +1240,13 @@ function endRaid(outcome,via){
   track('raid_end',{outcome,floor:R.map.floor,deepest,mode:R.mode});
   processDay();save();marketDay();exitRaid();demoProgress();
   sfx(outcome==='extract'?'level':'fail');
-  const sec=(h,arr,col)=>arr.length?`<h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+  const sec=(h,arr,col)=>arr.length?`<div class="rsec"><h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);
   openModal(`<h2 class="res-title ${outcome==='extract'?'win':'lose'}">${title}</h2>${L.notes.map(n=>`<p>${esc(n)}</p>`).join('')}
     <div class="slot"><div class="slot-label">Keeper XP</div><p><b style="font-family:var(--display);color:var(--gold)">+${kx}</b> · rank ${S.keeper.level} (${S.keeper.xp}/${keeperNeed()}) · ${R.kills} defeated · deepest floor ${deepest}</p>${L.keeper.map(k=>`<p class="status" style="color:var(--gold)">${esc(k)}</p>`).join('')}</div>
-    ${sec('Caught',L.caught,'var(--gold)')}${sec('Proven',L.proven,'var(--mint)')}${sec('Came home',L.home)}${sec('Level ups',L.levels)}${sec('Bond',L.bond,'var(--sky)')}${sec('Titles',L.titles,'var(--gold)')}${sec('Loot banked',L.loot)}${sec('Lost',L.lost,'var(--rose)')}${sec('Quests',quests,'var(--gold)')}
+    <div class="report">${sec('Caught',L.caught,'var(--gold)')}${sec('Proven',L.proven,'var(--mint)')}${sec('Came home',L.home)}${sec('Level ups',L.levels)}${sec('Bond',L.bond,'var(--sky)')}${sec('Titles',L.titles,'var(--gold)')}${sec('Loot banked',L.loot)}${sec('Lost',L.lost,'var(--rose)')}${sec('Quests',quests,'var(--gold)')}</div>
     <p class="status">Day ${S.day} begins. ${esc(S.log[0].msg)}</p>
-    <div class="row"><button class="btn primary" data-act="close">Back to the hideout</button></div>`);
+    <div class="row"><button class="btn primary" data-act="close">Back to the hideout</button></div>`,true);
 }
 function exitRaid(){
   $('#raid').hidden=true;$('#app').hidden=false;lockPage(false);

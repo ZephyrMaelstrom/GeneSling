@@ -1,6 +1,6 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,JOURNAL,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {LORE,BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
 import {save} from './save.js';
 import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
 import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
@@ -8,6 +8,8 @@ import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
 import {R,startRaid} from './raid.js';
 import {DEMO} from './flags.js';
+import {formLore,labLore,pagesFound,secretHybridKnown,whisper} from './lore.js';
+import {journalView,labLorePanel,muralView,storyView} from './loreui.js';
 import {buyPlot,craftDecor,displayWeapon,retire,setSigil,storeItem,takeDownWeapon} from './hideout.js';
 import {bredBy,buildPanel,hallPanel,mapTools,openLegend,openTrophy,renderBuildPanel,sigilPanel,titleChips} from './prideui.js';
 import {openShare,shareGo} from './share.js';
@@ -195,7 +197,7 @@ function creCard(c){
   const bs=st.star,bp=BOND_PASSIVE[T],nextB=BOND_TH[bs];
   return`<article class="cre">${spr(c,72)}<div class="cre-main">
     <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
-    <div class="status">${esc(formName(c))} · ${sp.blurb}</div>${bredBy(c)}
+    <div class="status">${esc(formName(c))} · ${formLore(c.species,c.stage||0)||sp.blurb}</div>${bredBy(c)}
     <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${ribbonChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
     ${hpBar(c)}
     <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
@@ -251,7 +253,7 @@ function viewBreeding(){
   </section>
   <section class="card"><h2>Incubator</h2>${eggs||'<p class="empty">No eggs yet.</p>'}
     <h3>Known hybrid pairings</h3><p class="hint">Rare when the parents' types match a pairing, in either order. Hybrids have both types, +20% HP and attack, and one evolution at Lv 20.</p>
-    <ul class="plain">${HYBRIDS.map(h=>`<li><b>${h.name}</b>: ${TYPES[h.types[0]].name} + ${TYPES[h.types[1]].name}</li>`).join('')}</ul></section></div>
+    <ul class="plain">${HYBRIDS.filter(h=>h.id!==LORE.SECRET_HYBRID||secretHybridKnown()).map(h=>`<li><b>${h.name}</b>: ${TYPES[h.types[0]].name} + ${TYPES[h.types[1]].name}</li>`).join('')}</ul></section></div>
   <div class="cols" style="margin-top:16px">${breedingTools()}</div>`;
 }
 
@@ -268,10 +270,10 @@ function viewResearch(){
 function viewArmory(){return workshopView(ui)}
 
 /* ---------- Codex ---------- */
-const journalNew=()=>JOURNAL.filter(j=>j.rank<=S.keeper.level).length>S.journalRead;
+const journalNew=()=>pagesFound()>S.journalRead;
 const milestoneReady=()=>{const m=DEX_MILES[S.dex.claimed];return!!m&&dexScore()>=m.n};
 function viewCodex(){
-  const T=[['creatures','Creatures'],['enemies','Enemies'],['bosses','Boss memories'],['journal','Ilsa’s journal'+(journalNew()?' •':'')],['reactions','Reactions & combos'],['veins','The veins'],['story','The Bloom']];
+  const T=[['creatures','Creatures'],['enemies','Enemies'],['bosses','Boss memories'],['journal','Ilsa’s journal'+(journalNew()?' •':'')],['reactions','Reactions & combos'],['veins','The veins'],['story','The story so far'],['murals','Murals']];
   const nav=`<div class="filters">${T.map(([k,l])=>`<button class="tab" aria-selected="${ui.codex===k}" data-act="codex" data-k="${k}">${l}</button>`).join('')}</div>`;
   const sc=dexScore(),m=DEX_MILES[S.dex.claimed];
   const head=`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Codex · ${sc}/${DEX_TOTAL()} discovered</h2>
@@ -281,7 +283,7 @@ function viewCodex(){
     const tnav=`<div class="filters">${[...TYPE_IDS,'hybrid'].map(t=>`<button class="tab" aria-selected="${ui.dexType===t}" data-act="dextype" data-k="${t}">${t==='hybrid'?'Hybrids':TYPES[t].name}</button>`).join('')}</div>`;
     const list=ui.dexType==='hybrid'?HYBRIDS.map(h=>h.id):speciesOf(ui.dexType);
     body=`<section class="card">${tnav}<div class="dexlines">${list.map(sp=>{const L=LINES[sp];return`<div class="dexline"><div class="row" style="justify-content:space-between"><b>${SPECIES[sp].name} line</b><small class="status">${SPECIES[sp].hybrid?'Hybrid':({6:'Common',3:'Uncommon',1:'Rare'})[SPECIES[sp].w]}</small></div><div class="dexforms">${L.map((f,i)=>{const d=S.dex.forms[sp+':'+i]||{};const seen=!!d.seen;
-      return`<div class="dexform ${seen?'':'unseen'}">${sprSp(sp,i,56,!seen)}<b>${seen?f.name:'???'}</b><small>${i?`Lv ${f.lv}${f.need?' · '+GENES[f.need[0]]+' '+f.need[1]:''}`:'Base form'}</small>${seen?`<small>${ATTACKS[f.atk].name} · ${ABILITIES[f.abil].name}</small><small>${d.owned?'Owned':'Seen'}${d.caught?' · caught '+d.caught:''}</small>`:''}</div>`}).join('<i class="arrow">›</i>')}</div></div>`}).join('')}</div></section>`;
+      return`<div class="dexform ${seen?'':'unseen'}">${sprSp(sp,i,56,!seen)}<b>${seen?f.name:'???'}</b><small>${i?`Lv ${f.lv}${f.need?' · '+GENES[f.need[0]]+' '+f.need[1]:''}`:'Base form'}</small>${seen?`<small>${ATTACKS[f.atk].name} · ${ABILITIES[f.abil].name}</small><small>${d.owned?'Owned':'Seen'}${d.caught?' · caught '+d.caught:''}</small><small class="lore">${formLore(sp,i)}</small>`:''}</div>`}).join('<i class="arrow">›</i>')}</div></div>`}).join('')}</div></section>`;
   }else if(ui.codex==='enemies'){
     body=[0,1].map(s=>`<section class="card" style="margin-bottom:16px"><h3>${s?'The Ember Abyss · Floors 4–6':'Overgrown Depths · Floors 1–3'}</h3><div class="dexgrid">${FOE_IDS.filter(k=>FOES[k].set===s).map(k=>{const d=S.dex.foes[k];const F=FOES[k];
       return`<div class="dexform ${d?'':'unseen'}"><canvas class="spr" width="52" height="52" data-foe="${k}" ${d?'':'data-sil="1"'}></canvas><b>${d?F.name:'???'}</b><small>${d?`Floor ${F.intro} · ${d.kills} defeated`:`Appears from floor ${F.intro}`}</small>${d&&d.kills?`<small class="lore">${F.lore}</small>`:''}</div>`}).join('')}</div></section>`).join('');
@@ -289,8 +291,8 @@ function viewCodex(){
     body=`<section class="card"><p class="hint">Each boss drops a memory shard the first time you beat it, revealing who it was before the Bloom changed it.</p><div class="memories">${BOSS_IDS.map(b=>{const B=BOSSES[b],won=S.progress.bosses[b];
       return`<div class="memory ${won?'':'unseen'}"><canvas class="spr" width="64" height="64" data-boss="${b}" ${won?'':'data-sil="1"'}></canvas><div><b>${won?B.name:'Unknown memory'}</b><small class="status">${B.set?'Floor 6':'Floor 3'}${won?' · beaten '+won+'×':''}</small><p>${won?B.lore:'Defeat this boss to recover its memory.'}</p></div></div>`}).join('')}</div></section>`;
   }else if(ui.codex==='journal'){
-    S.journalRead=JOURNAL.filter(j=>j.rank<=S.keeper.level).length;save();renderTabs();
-    body=`<section class="card journal"><p class="hint">Ilsa Marrow kept this journal. A new page turns up with each Keeper rank.</p>${JOURNAL.map(j=>j.rank<=S.keeper.level?`<article class="page"><h3>${j.title}</h3><p>${j.text}</p><small>Keeper rank ${j.rank}</small></article>`:`<article class="page locked"><h3>Missing page</h3><p>Reach Keeper rank ${j.rank} to find it.</p></article>`).join('')}</section>`;
+    S.journalRead=pagesFound();save();renderTabs();
+    body=journalView();
   }else if(ui.codex==='veins'){
     body=veinCodex();
   }else if(ui.codex==='reactions'){
@@ -300,7 +302,7 @@ function viewCodex(){
       <section class="card"><h2>Combos</h2><p class="hint">Your slot 1 and slot 2 companions' types decide your combo. Press C or the Combo button when it charges.</p>
       <ul class="plain">${Object.entries(COMBOS).map(([k,c])=>`<li><b>${c.name}</b> (${k.split('+').map(t=>TYPES[t].name).join(' + ')}): ${c.desc}</li>`).join('')}<li><b>Twin Fury</b> (same type): both attack twice as fast for 5s.</li><li><b>Pack Rally</b> (any other pair): both attack 60% faster for 5s.</li></ul></section></div>`;
   }else{
-    body=`<section class="card journal"><article class="page"><h3>The Bloom</h3>${LORE_INTRO.map(p=>`<p>${p}</p>`).join('')}</article></section>`;
+    body=ui.codex==='murals'?muralView():storyView();
   }
   return head+body;
 }
@@ -335,6 +337,7 @@ function viewLab(){
     <div class="row">${[1,2,3,4,5,6].map(f=>`<button class="btn small" data-act="lab-floor" data-k="${f}">Floor ${f}</button>`).join('')}<button class="btn small" data-act="tutorial">Tutorial</button></div>
     ${labBloom(ui)}
     ${labEndgamePanel()}
+    ${labLorePanel()}
     <h3>Arena</h3>
     <p class="hint">One room with your loadout and endless cages. Spawn any enemy, boss, wild species, weapon, buff, curse or room twist. Nothing dies for real.</p>
     <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
@@ -386,7 +389,8 @@ function viewSettings(){
 }
 
 /* ---------- modals ---------- */
-function openModal(html){$('#modal').hidden=false;$('#modalBox').innerHTML=html;paintSprites($('#modalBox'))}
+// wide: a landscape report (the end of a raid) that lays its sections out in columns.
+function openModal(html,wide){$('#modal').hidden=false;$('#modalBox').classList.toggle('wide',!!wide);$('#modalBox').innerHTML=html;paintSprites($('#modalBox'))}
 // Modals waiting for the open one to close (the demo's end screen after a raid's results, say).
 const modalQueue=[];
 function closeModal(){$('#modal').hidden=true;const next=modalQueue.shift();if(next)openModal(next)}
@@ -408,7 +412,7 @@ function openNpc(id){
   const quest=p?`<div class="slot"><div class="slot-label">Quest ${st.q+1} of ${n.quests.length}</div><p>${p.q.text}</p>
     <div class="bar"><i style="width:${p.v/p.q.n*100}%;background:var(--gold)"></i></div><p class="status">${p.v}/${p.q.n} · Reward: ${questRewardText(p.q.reward)}</p>
     ${p.done?`<button class="btn primary" data-act="turnin" data-k="${id}">Turn in</button>`:''}</div>`:`<p class="status">${n.outro}</p>`;
-  openModal(`<div class="row" style="gap:12px;flex-wrap:nowrap"><canvas class="spr" width="72" height="72" data-npc="${id}"></canvas><div><h2>${n.name}</h2><p class="status">${n.role} · ${SECTIONS[n.home].name}</p></div></div>
+  openModal(`<div class="row" style="gap:12px;flex-wrap:nowrap"><canvas class="spr" width="72" height="72" data-npc="${id}"></canvas><div><h2>${n.name}</h2><p class="status">${n.role} · ${SECTIONS[n.home]?SECTIONS[n.home].name:n.homeName}</p></div></div>
     <blockquote class="say">${line}</blockquote>${quest}<div class="row"><button class="btn" data-act="close">Goodbye</button></div>`);
   renderTabs();
 }
@@ -534,6 +538,8 @@ function act(a,d){
     case'splice':{const dn=byId(+ui.spDonor);if(!dn)break;if(ui.spArm!==dn.id){ui.spArm=dn.id;renderMain();break}ui.spArm=null;if(splice(+ui.spDonor,+ui.spRecip,ui.spLocus||'pow')){ui.spDonor='';sfx('evolve');save();renderAll()}break}
     case'bloomscar':{const c=byId(+d.id);if(c&&amt('bloomscar')>0){give('bloomscar',-1);c.genome.shine[c.genome.shine[0]<=c.genome.shine[1]?0:1]=2;express(c);addLog(`A Bloomscar serum scarred ${c.name}'s shine gene.`);sfx('evolve');save();renderAll()}break}
     case'lab-endgame':labEndgame();save();renderAll();break;
+    case'lab-lore':labLore(d.k==='all');save();renderAll();break;
+    case'lab-whisper':{const w=whisper();addLog(w?'Whisper: '+w.text:'No whisper is left to hear in this act.');save();renderAll();break}
     case'lab-deep':startRaid('raid',+d.k,null,'ember');break;
     case'lab-unbound':story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;startRaid('raid',7,null,'unbound',{tier:+d.k});break;
     case'lab-ending':story().ilsa=true;story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;save();renderAll();break;

@@ -8,7 +8,7 @@ A browser creature-capture extraction roguelite: "Enter the Gungeon meets Palwor
 - `docs/ROADMAP.md`: the ten phases with checklists. **Tick boxes here as work lands.**
 - `docs/DEVELOPMENT_PHASES.md`: the reasoning, build list and exit test for each phase, plus risks.
 - `docs/CODE.md`: how the code is built, file by file, plus the rules for randomness, saves and tests.
-- `src/`: the game as ES modules; content tables are in `src/data/*.json`, genetics numbers in `src/data/genetics.json`, jobs and production numbers in `src/data/jobs.json`, market numbers in `src/data/exchange.json`, hideout-builder and demo numbers in `src/data/pride.json`, veins, layouts, events, contracts and maps in `src/data/bloom.json`, endgame numbers (endings, Unbound rules, Bloomlords, gene tools, relics, Renown, shows, the Deepening, seasons) in `src/data/endgame.json`. The market engine is in `src/exchange/`. `npm run build` bundles it into `dist/index.html` and the demo into `dist/demo/index.html` (generated, not committed).
+- `src/`: the game as ES modules; content tables are in `src/data/*.json`, genetics numbers in `src/data/genetics.json`, jobs and production numbers in `src/data/jobs.json`, market numbers in `src/data/exchange.json`, hideout-builder and demo numbers in `src/data/pride.json`, veins, layouts, events, contracts and maps in `src/data/bloom.json`, all the lore (acts, journal pages, relics, rune walls, whispers, murals, codex entries, residents' arcs) in `src/data/lore.json`, endgame numbers (endings, Unbound rules, Bloomlords, gene tools, relics, Renown, shows, the Deepening, seasons) in `src/data/endgame.json`. The market engine is in `src/exchange/`. `npm run build` bundles it into `dist/index.html` and the demo into `dist/demo/index.html` (generated, not committed).
 - `tests/`: the headless test suite. `prototype/archive/`: the old single-file builds, v1 to v5.
 
 ## Current status
@@ -20,7 +20,8 @@ A browser creature-capture extraction roguelite: "Enter the Gungeon meets Palwor
 - **Phase 3 (The Exchange)**: built, and its exit test passes (90-day Economy Sandbox meets all three targets).
 - **Phase 4 (Hideout builder and demo)**: built; the demo deploys to `/GeneSling/demo/`. Feedback and play stats need Conner's Firebase project in `src/data/firebase.json`. The exit test (testers share cards unprompted, half of demo players return) needs real players.
 - **Phase 5 (The Bloom expands)**: built; the variety half of the exit test passes (20 raids, no repeated combination). The other half (each vein's key type used in a tester's regular loadout) needs testers.
-- **Phase 6 (Underheart and endgame)**: built, and its exit test passes from a Test Lab endgame save (the Heart, all three endings, Unbound tiers 1 to 5; the Apex Chamber keeps the simulator median at 13 generations). Leaderboards and the Fresh Season ladder wait for online play. Next: Phase 7 (lore) and Phase 8. Update these lines when a phase's exit test passes.
+- **Phase 6 (Underheart and endgame)**: built, and its exit test passes from a Test Lab endgame save (the Heart, all three endings, Unbound tiers 1 to 5; the Apex Chamber keeps the simulator median at 13 generations). Leaderboards and the Fresh Season ladder wait for online play.
+- **Phase 7 (Lore)**: built, and its exit test passes as automated checks (the fragments arrive act by act in story order; a solver given only the rune walls breaks the cipher). A human read-through of the fragments is still worth doing. The whole UI is landscape-first: raid menus fit the screen with nothing scrolling, and the hideout has a left tab rail. Next: Phase 8 (balance and playtest). Update these lines when a phase's exit test passes.
 
 ## Commands
 
@@ -41,7 +42,7 @@ Run lint and the tests after changing anything in `src/`. CI runs both on every 
 - In breeding, the mother sets species and type; the father weighs stats more heavily. Rare cross-type pairings make dual-type hybrids.
 - Creature types give both combat effects and hideout perks; rarer types come rarely from raids.
 - Art: simple 2D, colorful retro fantasy. Sprites are drawn procedurally on canvas, no image assets so far.
-- Touch-first: fixed on-screen joysticks, playable on a phone. For now the layout targets an Android S23 held sideways (about 780 × 360): move stick bottom left, attack stick bottom right, skills 1 and 2 above it, combo above those, a large Catch button left of it, minimap and the ⚙ menu (backpack, creatures, weapons, settings) top right. Check layouts at 780 × 360.
+- Touch-first: fixed on-screen joysticks, playable on a phone. The whole game targets an Android S23 held sideways (about 780 × 360): move stick bottom left, attack stick bottom right, skills 1 and 2 above it, combo above those, a large Catch button left of it, minimap and the ⚙ menu (backpack, creatures, weapons, settings) top right. Raid menus must show everything at once with no scrolling (lay them out in columns; `fitOverlay()` is only a safety net); hideout pages may scroll, beside the left tab rail. Check layouts at 780 × 360.
 - No premium currency, loot boxes or paid timers, ever.
 - Hosting: GitHub Pages plus Firebase (same setup as Conner's APlay app).
 - Every feature must serve one of the six pillars in `docs/DESIGN.md`.

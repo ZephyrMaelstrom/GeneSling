@@ -27,7 +27,7 @@ const tileY=y=>G.top+(y-minRow())*T;
 const toTile=(px,py)=>({x:Math.floor(px/T),y:Math.floor((py-G.top)/T)+minRow()});
 // A station's building box, as drawBuilding wants it: x centre, y base, w width.
 function bbox(i){const [w,h]=foot(i.key);return{x:tileX(i.x)+w*T/2,y:tileY(i.y)+h*T-28,w:125,link:i.key==='archive'?'research':null,name:i.key==='archive'?'Archive':null}}
-function npcSpot(id){const i=S.layout.find(x=>x.key===NPC_HOME[id]);if(!i)return{x:500,y:300};const [w,h]=foot(i.key);return{x:tileX(i.x)+w*T+22,y:tileY(i.y)+h*T-24}}
+function npcSpot(id){const i=S.layout.find(x=>x.key===(NPC_HOME[id]||NPCS[id].home));if(!i)return{x:500,y:300};const [w,h]=foot(i.key);return{x:tileX(i.x)+w*T+22,y:tileY(i.y)+h*T-24}}
 
 /* ---------- background: sky, cliff, the cave mouth, terraces and grass ---------- */
 function hmapBg(){

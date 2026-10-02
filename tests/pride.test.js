@@ -255,7 +255,7 @@ test('a v9 save loads into the current version with the old map’s layout, and 
   void r;
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, layout: S.layout.length === defaultLayout().length, plots: S.plots, trophies: S.trophies.map(t => [t.boss, !!t.legacy]), placed: S.layout.some(i => i.key === 'trophy'), titles: S.creatures.every(c => Array.isArray(c.titles)), story: trophyStory(S.trophies[0])}));
-  assert.equal(s.v, 12);
+  assert.equal(s.v, 13);
   assert.equal(s.layout, true);
   assert.equal(s.plots, 0);
   assert.deepEqual(s.trophies, [['bloom', true]]);

@@ -16,16 +16,24 @@ import ENEMIES_DATA from './data/enemies.json';
 const {FOES,WILD_FIRE}=ENEMIES_DATA;
 import BOSSES_DATA from './data/bosses.json';
 const {BOSSES}=BOSSES_DATA;
+// Phase 7: fuller memories for the bosses added after v5 (the v5 ones keep their words).
+for(const [k,t] of Object.entries(LORE.MEMORIES))if(BOSSES[k])BOSSES[k].lore=t;
 import HIDEOUT_DATA from './data/hideout.json';
 const {SEC_TH,SECTIONS,ARMORY_TH,ARMORY_TIERS,KEEPER_PERKS,RESEARCH,RES_COST}=HIDEOUT_DATA;
 import STORY_DATA from './data/story.json';
-const {LORE_INTRO,JOURNAL,NPCS}=STORY_DATA;
+const {LORE_INTRO,JOURNAL}=STORY_DATA;
+// Phase 7: the three new residents, and each original resident's story arc after their v5 quests.
+const NPCS={...STORY_DATA.NPCS,...LORE.RESIDENTS};
+// The forty Old Keeper relics, in the order the Archive reads them.
+ENDGAME.RELICS=LORE.RELICS;
+for(const [k,qs] of Object.entries(LORE.ARCS))NPCS[k].quests=[...NPCS[k].quests,...qs];
 import GENETICS from './data/genetics.json';
 import JOBS from './data/jobs.json';
 import EXCHANGE_DATA from './data/exchange.json';
 import PRIDE from './data/pride.json';
 import BLOOM from './data/bloom.json';
 import ENDGAME from './data/endgame.json';
+import LORE from './data/lore.json';
 
 
 /* ================= Types ================= */
@@ -90,4 +98,4 @@ const BOSS_IDS=Object.keys(BOSSES);
 const NPC_IDS=Object.keys(NPCS);
 const makeName=t=>pick(SYL[t])+pick(END);
 
-export {ENDGAME,BLOOM,PRIDE,EXCHANGE_DATA,JOBS,GENETICS,DEFECTS,TYPES,TIER,SPECIES,HYBRIDS,SYL,END,ATTACKS,ABILITIES,TYPE_ABIL,ELEM,REACTIONS,COMBOS,PERS,BOND_TH,BOND_PASSIVE,BOND_PERKS,GENES,GENE_HINT,TRAITS,NEG_TRAITS,GUNS,WEAPON_COST,SCRAP_ORE,DONATE_PTS,BUFFS,CURSES,ROOM_MODS,MODES,FOES,WILD_FIRE,BOSSES,SEC_TH,SECTIONS,ARMORY_TH,ARMORY_TIERS,KEEPER_PERKS,RESEARCH,RES_COST,LORE_INTRO,JOURNAL,NPCS,TYPE_IDS,SPECIES_IDS,BASE_SPECIES,speciesOf,hybridFor,typesOf,LINES,reactionFor,comboKey,comboFor,PERS_IDS,TRAIT_IDS,rollTraits,GUN_IDS,BUFF_IDS,CURSE_IDS,ROOM_MOD_IDS,SECTION_IDS,RES_IDS,FOE_IDS,foePool,BOSS_IDS,NPC_IDS,makeName};
+export {LORE,ENDGAME,BLOOM,PRIDE,EXCHANGE_DATA,JOBS,GENETICS,DEFECTS,TYPES,TIER,SPECIES,HYBRIDS,SYL,END,ATTACKS,ABILITIES,TYPE_ABIL,ELEM,REACTIONS,COMBOS,PERS,BOND_TH,BOND_PASSIVE,BOND_PERKS,GENES,GENE_HINT,TRAITS,NEG_TRAITS,GUNS,WEAPON_COST,SCRAP_ORE,DONATE_PTS,BUFFS,CURSES,ROOM_MODS,MODES,FOES,WILD_FIRE,BOSSES,SEC_TH,SECTIONS,ARMORY_TH,ARMORY_TIERS,KEEPER_PERKS,RESEARCH,RES_COST,LORE_INTRO,JOURNAL,NPCS,TYPE_IDS,SPECIES_IDS,BASE_SPECIES,speciesOf,hybridFor,typesOf,LINES,reactionFor,comboKey,comboFor,PERS_IDS,TRAIT_IDS,rollTraits,GUN_IDS,BUFF_IDS,CURSE_IDS,ROOM_MOD_IDS,SECTION_IDS,RES_IDS,FOE_IDS,foePool,BOSS_IDS,NPC_IDS,makeName};
