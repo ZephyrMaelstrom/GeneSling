@@ -1,0 +1,1817 @@
+<title>GeneSling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky resource header + tab rail over one working panel; raids take over the screen as a canvas overlay */
+:root{
+  --night:#17122e; --deep:#0e0a1f; --panel:#231b45; --panel2:#2d2457; --line:#4b3e87;
+  --ink:#f6eedb; --muted:#b4a9d8; --gold:#ffcf4a; --gold-d:#b5861b; --mint:#5de8b0; --rose:#ff6688; --sky:#58c2ff;
+  --display:'Pixelify Sans','Courier New',monospace; --body:'Alegreya Sans','Trebuchet MS',sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px),radial-gradient(rgba(255,207,74,.06) 1px,transparent 1.2px);
+  background-size:26px 26px,57px 57px;background-position:0 0,13px 9px}
+*{box-sizing:border-box}
+button,select,input{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.02em}
+h2{font-size:1.25rem}
+h3{font-size:1.05rem}
+p{margin:0}
+.app{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--night);padding-block:12px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:2px solid var(--line)}
+.brand{font-family:var(--display);font-size:1.7rem;font-weight:700;color:var(--gold);text-shadow:2px 2px 0 var(--rose),4px 4px 0 var(--deep);letter-spacing:.04em}
+.res{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.pill{font-family:var(--display);font-size:.92rem;background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:3px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill b{color:var(--gold);font-weight:600}
+.pill small{color:var(--muted);font-family:var(--body);font-size:.78rem}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding-block:12px 4px;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:var(--display);background:var(--panel);border:0;box-shadow:0 0 0 2px var(--line);padding:7px 14px;cursor:pointer;white-space:nowrap;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--gold);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d)}
+.tab:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+main{padding-top:12px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}
+.cols{display:grid;gap:16px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+@media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);box-shadow:0 0 0 2px var(--line),5px 5px 0 0 var(--deep);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hint{color:var(--muted);font-size:.95rem;max-width:65ch}
+.btn{font-family:var(--display);background:var(--panel2);border:0;box-shadow:0 0 0 2px var(--line),0 3px 0 2px var(--deep);padding:7px 12px;cursor:pointer;transition:transform .05s}
+.btn:active{transform:translateY(2px)}
+.btn.primary{background:var(--gold);color:var(--deep);box-shadow:0 0 0 2px var(--gold-d),0 3px 0 2px var(--gold-d)}
+.btn.danger{background:#5a1d33;box-shadow:0 0 0 2px var(--rose),0 3px 0 2px #2d0b18}
+.btn.small{padding:4px 9px;font-size:.85rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-block;font-family:var(--display);font-size:.78rem;padding:1px 7px;background:var(--panel2);box-shadow:0 0 0 1.5px var(--line);white-space:nowrap}
+.chip.type{background:var(--c);color:var(--deep);box-shadow:0 0 0 1.5px var(--deep)}
+.chip.warn{background:#5c4410;color:var(--gold);box-shadow:0 0 0 1.5px var(--gold-d)}
+.chip.good{background:#123d33;color:var(--mint);box-shadow:0 0 0 1.5px #1f7a62}
+.chip.bad{background:#4a1528;color:var(--rose);box-shadow:0 0 0 1.5px var(--rose)}
+.bar{height:8px;background:var(--deep);box-shadow:0 0 0 1.5px var(--line);position:relative;overflow:hidden}
+.bar>i{position:absolute;inset:0 auto 0 0;background:var(--mint)}
+.bar.hp>i{background:var(--mint)}
+.bar.low>i{background:var(--rose)}
+canvas.spr{image-rendering:pixelated;background:var(--deep);box-shadow:0 0 0 2px var(--line);flex:none}
+.cre{display:flex;gap:12px;background:var(--panel);box-shadow:0 0 0 2px var(--line),5px 5px 0 0 var(--deep);padding:12px;min-width:0}
+.cre-main{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.cre-name{font-family:var(--display);font-size:1.12rem;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.cre-name .lv{color:var(--gold);font-size:.9rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0;font-variant-numeric:tabular-nums}
+.stats div{background:var(--deep);padding:3px 6px}
+.stats dt{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.stats dd{margin:0;font-family:var(--display)}
+.genes{display:grid;grid-template-columns:auto 1fr auto;gap:3px 8px;align-items:center;font-size:.85rem}
+.genes .g{height:6px;background:var(--deep);position:relative}
+.genes .g i{position:absolute;inset:0 auto 0 0;background:var(--sky)}
+.genes span:last-child{font-family:var(--display);font-variant-numeric:tabular-nums}
+.trait{font-size:.9rem}
+.trait b{font-family:var(--display);font-weight:600;color:var(--gold)}
+.status{font-size:.85rem;color:var(--muted)}
+.slots{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:640px){.slots{grid-template-columns:minmax(0,1fr)}}
+.slot{background:var(--deep);box-shadow:0 0 0 2px var(--line);padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.slot.support{box-shadow:0 0 0 2px var(--sky)}
+.slot-label{font-family:var(--display);font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.slot-body{display:flex;gap:10px;align-items:center;min-width:0}
+.slot-body .nm{font-family:var(--display);font-size:1.05rem}
+.guns{display:flex;flex-wrap:wrap;gap:8px}
+.gun{background:var(--deep);border:0;box-shadow:0 0 0 2px var(--line);padding:8px 10px;cursor:pointer;text-align:left;min-width:150px;flex:1}
+.gun[aria-pressed="true"]{box-shadow:0 0 0 2px var(--gold),0 0 0 4px var(--gold-d)}
+.gun b{font-family:var(--display);display:block}
+.gun small{color:var(--muted)}
+.risk{background:#2c1230;box-shadow:0 0 0 2px var(--rose);padding:10px 12px;font-size:.95rem}
+.risk b{color:var(--rose);font-family:var(--display);font-weight:600}
+.station{gap:10px}
+.station-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.workers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.worker{background:var(--deep);padding:8px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0}
+.worker select{width:100%;background:var(--panel2);border:0;box-shadow:0 0 0 1.5px var(--line);padding:4px}
+.worker .lab{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow:auto}
+.log li{background:var(--deep);padding:6px 10px;font-size:.92rem}
+.log li span{font-family:var(--display);color:var(--gold);margin-right:6px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--display);text-align:right}
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.9rem}
+.field select,.field input[type=number]{background:var(--deep);border:0;box-shadow:0 0 0 1.5px var(--line);padding:6px}
+.toggle{display:flex;gap:8px;align-items:center;cursor:pointer}
+.empty{color:var(--muted);font-style:italic}
+kbd{font-family:var(--display);background:var(--deep);box-shadow:0 0 0 1.5px var(--line);padding:0 5px;font-size:.85rem}
+ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+/* modal */
+#modal{position:fixed;inset:0;z-index:80;background:rgba(8,5,20,.78);display:flex;align-items:center;justify-content:center;padding:16px}
+#modal .box{background:var(--panel);box-shadow:0 0 0 2px var(--gold-d),6px 6px 0 0 var(--deep);padding:18px;width:min(560px,100%);max-height:86vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.choose-list{display:flex;flex-direction:column;gap:8px}
+.choice{display:flex;gap:10px;align-items:center;background:var(--deep);border:0;box-shadow:0 0 0 2px var(--line);padding:8px;cursor:pointer;text-align:left;width:100%}
+.choice:hover{box-shadow:0 0 0 2px var(--gold)}
+.choice .nm{font-family:var(--display)}
+.choice small{color:var(--muted);display:block}
+.res-title{font-size:1.6rem}
+.res-title.win{color:var(--mint)}
+.res-title.lose{color:var(--rose)}
+/* raid overlay */
+#raid{position:fixed;inset:0;z-index:50;background:var(--deep);touch-action:none;user-select:none;-webkit-user-select:none;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.hud{position:absolute;pointer-events:none;font-family:var(--display)}
+.hud-tl{top:calc(env(safe-area-inset-top,0px) + 10px);left:10px;display:flex;flex-direction:column;gap:6px;width:min(250px,48vw)}
+.hud-box{background:rgba(14,10,31,.82);box-shadow:0 0 0 2px var(--line);padding:6px 8px}
+.hud-hp{height:12px;background:#2a0f1c;position:relative;box-shadow:0 0 0 1.5px var(--deep)}
+.hud-hp i{position:absolute;inset:0 auto 0 0;background:var(--rose)}
+.hud-line{display:flex;justify-content:space-between;font-size:.85rem;gap:8px}
+.hud-tr{top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+#mini{width:120px;height:120px;background:rgba(14,10,31,.82);box-shadow:0 0 0 2px var(--line)}
+.hud-party{display:flex;flex-direction:column;gap:5px}
+.pc{background:rgba(14,10,31,.82);box-shadow:0 0 0 2px var(--line);padding:4px 7px;font-size:.8rem;display:grid;grid-template-columns:auto 1fr;gap:2px 6px;align-items:center}
+.pc .key{color:var(--gold)}
+.pc .mini-bar{grid-column:1/-1;height:5px;background:#222;position:relative}
+.pc .mini-bar i{position:absolute;inset:0 auto 0 0;background:var(--mint)}
+.pc .cdb{grid-column:1/-1;height:3px;background:#222;position:relative}
+.pc .cdb i{position:absolute;inset:0 auto 0 0;background:var(--sky)}
+.pc.down{box-shadow:0 0 0 2px var(--rose)}
+.pc.caged{box-shadow:0 0 0 2px var(--gold)}
+#hudMsg{left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);background:rgba(14,10,31,.9);box-shadow:0 0 0 2px var(--gold-d);padding:6px 12px;max-width:min(520px,60vw);text-align:center;font-size:.95rem}
+#hudPrompt{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);background:rgba(14,10,31,.9);box-shadow:0 0 0 2px var(--sky);padding:6px 12px;text-align:center;max-width:80vw}
+.hud-keys{left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);font-size:.78rem;color:var(--muted);background:rgba(14,10,31,.75);padding:5px 8px;max-width:60vw}
+.raid-btns{position:absolute;top:calc(env(safe-area-inset-top,0px) + 136px);right:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+#pause{position:absolute;inset:0;background:rgba(8,5,20,.8);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+#pause .box{background:var(--panel);box-shadow:0 0 0 2px var(--line);padding:18px;display:flex;flex-direction:column;gap:10px;width:min(380px,100%)}
+#arenaPanel{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 176px);display:flex;flex-direction:column;gap:5px;max-width:200px;background:rgba(14,10,31,.85);box-shadow:0 0 0 2px var(--line);padding:8px;max-height:55vh;overflow:auto}
+#arenaPanel summary{font-family:var(--display);cursor:pointer;color:var(--gold)}
+#arenaPanel .ap{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-items:flex-start}
+#arenaPanel .lab{font-family:var(--display);font-size:.78rem;color:var(--muted);text-transform:uppercase}
+#arenaPanel .row{gap:4px}
+#touch{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:grid;grid-template-columns:repeat(3,56px);gap:8px}
+.tb{width:56px;height:56px;border-radius:50%;border:0;background:rgba(45,36,87,.85);box-shadow:0 0 0 2px var(--line);font-family:var(--display);font-size:.78rem;color:var(--ink);touch-action:none}
+.tb.big{background:rgba(255,207,74,.85);color:var(--deep)}
+.chip.sex{font-weight:700}
+.chip.sex.f{background:#4a1a35;color:#ff8fb1;box-shadow:0 0 0 1.5px #b3507a}
+.chip.sex.m{background:#14304a;color:#7fc8ff;box-shadow:0 0 0 1.5px #3a7ab3}
+ul.traits{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+ul.traits b{font-family:var(--display);font-weight:600;color:var(--gold)}
+ul.traits li.neg b{color:var(--rose)}
+.genes .g b{position:absolute;top:-2px;width:4px;height:10px;background:var(--gold)}
+.gunslot{background:var(--deep);box-shadow:0 0 0 2px var(--line);padding:10px;display:flex;flex-direction:column;gap:6px;flex:1;min-width:min(100%,220px)}
+.gunslot select{background:var(--panel2);border:0;box-shadow:0 0 0 1.5px var(--line);padding:6px}
+.gunslot small{color:var(--muted)}
+.bchips{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.bchip{font-size:.68rem;background:#123d33;color:var(--mint);padding:0 5px}
+#hudGun .on{color:var(--gold)}
+#hudGun span:not(.on){color:var(--muted)}
+.choice[disabled]{opacity:.45;cursor:not-allowed}
+.choice small{color:var(--muted);display:block;font-family:var(--body)}
+#arenaPanel select{background:var(--panel2);border:0;box-shadow:0 0 0 1.5px var(--line);padding:3px;max-width:100%}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">GeneSling</div>
+    <div class="res" id="res"></div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <main id="main"></main>
+</div>
+
+<div id="modal" hidden><div class="box" id="modalBox"></div></div>
+
+<div id="raid" hidden>
+  <canvas id="cv"></canvas>
+  <div class="hud hud-tl">
+    <div class="hud-box">
+      <div class="hud-line"><span id="hudFloor">Floor 1</span><span id="hudTime">8:00</span></div>
+      <div class="hud-hp"><i id="hudHp"></i></div>
+      <div class="hud-line"><span id="hudHpTxt">100/100</span><span id="hudGun">Pistol</span></div>
+    </div>
+    <div class="hud-party" id="hudParty"></div>
+    <div class="hud-box" id="hudBag"></div>
+  </div>
+  <div class="hud hud-tr"><canvas id="mini" width="240" height="240"></canvas></div>
+  <div class="raid-btns">
+    <button class="btn small" id="btnPause" style="pointer-events:auto">Pause</button>
+  </div>
+  <div class="hud" id="hudMsg" hidden></div>
+  <div class="hud" id="hudPrompt" hidden></div>
+  <div class="hud hud-keys" id="hudKeys">Move <kbd>WASD</kbd> · Shoot <kbd>Mouse</kbd> · Roll <kbd>Space</kbd> · Abilities <kbd>Q</kbd> <kbd>E</kbd> · Swap slot 3 <kbd>1</kbd> <kbd>2</kbd> · Gun <kbd>R</kbd> · Cage <kbd>F</kbd> · Use <kbd>G</kbd> · Pause <kbd>Esc</kbd></div>
+  <div id="arenaPanel" hidden></div>
+  <div id="touch" hidden>
+    <button class="tb" data-t="q">Q</button>
+    <button class="tb" data-t="e">E</button>
+    <button class="tb" data-t="use">Use</button>
+    <button class="tb" data-t="s1">3⇄1</button>
+    <button class="tb" data-t="s2">3⇄2</button>
+    <button class="tb" data-t="gun">Gun</button>
+    <button class="tb" data-t="cage">Cage</button>
+    <button class="tb big" data-t="roll">Roll</button>
+    <button class="tb" data-t="pause">II</button>
+  </div>
+  <div id="pause" hidden><div class="box" id="pauseBox"></div></div>
+</div>
+
+<script>
+'use strict';
+/* ================= Utilities ================= */
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ri=(a,b)=>Math.floor(rnd(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const wpick=(items,wf)=>{const ws=items.map(wf);let x=Math.random()*ws.reduce((a,b)=>a+b,0);for(let i=0;i<items.length;i++){x-=ws[i];if(x<=0)return items[i]}return items[items.length-1]};
+const SAVE_KEY='genesling-save-v2';
+const TOUCH=(window.matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window);
+
+/* ================= Types ================= */
+const TYPES={
+  ember:{name:'Ember',color:'#ff7a3d',tier:1,base:{hp:60,atk:12,spd:170},attack:'Fire bolt',ability:'Flame Ring',abilityDesc:'Blasts 12 fire bolts in a ring',support:'+10% gun damage',station:'forge',weight:30},
+  fungal:{name:'Fungal',color:'#e0527a',tier:1,base:{hp:80,atk:9,spd:150},attack:'Spore shot that slows',ability:'Spore Field',abilityDesc:'A cloud that slows and damages for 4s',support:'+2 food when you extract',station:'garden',weight:30},
+  tide:{name:'Tide',color:'#3fa9ff',tier:2,base:{hp:70,atk:8,spd:160},attack:'Bubble shot, heals you slowly',ability:'Tide Shield',abilityDesc:'You take no damage for 3s and heal 15',support:'You regenerate 1 HP per second',station:'spring',weight:16},
+  echo:{name:'Echo',color:'#9b7bff',tier:2,base:{hp:55,atk:10,spd:190},attack:'Twin pulse',ability:'Echo Ping',abilityDesc:'Stuns nearby enemies for 1.6s',support:'Reveals the whole floor map',station:'roost',weight:14},
+  gale:{name:'Gale',color:'#4fe0c8',tier:3,base:{hp:58,atk:13,spd:220},attack:'Dive strike (melee)',ability:'Gust Dash',abilityDesc:'Dashes through a foe for heavy damage',support:'Unlocks cliff extracts, +10% move speed',station:null,weight:5},
+  crystal:{name:'Crystal',color:'#ff8fe0',tier:3,base:{hp:65,atk:9,spd:150},attack:'Shard spray',ability:'Prism Ward',abilityDesc:'Turns enemy bullets near you back on them for 3s',support:'20% chance to block a hit',station:'vault',weight:3.5},
+  warden:{name:'Warden',color:'#e3b04b',tier:4,base:{hp:120,atk:9,spd:135},attack:'Stone slam (melee)',ability:'Taunt',abilityDesc:'Enemies attack it for 4s; it takes half damage',support:'+15% max HP for you',station:'nursery',weight:1.5},
+};
+const TYPE_IDS=Object.keys(TYPES);
+const TIER=['','Common','Uncommon','Rare','Very rare'];
+
+/* ================= Species: 3 per type + hybrids ================= */
+const SPECIES={
+  cindlet:{name:'Cindlet',type:'ember',col:'#ff9a4d',shade:'#c2561d',size:.85,acc:null,mods:{hp:.85,atk:.95,spd:1.15,rate:1.1},w:6,blurb:'Quick little spark.'},
+  pyrrox:{name:'Pyrrox',type:'ember',col:'#ff6a3d',shade:'#b33a1d',size:1,acc:'ears',mods:{hp:1,atk:1.15,spd:1,rate:1},w:3,blurb:'Fox-eared fire hunter.'},
+  magmaul:{name:'Magmaul',type:'ember',col:'#d9452b',shade:'#7a2316',size:1.2,acc:'horns',mods:{hp:1.3,atk:1.1,spd:.85,rate:.85},w:1,blurb:'Slow, molten bruiser.'},
+  puffcap:{name:'Puffcap',type:'fungal',col:'#e0527a',shade:'#9c2c4f',size:.9,acc:null,mods:{hp:1.15,atk:.9,spd:.95,rate:1},w:6,blurb:'Sturdy common mushroom.'},
+  shroomite:{name:'Shroomite',type:'fungal',col:'#c04ad8',shade:'#7a2a8f',size:1,acc:'horns',mods:{hp:1,atk:1.15,spd:1,rate:1},w:3,blurb:'Horned spore-spitter.'},
+  mycelisk:{name:'Mycelisk',type:'fungal',col:'#ff8a5c',shade:'#a8452a',size:1.15,acc:'tail',mods:{hp:1.1,atk:1,spd:.9,rate:1.25},w:1,blurb:'Rapid-fire spore serpent.'},
+  dewdrip:{name:'Dewdrip',type:'tide',col:'#5cc8ff',shade:'#2a7ab3',size:.85,acc:null,mods:{hp:.9,atk:.95,spd:1.15,rate:1.1},w:6,blurb:'Bouncy water droplet.'},
+  coralisk:{name:'Coralisk',type:'tide',col:'#3fd0c0',shade:'#1f8a80',size:1,acc:'horns',mods:{hp:1.25,atk:.95,spd:.9,rate:1},w:3,blurb:'Coral-crowned guardian.'},
+  tidewyrm:{name:'Tidewyrm',type:'tide',col:'#2f6bff',shade:'#1a3a9a',size:1.2,acc:'tail',mods:{hp:1.1,atk:1.2,spd:1,rate:1},w:1,blurb:'Deep-water serpent.'},
+  chirrup:{name:'Chirrup',type:'echo',col:'#b39bff',shade:'#6f55c2',size:.85,acc:null,mods:{hp:.9,atk:.95,spd:1.2,rate:1.05},w:6,blurb:'Chattering cave flier.'},
+  vesperbat:{name:'Vesperbat',type:'echo',col:'#7b5bff',shade:'#4a2fb3',size:1,acc:'ears',mods:{hp:1,atk:1,spd:1,rate:1.25},w:3,blurb:'Pulses in rapid bursts.'},
+  umbrowl:{name:'Umbrowl',type:'echo',col:'#4a3a8f',shade:'#251a52',size:1.15,acc:'horns',mods:{hp:1.1,atk:1.25,spd:.9,rate:1},w:1,blurb:'Shadow owl with a heavy cry.'},
+  zephling:{name:'Zephling',type:'gale',col:'#7ff0dc',shade:'#2fae98',size:.85,acc:null,mods:{hp:.9,atk:.95,spd:1.2,rate:1.05},w:6,blurb:'Breezy fledgling.'},
+  kestrix:{name:'Kestrix',type:'gale',col:'#2fc4a8',shade:'#167a68',size:1,acc:'horns',mods:{hp:1,atk:1.2,spd:1,rate:1},w:3,blurb:'Razor-taloned diver.'},
+  stormwing:{name:'Stormwing',type:'gale',col:'#3f8fd8',shade:'#1f4f8a',size:1.15,acc:'tail',mods:{hp:1.1,atk:1,spd:1,rate:1.25},w:1,blurb:'Rides thunderheads.'},
+  shardling:{name:'Shardling',type:'crystal',col:'#ffa8e8',shade:'#c25aa8',size:.85,acc:null,mods:{hp:.9,atk:1,spd:1.05,rate:1.15},w:6,blurb:'Chips off a bigger gem.'},
+  prismoth:{name:'Prismoth',type:'crystal',col:'#c49bff',shade:'#7a52c2',size:1,acc:'ears',mods:{hp:1,atk:1.05,spd:1.15,rate:1},w:3,blurb:'Light-bending moth.'},
+  geodon:{name:'Geodon',type:'crystal',col:'#e86fc0',shade:'#8f2f72',size:1.2,acc:'horns',mods:{hp:1.35,atk:1,spd:.85,rate:.95},w:1,blurb:'Walking geode.'},
+  pebblet:{name:'Pebblet',type:'warden',col:'#d9c08a',shade:'#8f7a4a',size:.85,acc:null,mods:{hp:.9,atk:.95,spd:1.15,rate:1.05},w:6,blurb:'Rolls everywhere.'},
+  bastion:{name:'Bastion',type:'warden',col:'#e3b04b',shade:'#9a7220',size:1,acc:'horns',mods:{hp:1.3,atk:.95,spd:.95,rate:1},w:3,blurb:'Living fortress wall.'},
+  monolord:{name:'Monolord',type:'warden',col:'#b8862f',shade:'#6b4a12',size:1.2,acc:'crown',mods:{hp:1.15,atk:1.25,spd:.9,rate:1},w:1,blurb:'Crowned stone king.'},
+};
+const HYBRIDS=[
+  {id:'blazewing',name:'Blazewing',types:['ember','gale'],col:'#ff8a3d',shade:'#1f9585'},
+  {id:'bogbloom',name:'Bogbloom',types:['tide','fungal'],col:'#4fb3a0',shade:'#9c2c4f'},
+  {id:'resonyx',name:'Resonyx',types:['crystal','echo'],col:'#d88fff',shade:'#4a2fb3'},
+  {id:'forgeheart',name:'Forgeheart',types:['warden','ember'],col:'#e39a3b',shade:'#7a2316'},
+  {id:'squallfin',name:'Squallfin',types:['gale','tide'],col:'#3fd8e8',shade:'#1a3a9a'},
+  {id:'duskcap',name:'Duskcap',types:['fungal','echo'],col:'#9a4ad8',shade:'#3a1a5a'},
+  {id:'gemguard',name:'Gemguard',types:['crystal','warden'],col:'#f0a0c8',shade:'#9a7220'},
+];
+HYBRIDS.forEach(h=>{SPECIES[h.id]={name:h.name,hybrid:true,types:h.types,col:h.col,shade:h.shade,size:1.1,acc:null,mods:{hp:1.2,atk:1.2,spd:1.05,rate:1.1},w:0,blurb:`Rare ${TYPES[h.types[0]].name}/${TYPES[h.types[1]].name} hybrid.`}});
+const SPECIES_IDS=Object.keys(SPECIES);
+const speciesOf=t=>SPECIES_IDS.filter(k=>!SPECIES[k].hybrid&&SPECIES[k].type===t);
+const hybridFor=(a,b)=>{if(a===b)return null;const h=HYBRIDS.find(h=>h.types.includes(a)&&h.types.includes(b));return h?h.id:null};
+const typesOf=c=>c.type2?[c.type,c.type2]:[c.type];
+
+/* ================= Genes & traits ================= */
+const GENES={vig:'Vigor',pow:'Power',swf:'Swift',hst:'Haste',tmp:'Temper'};
+const GENE_HINT={vig:'max HP',pow:'attack',swf:'move speed',hst:'attack speed',tmp:'obedience when wild'};
+const TRAITS={
+  thick:{name:'Thick Hide',desc:'+12% max HP',w:3},
+  glow:{name:'Glowcore',desc:'+10% attack',w:3},
+  quick:{name:'Quickfoot',desc:'+12% move speed',w:3},
+  rapid:{name:'Rapid Pulse',desc:'+15% attack speed',w:3},
+  keen:{name:'Keen Eye',desc:'15% chance to deal double damage',w:2},
+  sturdy:{name:'Sturdy',desc:'Takes 15% less damage',w:2},
+  regen:{name:'Regrowth',desc:'Heals 1.5% of max HP per second in raids',w:2},
+  reach:{name:'Long Reach',desc:'Shots fly 30% farther and faster',w:2},
+  focus:{name:'Focused',desc:'Ability recharges 20% faster',w:2},
+  vamp:{name:'Leech Fang',desc:'Heals 8% of the damage it deals',w:1.5},
+  lucky:{name:'Lucky Charm',desc:'+10% capture chance while in your party',w:1.5},
+  hoard:{name:'Hoarder',desc:'+15% coin from raids it survives',w:1.5},
+  worker:{name:'Hard Worker',desc:'Earns double work XP at a station',w:2},
+  lazy:{name:'Drowsy',desc:'Ability recharges 25% slower',w:1.2},
+  frail:{name:'Frail',desc:'-10% max HP',w:1.2},
+  clumsy:{name:'Clumsy',desc:'-10% move speed',w:1.2},
+};
+const TRAIT_IDS=Object.keys(TRAITS);
+const NEG_TRAITS=['lazy','frail','clumsy'];
+function rollTraits(n,exclude=[]){const out=[];while(out.length<n){const t=wpick(TRAIT_IDS,k=>TRAITS[k].w);if(!out.includes(t)&&!exclude.includes(t))out.push(t)}return out}
+
+/* ================= Guns ================= */
+const GUNS={
+  pistol:{name:'Scav Pistol',tier:0,dmg:10,rate:2.6,spread:.05,speed:540,life:1.1,col:'#ffe38a',desc:'Never lost. Reliable but weak.'},
+  revolver:{name:'Revolver',tier:1,dmg:24,rate:1.4,spread:.02,speed:640,life:1.2,col:'#ffd27a',desc:'Heavy single shots.'},
+  scatter:{name:'Scattergun',tier:1,dmg:7,rate:1.2,spread:.32,speed:480,pellets:5,life:.6,col:'#ffb347',desc:'Five pellets. Brutal up close.'},
+  repeater:{name:'Repeater',tier:1,dmg:5,rate:7,spread:.15,speed:560,life:.9,col:'#9dffcf',desc:'Sprays fast, low damage per shot.'},
+  galefan:{name:'Gale Fan',tier:1,dmg:7,rate:2.2,spread:.22,speed:640,pellets:3,life:.45,col:'#4fe0c8',desc:'Three quick, short-range darts.'},
+  carbine:{name:'Ember Carbine',tier:2,dmg:9,rate:1.5,burst:3,burstGap:.08,spread:.04,speed:600,life:1,col:'#ff7a3d',desc:'Three-round bursts.'},
+  longbow:{name:'Longbow',tier:2,dmg:40,rate:.85,speed:840,pierce:1,life:1.4,col:'#e8d8a8',r:5,desc:'Slow, hard-hitting arrows that pierce one foe.'},
+  spore:{name:'Spore Launcher',tier:2,dmg:16,rate:1,speed:340,explode:62,life:.8,col:'#e0527a',r:6,desc:'Bursting spore pods hit an area.'},
+  tidecaster:{name:'Tidecaster',tier:2,dmg:11,rate:2,speed:380,bounce:2,life:1.8,col:'#5cc8ff',r:7,desc:'Bubbles bounce off walls twice.'},
+  echorifle:{name:'Echo Rifle',tier:2,dmg:16,rate:1.8,speed:720,pierce:2,life:1.2,col:'#9b7bff',desc:'Pierces two enemies.'},
+  prism:{name:'Prism Splitter',tier:3,dmg:14,rate:1.6,speed:520,split:3,life:1.1,col:'#ff8fe0',r:6,desc:'Each shot splits into three.'},
+  mortar:{name:'Warden Mortar',tier:3,dmg:34,rate:.65,speed:300,explode:95,life:1,col:'#e3b04b',r:8,desc:'Big, slow explosive shells.'},
+  hex:{name:'Hexblaster',tier:3,dmg:12,rate:2.2,speed:300,homing:3.5,life:2,col:'#c27bff',r:6,desc:'Orbs that curve toward enemies.'},
+  gatling:{name:'Thunder Gatling',tier:3,dmg:5,rate:12,spread:.2,speed:600,spin:true,life:.9,col:'#7fd7ff',desc:'Spins up to a storm of bullets.'},
+  lance:{name:'Arc Lance',tier:3,dmg:30,rate:1.1,speed:760,pierce:9,life:1.3,col:'#7fd7ff',r:6,desc:'Pierces everything in a line.'},
+  starfall:{name:'Starfall Staff',tier:4,dmg:15,rate:1,ring:8,speed:420,life:1,col:'#ffe066',r:6,desc:'Fires a ring of eight stars. Raid-only find.'},
+};
+const GUN_IDS=Object.keys(GUNS);
+const GUN_COST={1:{coin:70,ore:4},2:{coin:110,ore:7},3:{coin:170,ore:12}};
+const GUN_VALUE=[0,30,55,90,140];
+
+/* ================= Run buffs ================= */
+const BUFFS={
+  dmg:{name:'Sharpened Rounds',desc:'+15% gun damage'},
+  rate:{name:'Hair Trigger',desc:'+15% fire rate'},
+  speed:{name:'Swift Boots',desc:'+12% move speed'},
+  hp:{name:'Heartstone',desc:'+25 max HP and heal 25'},
+  pdmg:{name:'Pack Fury',desc:'Companions deal 20% more damage'},
+  ptough:{name:'Pack Hide',desc:'Companions take 20% less damage'},
+  cage:{name:'Wide Snare',desc:'+40% cage radius, +10% capture chance'},
+  roll:{name:'Featherstep',desc:'Roll recharges 35% faster'},
+  leech:{name:'Leech Charm',desc:'Heal 1 HP for every 25 damage you deal'},
+  pierce:{name:'Drill Tips',desc:'Your shots pierce one more enemy'},
+  abil:{name:'Quick Bond',desc:'Companion abilities recharge 25% faster'},
+  greed:{name:'Greedy Eye',desc:'+30% coin found'},
+  time:{name:'Hourglass Shard',desc:'+60 seconds on the raid clock'},
+};
+const BUFF_IDS=Object.keys(BUFFS);
+
+/* ================= Stations ================= */
+const STATIONS={
+  forge:{name:'Forge',type:'ember',perk:'Craft tier 1–2 guns and gilded cages',up:'Craft tier 3 guns'},
+  garden:{name:'Garden',type:'fungal',perk:'+3 food each day',up:'+2 more food each day'},
+  spring:{name:'Spring',type:'tide',perk:'Fully heals every creature each day',up:'Wild creatures gain 6 bond per day'},
+  roost:{name:'Roost',type:'echo',perk:'Reveals the full map in raids',up:'Marks rooms holding rare creatures'},
+  vault:{name:'Vault',type:'crystal',perk:'Keep your slot 3 creature if you die',up:'Also keep the guns in your hands'},
+  nursery:{name:'Nursery',type:'warden',perk:'Breeding: one egg at a time, hatches in 2 days',up:'Two eggs at once, 1-day hatching, more mutations and hybrids'},
+};
+
+/* ================= Enemies: families that upgrade each floor ================= */
+const FOES={
+  husk:[
+    {name:'Husk',hp:30,spd:60,r:13,dmg:8,col:'#7d9150',bcol:'#ff6b6b',fire:{kind:'fan',n:1,spread:0,spd:190,every:2.6}},
+    {name:'Hollow',hp:50,spd:65,r:13,dmg:10,col:'#5f8f8a',bcol:'#ff8a5c',fire:{kind:'fan',n:3,spread:.5,spd:195,every:2.8}},
+    {name:'Revenant',hp:72,spd:70,r:14,dmg:12,col:'#8a6fb3',bcol:'#ff5ca8',fire:{kind:'fan',n:5,spread:.9,spd:200,every:3,waves:2}},
+  ],
+  bat:[
+    {name:'Hexbat',hp:20,spd:105,r:11,dmg:7,col:'#7d43b8',bcol:'#c27bff',fire:{kind:'ring',n:6,spd:135,every:3.4}},
+    {name:'Gloombat',hp:34,spd:115,r:11,dmg:9,col:'#3f4fb8',bcol:'#7f9bff',fire:{kind:'ring',n:8,spd:145,every:3.4,rot:.2}},
+    {name:'Voidbat',hp:48,spd:125,r:12,dmg:11,col:'#2a1c4f',bcol:'#b05cff',fire:{kind:'ring',n:10,spd:150,every:3.6,waves:2,rot:.31}},
+  ],
+  crawler:[
+    {name:'Grubling',hp:28,spd:80,r:12,dmg:9,col:'#c98a5a',melee:true,fire:{kind:'charge',every:2.6,cspd:360}},
+    {name:'Mawler',hp:46,spd:90,r:14,dmg:12,col:'#b85a3a',melee:true,fire:{kind:'charge',every:2.4,cspd:420}},
+    {name:'Dreadmaw',hp:70,spd:95,r:16,dmg:14,col:'#8f2a3a',bcol:'#ff7a5c',melee:true,fire:{kind:'charge',every:2.4,cspd:440,ring:8,rspd:130}},
+  ],
+  totem:[
+    {name:'Spore Totem',hp:42,spd:0,r:14,dmg:8,col:'#6aa84f',bcol:'#b8f06a',fire:{kind:'cross',spd:140,every:2.8}},
+    {name:'Rune Totem',hp:62,spd:0,r:14,dmg:10,col:'#4f7fd8',bcol:'#7fd7ff',fire:{kind:'spiral',n:3,spd:135,every:.55,step:.24}},
+    {name:'Eye Totem',hp:84,spd:0,r:15,dmg:11,col:'#d84f7f',bcol:'#ff9bbf',fire:{kind:'burst',n:3,gap:.16,spd:240,every:2.6}},
+  ],
+  brute:[
+    {name:'Ogrolem',hp:150,spd:45,r:20,dmg:11,col:'#6b2a3a',bcol:'#ffa04f',melee:true,fire:{kind:'brute',n:10,spd:130,every:2.8}},
+    {name:'Ogrolem',hp:230,spd:48,r:21,dmg:12,col:'#6b2a3a',bcol:'#ffa04f',melee:true,fire:{kind:'brute',n:12,spd:140,every:2.7}},
+    {name:'Colossus',hp:340,spd:50,r:23,dmg:14,col:'#3a2a5a',bcol:'#ff5c7a',melee:true,fire:{kind:'brute',n:14,spd:150,every:2.6}},
+  ],
+};
+const FOE_IDS=Object.keys(FOES);
+const WILD_FIRE={
+  ember:{kind:'fan',n:1,spread:0,spd:250,every:2.3},
+  fungal:{kind:'fan',n:3,spread:.6,spd:150,every:2.7,slow:1},
+  tide:{kind:'fan',n:2,spread:.25,spd:170,every:2.5},
+  echo:{kind:'burst',n:2,gap:.15,spd:280,every:2.5},
+  crystal:{kind:'ring',n:6,spd:150,every:3,rot:.25},
+  gale:{kind:'charge',every:2.3,cspd:460},
+  warden:{kind:'ring',n:8,spd:120,every:3.3},
+};
+
+const SYL={ember:['Cin','Ash','Kin','Pyr','Scor','Em','Vol'],fungal:['Mor','Puf','Spo','Cap','Tru','Myc','Fen'],tide:['Rip','Brin','Mar','Wav','Cor','Nai','Sil'],echo:['Ech','Vesp','Nox','Chir','Dus','Umb','Lur'],gale:['Zeph','Aer','Gus','Kes','Sky','Fal','Wisp'],crystal:['Pris','Gem','Qua','Opa','Lum','Shar','Glim'],warden:['Gra','Bas','Tor','Mon','Ked','Ore','Hul']};
+const END=['der','ra','ix','o','el','ling','ett','a','us','ble','ka','wyn'];
+const makeName=t=>pick(SYL[t])+pick(END);
+
+/* ================= State ================= */
+let S=null;
+let ui={tab:'raid',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',gunPick:null,
+  lab:{species:'bastion',origin:'wild',sex:'R',level:5,max:false,proven:false,t1:'',t2:''}};
+
+function randGenes(min,max){const g={};for(const k in GENES)g[k]=ri(min,max);return g}
+function makeCreature(species,origin,level,o={}){
+  const sp=SPECIES[species];
+  const type=o.type||(sp.hybrid?sp.types[0]:sp.type);
+  const type2=sp.hybrid?(o.type2||sp.types.find(t=>t!==type)):null;
+  const wild=origin==='wild';
+  const c={id:S.nextId++,species,type,type2,sex:o.sex||(Math.random()<.5?'F':'M'),name:o.name||makeName(type),origin,
+    proven:!wild||!!o.proven,
+    genes:o.genes||(wild?randGenes((o.floor||1)>=2?4:3,10):randGenes(2,7)),
+    traits:o.traits||rollTraits(wild?(Math.random()<.5?2:1):2),
+    level:level||1,xp:0,bond:wild?(o.bond!=null?o.bond:10):100,gen:o.gen||0,workXp:0,raids:0,
+    captureRaid:o.captureRaid!=null?o.captureRaid:-1};
+  c.hp=stats(c).hp;return c;
+}
+function stats(c){
+  const B=TYPES[c.type].base,m=SPECIES[c.species].mods,g=c.genes,l=1+.09*(c.level-1),has=k=>c.traits.includes(k);
+  let hp=B.hp*m.hp*(.6+g.vig*.08)*l,atk=B.atk*m.atk*(.6+g.pow*.08)*l,spd=B.spd*m.spd*(.85+g.swf*.03),rate=m.rate*(.8+g.hst*.04);
+  if(has('thick'))hp*=1.12;if(has('frail'))hp*=.9;if(has('glow'))atk*=1.1;if(has('quick'))spd*=1.12;if(has('clumsy'))spd*=.9;if(has('rapid'))rate*=1.15;
+  const obey=c.origin==='bred'?1:clamp(.4+g.tmp*.03+c.bond/250+(c.proven?.1:0),.2,1);
+  return{hp:Math.round(hp),atk:Math.round(atk*10)/10,spd:Math.round(spd),rate:Math.round(rate*100)/100,obey,
+    taken:has('sturdy')?.85:1,regen:has('regen')?.015:0,reach:has('reach')?1.3:1,abil:(has('focus')?.8:1)*(has('lazy')?1.25:1),crit:has('keen')?.15:0,vamp:has('vamp')?.08:0};
+}
+function newGame(){
+  S={v:2,day:1,coin:150,food:16,ore:5,cages:{basic:3,gilded:0},guns:{pistol:1,revolver:1},creatures:[],eggs:[],
+    stations:{forge:[null,null],garden:[null,null],spring:[null,null],roost:[null,null],vault:[null,null],nursery:[null,null]},
+    loadout:{guns:['revolver','pistol'],slots:[null,null,null]},stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0},log:[],
+    settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true},nextId:1};
+  const a=makeCreature('pyrrox','bred',3,{name:'Cinder',sex:'M',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
+  const b=makeCreature('puffcap','bred',3,{name:'Morel',sex:'F',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
+  const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',proven:true,bond:40,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
+  const d=makeCreature('cindlet','bred',2,{name:'Kindle',sex:'F',traits:['worker','quick']});
+  const e=makeCreature('shroomite','bred',2,{name:'Puffin',sex:'M',traits:['worker','reach']});
+  S.creatures.push(a,b,c,d,e);
+  S.stations.forge[0]=d.id;S.stations.garden[0]=e.id;
+  S.loadout.slots=[a.id,b.id,c.id];
+  addLog('Your hideout opens. Kindle runs the Forge and Puffin tends the Garden. Find a Warden to open the Nursery.');
+}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem(SAVE_KEY);if(r){const d=JSON.parse(r);if(d&&d.v===2)return d}}catch(e){}return null}
+function addLog(msg){S.log.unshift({day:S.day,msg});S.log=S.log.slice(0,40)}
+
+const byId=id=>S.creatures.find(c=>c.id===id);
+function whereIs(c){
+  for(const k in S.stations){const i=S.stations[k].indexOf(c.id);if(i>=0)return{kind:'station',key:k,slot:i}}
+  const j=S.loadout.slots.indexOf(c.id);if(j>=0)return{kind:'loadout',slot:j};
+  return{kind:'idle'};
+}
+function normStations(){for(const k in S.stations){const s=S.stations[k];if(!s[0]&&s[1]){s[0]=s[1];s[1]=null}}}
+function unplace(c){
+  for(const k in S.stations)S.stations[k]=S.stations[k].map(x=>x===c.id?null:x);
+  S.loadout.slots=S.loadout.slots.map(x=>x===c.id?null:x);normStations();
+}
+function killCreature(c){unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.stats.lost++}
+const online=k=>!!byId(S.stations[k][0]);
+const upgraded=k=>online(k)&&!!byId(S.stations[k][1]);
+const workLevel=c=>Math.min(5,1+Math.floor(c.workXp/40));
+const typeTier=c=>Math.max(...typesOf(c).map(t=>TYPES[t].tier));
+function sellValue(c){return Math.round((12*typeTier(c)**2+c.level*4)*(c.type2?1.5:1))}
+function gainXp(c,amt){
+  c.xp+=amt;let ups=0;
+  while(c.xp>=40*c.level&&c.level<30){c.xp-=40*c.level;c.level++;ups++}
+  if(ups)c.hp=Math.min(stats(c).hp,c.hp+12*ups);
+  return ups;
+}
+const eggCap=()=>upgraded('nursery')?2:1;
+const sexSym=s=>s==='F'?'♀':'♂';
+
+function processDay(){
+  S.day++;const notes=[];
+  const n=S.creatures.length;
+  if(S.food>=n)S.food-=n;
+  else{const short=n-S.food;S.food=0;S.creatures.forEach(c=>{c.bond=Math.max(0,c.bond-5);c.hp=Math.max(1,Math.round(c.hp*.9))});notes.push(`Food ran short by ${short}. Creatures went hungry and lost bond.`)}
+  if(online('garden')){const w=byId(S.stations.garden[0]);const g=3+(upgraded('garden')?2:0)+Math.floor((workLevel(w)-1)/2);S.food+=g;notes.push(`The Garden grew ${g} food.`)}
+  S.creatures.forEach(c=>{const m=stats(c).hp;c.hp=online('spring')?m:Math.min(m,Math.round(c.hp+m*.35))});
+  if(upgraded('spring'))S.creatures.forEach(c=>{if(c.origin==='wild')c.bond=Math.min(100,c.bond+6)});
+  for(const k in S.stations)S.stations[k].forEach(id=>{const c=byId(id);if(c)c.workXp+=c.traits.includes('worker')?20:10});
+  if(online('nursery')){
+    const hatched=[];
+    S.eggs.forEach(e=>{e.days--;if(e.days<=0){S.creatures.push(e.child);hatched.push(e.child)}});
+    S.eggs=S.eggs.filter(e=>e.days>0);
+    hatched.forEach(c=>notes.push(`An egg hatched: ${c.name}, a ${sexSym(c.sex)} ${SPECIES[c.species].name}${c.type2?' (hybrid!)':''}.`));
+  }else if(S.eggs.length)notes.push('Eggs are waiting. The Nursery needs a Warden to keep incubating.');
+  addLog(`Day ${S.day}. `+(notes.join(' ')||'A quiet day at the hideout.'));
+}
+
+/* ================= Breeding ================= */
+function hybridChance(mom,dad){
+  if(SPECIES[mom.species].hybrid||SPECIES[dad.species].hybrid)return{id:null,p:0};
+  const id=hybridFor(mom.type,dad.type);return{id,p:id?(upgraded('nursery')?.18:.1):0};
+}
+function breed(){
+  const mom=byId(+ui.mom),dad=byId(+ui.dad);
+  if(!mom||!dad||mom.sex!=='F'||dad.sex!=='M'||!mom.proven||!dad.proven)return;
+  if(!online('nursery')||S.coin<20||S.food<3||S.eggs.length>=eggCap())return;
+  S.coin-=20;S.food-=3;
+  const up=upgraded('nursery'),mc=up?.25:.12;
+  let species=mom.species,type=mom.type,type2=mom.type2;
+  const h=hybridChance(mom,dad);let isHybrid=!!mom.type2;
+  if(h.id&&Math.random()<h.p){species=h.id;type=mom.type;type2=dad.type;isHybrid=true}
+  const genes={};
+  for(const k in GENES){let v=Math.random()<.7?dad.genes[k]:mom.genes[k];if(Math.random()<mc)v+=pick([-2,-1,1,1,2]);genes[k]=clamp(v,1,10)}
+  const traits=[];
+  for(let i=0;i<2;i++){
+    let t=null;
+    if(Math.random()<.08)t=rollTraits(1,traits)[0];
+    else{const src=Math.random()<.6?dad:mom;const pool=src.traits.filter(x=>!traits.includes(x));const alt=(src===dad?mom:dad).traits.filter(x=>!traits.includes(x));t=pool.length?pick(pool):alt.length?pick(alt):rollTraits(1,traits)[0]}
+    traits.push(t);
+  }
+  const child=makeCreature(species,'bred',1,{type,type2,genes,traits,gen:Math.max(mom.gen,dad.gen)+1});
+  S.eggs.push({id:child.id,days:up?1:2,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid&&!mom.type2});
+  if(isHybrid&&!mom.type2){S.stats.hybrids++;addLog(`${mom.name} and ${dad.name} produced a shimmering egg. Something unusual is inside.`)}
+  else addLog(`${mom.name} and ${dad.name} produced an egg.`);
+  ui.mom='';ui.dad='';save();renderAll();
+}
+
+/* ================= Sprites ================= */
+const OL='#160f2c';
+function drawAcc(g,kind,col,sh,t,front){
+  g.lineWidth=2;g.strokeStyle=OL;
+  const fs=()=>{g.fill();g.stroke()};
+  if(!front){
+    if(kind==='tail'){g.fillStyle=sh;g.beginPath();g.moveTo(-9,4);g.quadraticCurveTo(-22,-2+Math.sin(t*6)*3,-18,10);g.quadraticCurveTo(-13,9,-8,9);g.closePath();fs()}
+    if(kind==='m-gale'){g.fillStyle='#4fe0c8';g.beginPath();g.moveTo(-6,-2);g.quadraticCurveTo(-22,-12+Math.sin(t*10)*3,-20,4);g.quadraticCurveTo(-13,6,-6,6);g.closePath();fs()}
+    if(kind==='m-tide'){g.fillStyle='#3fa9ff';g.beginPath();g.moveTo(-6,-6);g.lineTo(-14,-16);g.lineTo(-2,-10);g.closePath();fs()}
+    if(kind==='m-crystal'){g.fillStyle='#ff8fe0';[[-10,-4],[-6,-10]].forEach(([x,y])=>{g.beginPath();g.moveTo(x,y);g.lineTo(x-5,y-8);g.lineTo(x+3,y-3);g.closePath();fs()})}
+    return;
+  }
+  if(kind==='ears'||kind==='m-echo'){g.fillStyle=kind==='m-echo'?'#9b7bff':col;[-1,1].forEach(s=>{g.beginPath();g.moveTo(s*3,-9);g.lineTo(s*8,-19);g.lineTo(s*10,-7);g.closePath();fs()})}
+  if(kind==='horns'||kind==='m-warden'){g.fillStyle=kind==='m-warden'?'#c9b48a':'#f6eedb';[-1,1].forEach(s=>{g.beginPath();g.moveTo(s*4,-10);g.lineTo(s*10,-19);g.lineTo(s*9,-9);g.closePath();fs()})}
+  if(kind==='crown'){g.fillStyle='#ffcf4a';g.beginPath();g.moveTo(-8,-10);g.lineTo(-8,-17);g.lineTo(-4,-13);g.lineTo(0,-19);g.lineTo(4,-13);g.lineTo(8,-17);g.lineTo(8,-10);g.closePath();fs()}
+  if(kind==='m-ember'){const fl=Math.sin(t*14)*2;g.fillStyle='#ffd23f';g.beginPath();g.moveTo(-4,-9);g.lineTo(-1,-19-fl);g.lineTo(2,-12);g.lineTo(5,-18+fl);g.lineTo(6,-9);g.closePath();fs()}
+  if(kind==='m-fungal'){g.fillStyle='#fff';[[-6,4,2.2],[5,7,2],[0,0,1.8]].forEach(([x,y,r])=>{g.beginPath();g.arc(x,y,r,0,7);g.fill()})}
+}
+function drawCreature(g,c,x,y,s,t,o={}){
+  const sp=SPECIES[c.species],type=c.type,col=o.flash?'#ffffff':sp.col,sh=o.flash?'#ffffff':sp.shade;
+  const seed=o.seed||0,bob=Math.sin(t*6+seed)*1.5,sz=s*(sp.size||1);
+  g.save();g.translate(x,y);g.scale(sz,sz);
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,15,11,3.5,0,0,7);g.fill();
+  g.translate(0,bob);if(o.face<0)g.scale(-1,1);
+  g.lineWidth=2.2;g.strokeStyle=OL;g.lineJoin='round';
+  const fs=()=>{g.fill();g.stroke()};
+  const eyes=(ex,ey,gap)=>{g.lineWidth=1.5;[ex,ex-gap].forEach(px=>{g.fillStyle='#fff';g.fillRect(px-2,ey-2,4,4);g.strokeRect(px-2,ey-2,4,4);g.fillStyle=OL;g.fillRect(px-.2,ey-1,2,2.4)});g.lineWidth=2.2};
+  const mark=c.type2?'m-'+c.type2:null;
+  drawAcc(g,sp.acc,col,sh,t,false);if(mark)drawAcc(g,mark,col,sh,t,false);
+  g.lineWidth=2.2;g.strokeStyle=OL;
+  if(type==='ember'){
+    const fl=Math.sin(t*14+seed)*2;
+    if(!mark){g.fillStyle='#ffd23f';g.beginPath();g.moveTo(-6,-6);g.lineTo(-2,-17-fl);g.lineTo(1,-10);g.lineTo(4,-18+fl);g.lineTo(7,-6);g.closePath();fs()}
+    g.fillStyle='#ffd23f';g.beginPath();g.moveTo(-10,5);g.lineTo(-19,-2+fl);g.lineTo(-15,8);g.closePath();fs();
+    g.fillStyle=col;g.beginPath();g.arc(0,3,11,0,7);fs();
+    g.fillStyle=o.flash?'#fff':'rgba(255,230,190,.55)';g.beginPath();g.ellipse(1,7,6,4,0,0,7);g.fill();
+    eyes(5,0,6);
+  }else if(type==='fungal'){
+    g.fillStyle=o.flash?'#fff':'#f2e4c9';g.beginPath();g.rect(-7,-1,14,14);fs();
+    g.fillStyle=col;g.beginPath();g.ellipse(0,-1,15,11,0,Math.PI,0);g.closePath();fs();
+    g.fillStyle='#fff';[[-7,-6,2.5],[2,-8,3],[8,-4,2]].forEach(([a,b,r])=>{g.beginPath();g.arc(a,b,r,0,7);g.fill()});
+    eyes(4,6,6);
+  }else if(type==='tide'){
+    g.fillStyle=sh;g.beginPath();g.moveTo(-8,2);g.lineTo(-16,-4);g.lineTo(-12,8);g.closePath();fs();
+    g.fillStyle=col;g.beginPath();g.moveTo(0,-15);g.bezierCurveTo(10,-4,13,4,9,10);g.bezierCurveTo(5,15,-5,15,-9,10);g.bezierCurveTo(-13,4,-10,-4,0,-15);fs();
+    g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.ellipse(-3,-3,2.5,4,-.4,0,7);g.fill();
+    eyes(5,3,6);
+  }else if(type==='echo'){
+    const w=Math.sin(t*12+seed)*4;
+    g.fillStyle=sh;g.beginPath();g.moveTo(-6,0);g.lineTo(-20,-8+w);g.lineTo(-16,4);g.lineTo(-20,8);g.lineTo(-6,8);g.closePath();fs();
+    g.beginPath();g.moveTo(6,0);g.lineTo(20,-8+w);g.lineTo(16,4);g.lineTo(20,8);g.lineTo(6,8);g.closePath();fs();
+    g.fillStyle=col;g.beginPath();g.arc(0,2,9,0,7);fs();
+    eyes(4,1,7);
+  }else if(type==='gale'){
+    g.fillStyle=sh;g.beginPath();g.moveTo(-4,-6);g.lineTo(-10,-16);g.lineTo(-2,-9);g.lineTo(0,-17);g.lineTo(3,-7);g.closePath();fs();
+    g.fillStyle=col;g.beginPath();g.ellipse(0,2,12,10,0,0,7);fs();
+    g.fillStyle=sh;g.beginPath();g.moveTo(-10,0);g.quadraticCurveTo(-20,-4+Math.sin(t*10)*3,-18,8);g.quadraticCurveTo(-12,8,-6,6);g.closePath();fs();
+    g.fillStyle='#ffb347';g.beginPath();g.moveTo(10,0);g.lineTo(18,3);g.lineTo(10,6);g.closePath();fs();
+    eyes(6,-1,6);
+  }else if(type==='crystal'){
+    g.fillStyle=col;g.beginPath();g.moveTo(0,-16);g.lineTo(12,-2);g.lineTo(0,14);g.lineTo(-12,-2);g.closePath();fs();
+    g.strokeStyle='rgba(255,255,255,.6)';g.lineWidth=1.2;g.beginPath();g.moveTo(-12,-2);g.lineTo(12,-2);g.moveTo(0,-16);g.lineTo(-4,-2);g.lineTo(0,14);g.stroke();
+    g.strokeStyle=OL;g.lineWidth=2.2;eyes(5,3,6);
+  }else if(type==='warden'){
+    g.fillStyle=col;g.beginPath();g.rect(-13,-10,26,24);fs();
+    g.fillStyle=sh;g.fillRect(-13,-10,26,6);g.strokeRect(-13,-10,26,6);
+    g.fillStyle=o.flash?'#fff':'rgba(60,40,10,.6)';g.fillRect(-9,8,6,6);g.fillRect(3,8,6,6);
+    eyes(6,1,8);
+  }
+  drawAcc(g,sp.acc,col,sh,t,true);if(mark)drawAcc(g,mark,col,sh,t,true);
+  if(o.sex){g.font='700 9px sans-serif';g.textAlign='center';g.fillStyle=o.sex==='F'?'#ff8fb1':'#7fc8ff';g.fillText(sexSym(o.sex),11,-10)}
+  g.restore();
+}
+function drawEgg(g,x,y,s,cols,shiny){
+  g.save();g.translate(x,y);g.scale(s,s);
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,14,10,3,0,0,7);g.fill();
+  g.fillStyle=shiny?'#fff6c8':'#f6eedb';g.strokeStyle=shiny?'#ffcf4a':OL;g.lineWidth=2.2;g.beginPath();g.ellipse(0,0,11,14,0,0,7);g.fill();g.stroke();
+  [[-4,-5,0],[5,2,1],[-3,7,0],[4,-8,1]].forEach(([a,b,i])=>{g.fillStyle=cols[i]||cols[0];g.beginPath();g.arc(a,b,2.6,0,7);g.fill()});
+  g.restore();
+}
+function paintSprites(root){
+  const dpr=window.devicePixelRatio||1;
+  root.querySelectorAll('canvas.spr').forEach(cv=>{
+    const w=+cv.getAttribute('width'),h=+cv.getAttribute('height');
+    if(!cv.dataset.sized){cv.style.width=w+'px';cv.style.height=h+'px';cv.width=w*dpr;cv.height=h*dpr;cv.dataset.sized='1'}
+    const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+    if(cv.dataset.egg){drawEgg(g,w/2,h/2,w/40,cv.dataset.egg.split(','),cv.dataset.shiny==='1');return}
+    if(!cv.dataset.cid)return;
+    const c=byId(+cv.dataset.cid)||(R&&R.slot3&&R.slot3.c.id===+cv.dataset.cid?R.slot3.c:null);if(!c)return;
+    drawCreature(g,c,w/2,h/2+3,w/50,0,{face:1,sex:c.sex});
+  });
+}
+const spr=(c,size=64)=>`<canvas class="spr" width="${size}" height="${size}" data-cid="${c.id}" aria-label="${esc(SPECIES[c.species].name)} sprite"></canvas>`;
+const typeChip=t=>`<span class="chip type" style="--c:${TYPES[t].color}">${TYPES[t].name}</span>`;
+const typeChips=c=>typesOf(c).map(typeChip).join('')+(c.type2?'<span class="chip warn">Hybrid</span>':'');
+const sexChip=c=>`<span class="chip sex ${c.sex==='F'?'f':'m'}" title="${c.sex==='F'?'Female: passes on her species':'Male: passes on most of his stats'}">${sexSym(c.sex)}</span>`;
+
+/* ================= Hideout UI ================= */
+const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['nursery','Nursery'],['market','Forge & Market'],['lab','Test Lab']];
+function renderAll(){renderHeader();renderTabs();renderMain()}
+function renderHeader(){
+  const n=S.creatures.length;
+  $('#res').innerHTML=`<span class="pill">Day <b>${S.day}</b></span><span class="pill">Coin <b>${S.coin}</b></span><span class="pill">Food <b>${S.food}</b> <small>−${n}/day</small></span><span class="pill">Ore <b>${S.ore}</b></span><span class="pill">Cages <b>${S.cages.basic}</b>${S.cages.gilded?` <small>+${S.cages.gilded} gilded</small>`:''}</span>`;
+}
+function renderTabs(){$('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${ui.tab===k}" data-act="tab" data-k="${k}">${l}</button>`).join('')}
+function renderMain(){
+  const m=$('#main');
+  m.innerHTML=({raid:viewRaid,hideout:viewHideout,roster:viewRoster,nursery:viewNursery,market:viewMarket,lab:viewLab}[ui.tab])();
+  paintSprites(m);
+}
+function hpBar(c){const m=stats(c).hp,p=clamp(c.hp/m,0,1);return`<div class="bar hp ${p<.35?'low':''}" title="${c.hp}/${m} HP"><i style="width:${p*100}%"></i></div>`}
+function statusText(c){
+  const w=whereIs(c);
+  if(w.kind==='station')return`Working the ${STATIONS[w.key].name}${w.slot?' (upgrade slot)':''} · work Lv ${workLevel(c)}`;
+  if(w.kind==='loadout')return w.slot<2?`In loadout, combat slot ${w.slot+1}`:'In loadout, slot 3';
+  return'Idle in the pens';
+}
+const abilType=c=>c.type2||c.type;
+function supportText(c){return typesOf(c).map(t=>TYPES[t].support).join(' · ')}
+function validGuns(){
+  const L=S.loadout.guns;
+  if(!L[0]||(L[0]!=='pistol'&&!S.guns[L[0]]))L[0]='pistol';
+  if(L[1]&&L[1]!=='pistol'){const need=L[1]===L[0]?2:1;if((S.guns[L[1]]||0)<need)L[1]=null}
+  if(L[1]==='pistol'&&L[0]==='pistol')L[1]=null;
+}
+
+function viewRaid(){
+  validGuns();
+  const L=S.loadout,slots=L.slots.map(byId);
+  const labels=['Combat · Q','Combat · E','Slot 3 · support or free'];
+  const slotHtml=slots.map((c,i)=>{
+    const sup=i===2;
+    if(!c)return`<div class="slot ${sup?'support':''}"><div class="slot-label">${labels[i]}</div>
+      <p class="empty">${sup?'Free. Keep it empty to cage a wild creature mid-raid, then swap it with slot 1 or 2 to test it.':'Empty'}</p>
+      <button class="btn small" data-act="choose" data-slot="${i}">Choose</button></div>`;
+    const T=TYPES[abilType(c)];
+    return`<div class="slot ${sup?'support':''}"><div class="slot-label">${labels[i]}</div>
+      <div class="slot-body">${spr(c,56)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
+      <div class="status">${sexSym(c.sex)} ${SPECIES[c.species].name}</div>
+      <div class="row" style="gap:4px">${typeChips(c)}${c.origin==='wild'&&!c.proven?'<span class="chip warn">Unproven</span>':''}</div></div></div>
+      ${hpBar(c)}
+      <p class="status">${sup?'Passive: '+supportText(c):(i===0?'Q':'E')+': '+T.ability+'. '+T.abilityDesc+'.'}</p>
+      <div class="row"><button class="btn small" data-act="choose" data-slot="${i}">Change</button><button class="btn small" data-act="clearslot" data-slot="${i}">${sup?'Leave free':'Remove'}</button></div></div>`;
+  }).join('');
+  const gunOpts=(cur,slot)=>{
+    const owned=GUN_IDS.filter(k=>k==='pistol'||(S.guns[k]||0)>0);
+    return`<select id="gun-${slot}" data-act="gunsel" data-slot="${slot}" aria-label="${slot?'Secondary':'Primary'} gun">${slot?`<option value="" ${!cur?'selected':''}>None</option>`:''}
+      ${owned.map(k=>`<option value="${k}" ${cur===k?'selected':''}>${GUNS[k].name}${k==='pistol'?'':' (own '+S.guns[k]+')'}</option>`).join('')}</select>`;
+  };
+  const gunCard=(k,slot)=>{const g=k?GUNS[k]:null;return`<div class="gunslot"><span class="slot-label">${slot?'Secondary · R swaps':'Primary'}</span>${gunOpts(k,slot)}${g?`<small>${g.desc} ${gunStatLine(g)}</small>`:'<small>Room for a gun you find in a chest.</small>'}</div>`};
+  const risk=slots.filter(Boolean).map(c=>esc(c.name));L.guns.forEach(g=>{if(g&&g!=='pistol')risk.push(GUNS[g].name)});
+  const carry=Math.min(3,S.cages.basic+S.cages.gilded);
+  const vault=online('vault')?(upgraded('vault')?' The Vault keeps your slot 3 creature and your guns.':' The Vault keeps your slot 3 creature.'):'';
+  return`<div class="cols">
+  <section class="card"><h2>Loadout</h2>
+    <p class="hint">Two companions fight beside you. Slot 3 holds a support creature for its passive, or stays free so a caged catch has somewhere to go. Swap slot 3 with slot 1 or 2 at any time.</p>
+    <div class="slots">${slotHtml}</div>
+    <h3>Guns</h3><div class="guns">${gunCard(L.guns[0],0)}${gunCard(L.guns[1],1)}</div>
+    <p class="hint">You'll carry ${carry} cage${carry===1?'':'s'}${S.cages.gilded?' (gilded first)':''}. Unused cages come home if you extract.</p>
+    <div class="risk"><b>Lost if you die:</b> ${risk.length?risk.join(', '):'nothing of yours'}, plus all cages, buffs and loot carried.${vault}</div>
+    <div class="row"><button class="btn primary" data-act="deploy">Deploy raid</button><button class="btn" data-act="scav">Scav run (no risk)</button></div>
+  </section>
+  <section class="card"><h2>How raids work</h2>
+    <ul class="plain">
+      <li>Three floors. Enemies get tougher and their patterns get busier each floor.</li>
+      <li>Rooms seal until every enemy is beaten or caught. Enemies glow just before they fire.</li>
+      <li>Wild creatures are uncommon. Weaken one below half health, get close, and use a cage. It catches the nearest weakened creature within the gold ring. Slot 3 must be free.</li>
+      <li>Chests hold guns, buff orbs and supplies. A gun you pick up replaces the one in your hand, which drops on the floor.</li>
+      <li>Peddlers sell buffs and guns for coin. Shrines grant one free buff. Buffs last until the raid ends.</li>
+      <li>Floor 1 and 2 have a gate extract (20 coin). Floor 3 has a free rift and a cliff that needs a Gale.</li>
+      <li>Downed companions die if you extract without reviving them. Stand next to one to revive it.</li>
+      <li>A wild catch can't breed until it survives one full raid after capture.</li>
+    </ul>
+    <h3>Controls</h3>
+    <p class="hint">${TOUCH?'Left thumb moves, right thumb aims and fires. Buttons cover roll, abilities, swaps, guns, cages and Use.':'WASD move · mouse aim and fire · Space or right-click roll · Q/E abilities · 1/2 swap slot 3 into slot 1/2 · R switch gun · F cage · G use · Esc pause'}</p>
+    <dl class="kv"><dt>Raids</dt><dd>${S.stats.raids}</dd><dt>Extractions</dt><dd>${S.stats.extracts}</dd><dt>Deaths</dt><dd>${S.stats.deaths}</dd><dt>Creatures lost</dt><dd>${S.stats.lost}</dd><dt>Captures</dt><dd>${S.stats.captures}</dd><dt>Hybrid eggs</dt><dd>${S.stats.hybrids}</dd></dl>
+  </section></div>`;
+}
+function gunStatLine(g){
+  const bits=[`${g.dmg}${g.pellets?'×'+g.pellets:''}${g.burst?'×'+g.burst:''}${g.ring?'×'+g.ring:''} dmg`,`${g.rate}/s`];
+  if(g.pierce)bits.push(`pierce ${g.pierce}`);if(g.explode)bits.push('explodes');if(g.bounce)bits.push('bounces');if(g.homing)bits.push('homing');if(g.split)bits.push('splits');if(g.spin)bits.push('spins up');
+  return bits.join(' · ');
+}
+
+function viewHideout(){
+  const cards=Object.entries(STATIONS).map(([k,st])=>{
+    const ws=S.stations[k].map(byId),on=!!ws[0],up=on&&!!ws[1];
+    const opts=(slot)=>{
+      const cur=ws[slot];
+      const list=S.creatures.filter(c=>typesOf(c).includes(st.type)&&(!cur||c.id!==cur.id)&&!(slot===1&&ws[0]&&c.id===ws[0].id)&&!(slot===0&&ws[1]&&c.id===ws[1].id));
+      return`<select id="st-${k}-${slot}" data-act="assign" data-k="${k}" data-slot="${slot}" ${slot===1&&!on?'disabled':''} aria-label="${st.name} worker ${slot+1}">
+        <option value="">${cur?'Unassign':'Empty'}</option>${cur?`<option value="${cur.id}" selected>${esc(cur.name)} · Lv ${cur.level}</option>`:''}
+        ${list.map(c=>{const w=whereIs(c);return`<option value="${c.id}">${esc(c.name)} · ${SPECIES[c.species].name} Lv ${c.level}${w.kind==='loadout'?' (from loadout)':w.kind==='station'?' (from '+STATIONS[w.key].name+')':''}</option>`}).join('')}</select>`;
+    };
+    const worker=(slot)=>{const c=ws[slot];return`<div class="worker"><span class="lab">${slot?'Upgrade':'Worker'}</span>${c?spr(c,48):`<canvas class="spr" width="48" height="48" aria-hidden="true"></canvas>`}${c?`<span class="status">Work Lv ${workLevel(c)}</span>`:''}${opts(slot)}</div>`};
+    const have=S.creatures.filter(c=>typesOf(c).includes(st.type)).length;
+    return`<section class="card station"><div class="station-head"><h3>${st.name}</h3>${on?(up?'<span class="chip good">Upgraded</span>':'<span class="chip good">Online</span>'):'<span class="chip bad">Offline</span>'}</div>
+      <div class="row">Needs ${typeChip(st.type)} <span class="status">${TIER[TYPES[st.type].tier]} · you own ${have}</span></div>
+      <p>${st.perk}</p><p class="status">Upgrade: ${st.up}</p>
+      <div class="workers">${worker(0)}${worker(1)}</div></section>`;
+  }).join('');
+  const log=S.log.map(l=>`<li><span>Day ${l.day}</span>${esc(l.msg)}</li>`).join('');
+  return`<div class="cols"><div class="grid">${cards}</div>
+    <section class="card"><h2>Hideout log</h2><p class="hint">Each raid moves time forward one day. Every creature eats 1 food a day. Hybrids can staff either of their types' stations.</p>
+    <div class="row"><button class="btn" data-act="wait">Wait one day</button></div><ul class="log">${log}</ul></section></div>`;
+}
+
+function creCard(c){
+  const st=stats(c),sp=SPECIES[c.species];
+  const genes=Object.entries(GENES).map(([k,l])=>`<span title="${GENE_HINT[k]}">${l}</span><div class="g"><i style="width:${c.genes[k]*10}%"></i></div><span>${c.genes[k]}</span>`).join('');
+  const sellArmed=ui.sellId===c.id;
+  const traits=c.proven?c.traits.map(t=>`<li class="${NEG_TRAITS.includes(t)?'neg':''}"><b>${TRAITS[t].name}</b> · ${TRAITS[t].desc}</li>`).join(''):'<li><b>Traits hidden</b> · revealed once proven</li>';
+  return`<article class="cre">${spr(c,72)}<div class="cre-main">
+    <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
+    <div class="status">${sp.name} · ${sp.blurb}</div>
+    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}<span class="chip">${TIER[typeTier(c)]}</span>${c.origin==='bred'?`<span class="chip good">Bred · Gen ${c.gen}</span>`:(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}</div>
+    ${hpBar(c)}
+    <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
+    <div class="genes">${genes}</div>
+    <ul class="traits">${traits}</ul>
+    ${c.origin==='wild'?`<p class="status">Bond ${c.bond}/100 · obeys ${Math.round(st.obey*100)}% of the time</p>`:''}
+    <p class="status">${statusText(c)} · XP ${c.xp}/${40*c.level}</p>
+    <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
+    <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button></div>
+  </div></article>`;
+}
+function viewRoster(){
+  const F=[['all','All'],['wild','Wild'],['bred','Bred'],['unproven','Unproven'],['f','Female'],['m','Male'],['hybrid','Hybrids'],['idle','Idle']];
+  let list=S.creatures.slice();
+  const f=ui.filter;
+  if(f==='wild')list=list.filter(c=>c.origin==='wild');
+  if(f==='bred')list=list.filter(c=>c.origin==='bred');
+  if(f==='unproven')list=list.filter(c=>!c.proven);
+  if(f==='f')list=list.filter(c=>c.sex==='F');
+  if(f==='m')list=list.filter(c=>c.sex==='M');
+  if(f==='hybrid')list=list.filter(c=>c.type2);
+  if(f==='idle')list=list.filter(c=>whereIs(c).kind==='idle');
+  list.sort((a,b)=>typeTier(b)-typeTier(a)||b.level-a.level);
+  return`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Roster · ${S.creatures.length} creatures</h2>
+    <div class="filters">${F.map(([k,l])=>`<button class="tab" aria-selected="${ui.filter===k}" data-act="filter" data-k="${k}">${l}</button>`).join('')}</div></div>
+    <p class="hint">Feeding costs 1 food, heals 20% and adds 10 bond. Bond makes wild creatures more obedient in raids. Genes run 1–10 and every trait can be passed down by breeding.</p></section>
+    <div class="grid">${list.map(creCard).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
+}
+
+function viewNursery(){
+  const on=online('nursery');
+  const moms=S.creatures.filter(c=>c.proven&&c.sex==='F'),dads=S.creatures.filter(c=>c.proven&&c.sex==='M');
+  const opt=(list,sel)=>`<option value="">Choose</option>`+list.map(c=>`<option value="${c.id}" ${String(c.id)===String(sel)?'selected':''}>${esc(c.name)} · ${SPECIES[c.species].name}${c.type2?' (hybrid)':''} Lv ${c.level}</option>`).join('');
+  const a=byId(+ui.mom),b=byId(+ui.dad);
+  let pred='';
+  if(a&&b){
+    const mut=upgraded('nursery')?2:1;
+    const h=hybridChance(a,b);
+    const genes=Object.entries(GENES).map(([k,l])=>{const lo=clamp(Math.min(a.genes[k],b.genes[k])-mut,1,10),hi=clamp(Math.max(a.genes[k],b.genes[k])+mut,1,10);
+      return`<span>${l}</span><div class="g"><i style="left:${(lo-1)*10}%;width:${(hi-lo+1)*10}%"></i><b style="left:calc(${(b.genes[k]-.5)*10}% - 2px)"></b></div><span>${lo}–${hi}</span>`}).join('');
+    const tpool=[...new Set([...b.traits,...a.traits])].map(t=>TRAITS[t].name).join(', ');
+    pred=`<div class="slot"><div class="slot-label">Likely offspring</div>
+      <p><b style="font-family:var(--display)">${SPECIES[a.species].name}</b> (from the mother)${h.id?` · <span style="color:var(--gold)">${Math.round(h.p*100)}% chance of a ${SPECIES[h.id].name} hybrid (${TYPES[a.type].name}/${TYPES[b.type].name})</span>`:''}</p>
+      <div class="genes">${genes}</div>
+      <p class="status">Each gene comes from the father 70% of the time (gold tick) and the mother 30%, with a ${upgraded('nursery')?25:12}% mutation chance. Traits draw from: ${tpool}, with a small chance of a new one.</p></div>`;
+  }
+  const eggs=S.eggs.map(e=>`<div class="slot"><div class="slot-body"><canvas class="spr" width="56" height="56" data-egg="${e.cols.join(',')}" data-shiny="${e.hybrid?1:0}" aria-label="Egg"></canvas><div><div class="nm">${e.hybrid?'Shimmering egg':'Egg'} of ${esc(e.parents)}</div><p class="status">Hatches in ${e.days} day${e.days===1?'':'s'}${on?'':' (paused)'}</p></div></div></div>`).join('');
+  const can=on&&a&&b&&S.coin>=20&&S.food>=3&&S.eggs.length<eggCap();
+  const combos=HYBRIDS.map(h=>`<li><b>${h.name}</b>: ${TYPES[h.types[0]].name} + ${TYPES[h.types[1]].name}</li>`).join('');
+  return`<div class="cols"><section class="card"><h2>Nursery</h2>
+    ${on?`<p class="hint">Pair a proven female and a proven male. The mother decides the species. The father passes on most of the stats. Costs 20 coin and 3 food.</p>`:`<div class="risk"><b>Offline.</b> Assign a Warden to the Nursery in the Hideout tab to start breeding. Wardens are very rare raid finds. You can spawn one in the Test Lab.</div>`}
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+      <label class="field">Mother ♀<select id="breedMom" data-act="mom">${opt(moms,ui.mom)}</select></label>
+      <label class="field">Father ♂<select id="breedDad" data-act="dad">${opt(dads,ui.dad)}</select></label>
+    </div>
+    ${pred}
+    <div class="row"><button class="btn primary" data-act="breed" ${can?'':'disabled'}>Lay an egg</button><span class="status">Incubator ${S.eggs.length}/${eggCap()}</span></div>
+    <p class="status">Only proven creatures can breed. Unproven wild catches must survive one more raid first.</p>
+  </section>
+  <section class="card"><h2>Incubator</h2>${eggs||'<p class="empty">No eggs yet.</p>'}
+    <h3>Known hybrid pairings</h3><p class="hint">Rare when the parents' types match a pairing, in either order. Hybrids have both types, +20% HP and attack, and use the father's type for their ability.</p><ul class="plain">${combos}</ul></section></div>`;
+}
+
+function viewMarket(){
+  const forge=online('forge'),up=upgraded('forge');
+  const craft=GUN_IDS.filter(k=>GUNS[k].tier>=1&&GUNS[k].tier<=3).map(k=>{
+    const g=GUNS[k],cost=GUN_COST[g.tier];
+    const locked=!forge||(g.tier===3&&!up);const afford=S.coin>=cost.coin&&S.ore>=cost.ore;
+    return`<div class="slot"><div class="nm" style="font-family:var(--display)">${g.name} <small class="status">tier ${g.tier} · own ${S.guns[k]||0}</small></div><p class="status">${g.desc}</p><p class="status">${gunStatLine(g)}</p>
+      <div class="row"><button class="btn small" data-act="craft" data-k="${k}" ${locked||!afford?'disabled':''}>${locked?(forge?'Needs upgraded Forge':'Needs Forge online'):`Craft · ${cost.coin}c ${cost.ore} ore`}</button>
+      ${(S.guns[k]||0)>0?`<button class="btn small" data-act="sellgun" data-k="${k}">Sell · ${GUN_VALUE[g.tier]}c</button>`:''}</div></div>`;
+  }).join('');
+  const star=(S.guns.starfall||0)>0?`<div class="slot"><div class="nm" style="font-family:var(--display)">Starfall Staff <small class="status">own ${S.guns.starfall}</small></div><p class="status">${GUNS.starfall.desc}</p><button class="btn small" data-act="sellgun" data-k="starfall">Sell · ${GUN_VALUE[4]}c</button></div>`:'';
+  return`<div class="cols"><section class="card"><h2>Forge</h2>
+    <p class="hint">${forge?'Your Forge is lit.':'Assign an Ember (or Ember hybrid) to the Forge to craft.'} Guns you bring are lost if you die, except the Scav Pistol. Guns you hold when you extract come home, including ones found in the raid.</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))">${craft}${star}
+    <div class="slot"><div class="nm" style="font-family:var(--display)">Gilded Cage</div><p class="status">Captures 70% more reliably. Used before basic cages.</p>
+    <button class="btn small" data-act="gilded" ${forge&&S.coin>=25&&S.ore>=2?'':'disabled'}>${forge?'Craft · 25c 2 ore':'Needs Forge online'}</button></div></div>
+  </section>
+  <section class="card"><h2>Market</h2>
+    <div class="row"><button class="btn" data-act="buy-food" ${S.coin>=5?'':'disabled'}>Buy 1 food · 5c</button><button class="btn" data-act="buy-food5" ${S.coin>=22?'':'disabled'}>Buy 5 food · 22c</button></div>
+    <div class="row"><button class="btn" data-act="buy-cage" ${S.coin>=15?'':'disabled'}>Buy basic cage · 15c</button></div>
+    <div class="row"><button class="btn" data-act="sell-ore" ${S.ore>0?'':'disabled'}>Sell 1 ore · 8c</button></div>
+    <p class="hint">Sell surplus creatures from the Roster tab.</p></section></div>`;
+}
+
+function viewLab(){
+  const L=ui.lab,st=S.settings;
+  const tg=(k,l,d)=>`<label class="toggle"><input type="checkbox" id="set-${k}" data-act="setting" data-k="${k}" ${st[k]?'checked':''}> <span><b style="font-family:var(--display)">${l}</b><br><small class="status">${d}</small></span></label>`;
+  const spOpts=TYPE_IDS.map(t=>`<optgroup label="${TYPES[t].name}">${speciesOf(t).map(k=>`<option value="${k}" ${L.species===k?'selected':''}>${SPECIES[k].name} (${SPECIES[k].w===6?'common':SPECIES[k].w===3?'uncommon':'rare'})</option>`).join('')}</optgroup>`).join('')+
+    `<optgroup label="Hybrids">${HYBRIDS.map(h=>`<option value="${h.id}" ${L.species===h.id?'selected':''}>${h.name} (${TYPES[h.types[0]].name}/${TYPES[h.types[1]].name})</option>`).join('')}</optgroup>`;
+  const trOpts=sel=>`<option value="">Random</option>`+TRAIT_IDS.map(t=>`<option value="${t}" ${sel===t?'selected':''}>${TRAITS[t].name}</option>`).join('');
+  return`<div class="cols"><section class="card"><h2>Test Lab</h2>
+    <p class="hint">A sandbox for trying creatures, guns and fights without grinding. Everything here edits your save directly.</p>
+    <h3>Spawn a creature</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))">
+      <label class="field">Species<select id="lab-species" data-act="lab" data-k="species">${spOpts}</select></label>
+      <label class="field">Sex<select id="lab-sex" data-act="lab" data-k="sex"><option value="R" ${L.sex==='R'?'selected':''}>Random</option><option value="F" ${L.sex==='F'?'selected':''}>Female ♀</option><option value="M" ${L.sex==='M'?'selected':''}>Male ♂</option></select></label>
+      <label class="field">Origin<select id="lab-origin" data-act="lab" data-k="origin"><option value="wild" ${L.origin==='wild'?'selected':''}>Wild</option><option value="bred" ${L.origin==='bred'?'selected':''}>Bred</option></select></label>
+      <label class="field">Level<input id="lab-level" type="number" min="1" max="30" value="${L.level}" data-act="lab" data-k="level"></label>
+      <label class="field">Trait 1<select id="lab-t1" data-act="lab" data-k="t1">${trOpts(L.t1)}</select></label>
+      <label class="field">Trait 2<select id="lab-t2" data-act="lab" data-k="t2">${trOpts(L.t2)}</select></label>
+    </div>
+    <div class="row"><label class="toggle"><input type="checkbox" id="lab-max" data-act="lab" data-k="max" ${L.max?'checked':''}> Max genes</label><label class="toggle"><input type="checkbox" id="lab-proven" data-act="lab" data-k="proven" ${L.proven?'checked':''}> Already proven</label></div>
+    <div class="row"><button class="btn primary" data-act="lab-spawn">Add to roster</button></div>
+    <h3>Arena</h3>
+    <p class="hint">One room with your current loadout and endless cages. Spawn any enemy at any floor tier, any wild species, random guns and buffs. Nothing dies for real.</p>
+    <div class="row"><button class="btn primary" data-act="arena">Enter the arena</button>${tg('keepArena','Keep arena catches','Creatures you cage in the arena join your roster.')}</div>
+    <h3>Resources</h3>
+    <div class="row"><button class="btn" data-act="lab-res" data-k="coin">+200 coin</button><button class="btn" data-act="lab-res" data-k="food">+20 food</button><button class="btn" data-act="lab-res" data-k="ore">+15 ore</button><button class="btn" data-act="lab-res" data-k="cage">+3 cages</button><button class="btn" data-act="lab-res" data-k="gilded">+3 gilded</button><button class="btn" data-act="lab-res" data-k="guns">One of every gun</button></div>
+    <div class="row"><button class="btn" data-act="wait">Advance a day</button><button class="btn" data-act="lab-heal">Heal everyone</button><button class="btn" data-act="lab-prove">Prove everyone</button><button class="btn" data-act="lab-xp">+1 level to loadout</button><button class="btn" data-act="lab-hatch">Hatch eggs now</button></div>
+  </section>
+  <section class="card"><h2>Raid switches</h2>
+    ${tg('god','God mode','You take no damage in raids.')}
+    ${tg('reveal','Reveal maps','Show the whole floor map on the minimap.')}
+    ${tg('instant','Guaranteed capture','Any cage on a wild creature in range works, at any health.')}
+    ${tg('noTimer','No raid timer','The dungeon never collapses.')}
+    <h3>Save</h3><p class="hint">Progress saves in this browser only. This version uses a new save format, so earlier test saves were reset.</p>
+    <div class="row"><button class="btn ${ui.resetArm?'danger':''}" data-act="reset">${ui.resetArm?'Confirm: wipe and restart':'Reset save'}</button></div>
+  </section></div>`;
+}
+
+/* modal */
+function openModal(html){$('#modalBox').innerHTML=html;$('#modal').hidden=false;paintSprites($('#modalBox'))}
+function closeModal(){$('#modal').hidden=true}
+function openChooser(slot){
+  const cur=S.loadout.slots[slot];
+  const list=S.creatures.filter(c=>c.id!==cur).sort((a,b)=>stats(b).atk-stats(a).atk);
+  const items=list.map(c=>{const w=whereIs(c);const note=w.kind==='station'?`Leaves the ${STATIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';
+    return`<button class="choice" data-act="pickslot" data-slot="${slot}" data-id="${c.id}">${spr(c,44)}<span style="min-width:0;flex:1"><span class="nm">${esc(c.name)} · ${sexSym(c.sex)} ${SPECIES[c.species].name} Lv ${c.level}</span><small>${c.hp}/${stats(c).hp} HP · ${slot===2?'Passive: '+supportText(c):TYPES[abilType(c)].ability}${c.proven?'':' · Unproven'}</small>${note?`<small style="color:var(--gold)">${note}</small>`:''}</span></button>`}).join('');
+  openModal(`<h2>${slot===2?'Slot 3: support or free':'Combat slot '+(slot+1)}</h2>
+    ${slot===2?'<p class="hint">A support creature gives its passive but stays out of the fight until you swap it into slot 1 or 2. Leave the slot free if you plan to cage something.</p>':''}
+    <div class="choose-list">${slot===2?'<button class="choice" data-act="clearslot" data-slot="2"><span class="nm">Leave free for a capture</span></button>':''}${items||'<p class="empty">No other creatures.</p>'}</div>
+    <div class="row"><button class="btn" data-act="close">Cancel</button></div>`);
+}
+
+/* ================= Actions ================= */
+function act(a,d){
+  switch(a){
+    case'tab':ui.tab=d.k;ui.sellId=null;ui.resetArm=false;renderAll();window.scrollTo(0,0);break;
+    case'filter':ui.filter=d.k;renderMain();break;
+    case'close':closeModal();break;
+    case'choose':openChooser(+d.slot);break;
+    case'pickslot':{const c=byId(+d.id);unplace(c);S.loadout.slots[+d.slot]=c.id;closeModal();save();renderAll();break}
+    case'clearslot':S.loadout.slots[+d.slot]=null;closeModal();save();renderAll();break;
+    case'deploy':startRaid('raid');break;
+    case'scav':startRaid('scav');break;
+    case'arena':startRaid('arena');break;
+    case'wait':processDay();save();renderAll();break;
+    case'feed':{const c=byId(+d.id);if(S.food<1)break;S.food--;c.bond=Math.min(100,c.bond+10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));save();renderAll();break}
+    case'sell':{const c=byId(+d.id);if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
+      S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);save();renderAll();break}
+    case'breed':breed();break;
+    case'craft':{const g=GUNS[d.k],cost=GUN_COST[g.tier];if(S.coin<cost.coin||S.ore<cost.ore)break;S.coin-=cost.coin;S.ore-=cost.ore;S.guns[d.k]=(S.guns[d.k]||0)+1;addLog(`The Forge made a ${g.name}.`);save();renderAll();break}
+    case'sellgun':{const g=GUNS[d.k];if(!(S.guns[d.k]>0))break;S.guns[d.k]--;S.coin+=GUN_VALUE[g.tier];validGuns();save();renderAll();break}
+    case'gilded':if(S.coin>=25&&S.ore>=2){S.coin-=25;S.ore-=2;S.cages.gilded++;save();renderAll()}break;
+    case'buy-food':if(S.coin>=5){S.coin-=5;S.food++;save();renderAll()}break;
+    case'buy-food5':if(S.coin>=22){S.coin-=22;S.food+=5;save();renderAll()}break;
+    case'buy-cage':if(S.coin>=15){S.coin-=15;S.cages.basic++;save();renderAll()}break;
+    case'sell-ore':if(S.ore>0){S.ore--;S.coin+=8;save();renderAll()}break;
+    case'lab-spawn':{const L=ui.lab;const lv=clamp(+L.level||1,1,30);
+      let traits=null;if(L.t1||L.t2){traits=[];if(L.t1)traits.push(L.t1);if(L.t2&&L.t2!==L.t1)traits.push(L.t2);while(traits.length<2)traits.push(rollTraits(1,traits)[0])}
+      const c=makeCreature(L.species,L.origin,lv,{proven:L.proven,sex:L.sex==='R'?null:L.sex,traits,genes:L.max?{vig:10,pow:10,swf:10,hst:10,tmp:10}:undefined,bond:L.origin==='wild'?20:100,captureRaid:L.origin==='wild'&&!L.proven?S.stats.raids:-1});
+      S.creatures.push(c);addLog(`Test Lab: added ${c.name}, a ${sexSym(c.sex)} ${L.origin} ${SPECIES[c.species].name} at Lv ${lv}.`);save();renderAll();break}
+    case'lab-res':{const k=d.k;if(k==='coin')S.coin+=200;if(k==='food')S.food+=20;if(k==='ore')S.ore+=15;if(k==='cage')S.cages.basic+=3;if(k==='gilded')S.cages.gilded+=3;if(k==='guns')GUN_IDS.forEach(g=>{if(g!=='pistol')S.guns[g]=Math.max(1,S.guns[g]||0)});save();renderAll();break}
+    case'lab-heal':S.creatures.forEach(c=>c.hp=stats(c).hp);save();renderAll();break;
+    case'lab-prove':S.creatures.forEach(c=>c.proven=true);save();renderAll();break;
+    case'lab-xp':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.level=Math.min(30,c.level+1);c.hp=stats(c).hp});save();renderAll();break;
+    case'lab-hatch':{const n=S.eggs.length;S.eggs.forEach(e=>S.creatures.push(e.child));S.eggs=[];if(n)addLog(`Test Lab: hatched ${n} egg${n>1?'s':''}.`);save();renderAll();break}
+    case'reset':if(!ui.resetArm){ui.resetArm=true;renderMain();break}ui.resetArm=false;newGame();save();ui.tab='raid';renderAll();break;
+  }
+}
+document.addEventListener('click',e=>{
+  if(e.target.id==='modal'){closeModal();return}
+  const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT')return;
+  if(b.closest('#raid'))return;
+  act(b.dataset.act,b.dataset);
+});
+document.addEventListener('change',e=>{
+  const el=e.target,a=el.dataset.act;if(!a)return;
+  if(a==='assign'){
+    const k=el.dataset.k,slot=+el.dataset.slot,id=+el.value;
+    if(byId(S.stations[k][slot]))S.stations[k][slot]=null;
+    if(id){const c=byId(id);unplace(c);S.stations[k][slot]=c.id}
+    normStations();save();renderAll();
+  }else if(a==='gunsel'){S.loadout.guns[+el.dataset.slot]=el.value||null;validGuns();save();renderMain()}
+  else if(a==='mom'){ui.mom=el.value;renderMain()}
+  else if(a==='dad'){ui.dad=el.value;renderMain()}
+  else if(a==='lab'){const k=el.dataset.k;ui.lab[k]=el.type==='checkbox'?el.checked:el.value}
+  else if(a==='setting'){S.settings[el.dataset.k]=el.checked;save()}
+});
+
+/* ================= Raid engine ================= */
+const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6,FLOORS=3;
+let R=null,raf=0;
+const keys=new Set();
+const touch={move:null,aim:null};
+
+function rollWildSpecies(floor,lair){
+  const rareMul=(floor===1?1:floor===2?2:3.5)*(lair?4:1);
+  const type=wpick(TYPE_IDS,t=>TYPES[t].weight*(TYPES[t].tier>=3?rareMul:1));
+  return wpick(speciesOf(type),k=>SPECIES[k].w*(SPECIES[k].w===1?(floor>=2?2:1):1));
+}
+function genMap(floor,arena){
+  const G=arena?1:4,rooms=[],grid={};const key=(x,y)=>x+','+y;
+  const add=(gx,gy)=>{const r={gx,gy,ox:gx*CW+3,oy:gy*CH+3,links:[],kind:'fight',spawned:false,cleared:false,locked:false,visited:false,doors:[],idx:rooms.length};rooms.push(r);grid[key(gx,gy)]=r;return r};
+  const start=add(arena?0:ri(0,3),arena?0:ri(0,3));
+  const target=arena?1:8+floor;let guard=0;
+  while(rooms.length<target&&guard++<1000){const a=pick(rooms);const[dx,dy]=pick([[1,0],[-1,0],[0,1],[0,-1]]);const nx=a.gx+dx,ny=a.gy+dy;
+    if(nx<0||ny<0||nx>=G||ny>=G||grid[key(nx,ny)])continue;const b=add(nx,ny);a.links.push(b);b.links.push(a)}
+  start.dist=0;const q=[start];while(q.length){const r=q.shift();for(const n of r.links)if(n.dist==null){n.dist=r.dist+1;q.push(n)}}
+  start.kind=arena?'arena':'start';start.cleared=true;start.visited=true;
+  if(!arena){
+    const others=rooms.filter(r=>r!==start).sort((a,b)=>b.dist-a.dist);let i=0;const set=k=>{if(others[i])others[i++].kind=k};
+    if(floor<FLOORS){set('stairs');set('gate')}else{set('rift');set('cliff')}
+    if(floor>=2)set('lair');
+    const rest=others.slice(i).sort(()=>Math.random()-.5);let j=0;const put=k=>{if(rest[j])rest[j++].kind=k};
+    put('chest');put('chest');
+    if(Math.random()<.75)put('shop');
+    if(Math.random()<(floor===1?.35:.7))put('shrine');
+    const famW={husk:3,bat:2,crawler:2.5,totem:1.6};
+    for(const r of rooms){
+      if(['start','shop','shrine'].includes(r.kind))continue;
+      const base={fight:[3,4],chest:[1,2],stairs:[3,4],gate:[2,3],rift:[3,4],cliff:[2,3],lair:[3,4]}[r.kind];
+      const n=ri(base[0],base[1])+(floor-1);
+      const wildChance=floor===3?.28:.22;
+      const wc=r.kind==='lair'?1+(Math.random()<.3?1:0):(Math.random()<wildChance?1:0);
+      const foes=[];if(r.kind==='lair')foes.push('brute');
+      while(foes.length<n-wc)foes.push(wpick(Object.keys(famW),k=>famW[k]));
+      r.plan={foes,wilds:Array.from({length:wc},()=>rollWildSpecies(floor,r.kind==='lair'))};
+    }
+  }
+  const W=G*CW,H=G*CH,tiles=new Uint8Array(W*H),doorOwner=new Map();
+  for(const r of rooms)for(let j=0;j<RH;j++)for(let i=0;i<RW;i++)tiles[(r.oy+j)*W+r.ox+i]=1;
+  const done=new Set();
+  for(const a of rooms)for(const b of a.links){
+    const k=Math.min(a.idx,b.idx)+'-'+Math.max(a.idx,b.idx);if(done.has(k))continue;done.add(k);
+    const[p,q2]=(a.gx<b.gx||a.gy<b.gy)?[a,b]:[b,a];
+    if(p.gy===q2.gy){const cy=p.oy+(RH>>1);
+      for(let x=p.ox+RW;x<q2.ox;x++)for(let y=cy-1;y<=cy+1;y++)tiles[y*W+x]=1;
+      for(let y=cy-1;y<=cy+1;y++){const i1=y*W+p.ox+RW,i2=y*W+q2.ox-1;tiles[i1]=3;tiles[i2]=3;doorOwner.set(i1,p);doorOwner.set(i2,q2);p.doors.push(i1);q2.doors.push(i2)}
+    }else{const cx=p.ox+(RW>>1);
+      for(let y=p.oy+RH;y<q2.oy;y++)for(let x=cx-1;x<=cx+1;x++)tiles[y*W+x]=1;
+      for(let x=cx-1;x<=cx+1;x++){const i1=(p.oy+RH)*W+x,i2=(q2.oy-1)*W+x;tiles[i1]=3;tiles[i2]=3;doorOwner.set(i1,p);doorOwner.set(i2,q2);p.doors.push(i1);q2.doors.push(i2)}
+    }
+  }
+  for(const r of rooms){
+    if(['fight','lair','chest','arena'].includes(r.kind)){
+      const n=r.kind==='arena'?4:ri(0,3);
+      for(let k=0;k<n;k++){const px=r.ox+ri(2,RW-4),py=r.oy+ri(2,RH-4);
+        if(Math.abs(px+1-(r.ox+RW/2))<3.5&&Math.abs(py+1-(r.oy+RH/2))<3)continue;
+        for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++)tiles[(py+dy)*W+px+dx]=2}
+    }
+    r.cx=(r.ox+RW/2)*TS;r.cy=(r.oy+RH/2)*TS;
+    if(r.kind==='chest'||r.kind==='lair')r.chest={x:r.cx,y:r.cy,open:false};
+  }
+  return{G,W,H,tiles,doorOwner,rooms,grid,start,floor,arena:!!arena};
+}
+function solidAt(M,tx,ty){if(tx<0||ty<0||tx>=M.W||ty>=M.H)return true;const i=ty*M.W+tx,t=M.tiles[i];if(t===1)return false;if(t===3)return M.doorOwner.get(i).locked;return true}
+function hitsWall(x,y,r){const M=R.map;const x0=Math.floor((x-r)/TS),x1=Math.floor((x+r)/TS),y0=Math.floor((y-r)/TS),y1=Math.floor((y+r)/TS);
+  for(let ty=y0;ty<=y1;ty++)for(let tx=x0;tx<=x1;tx++)if(solidAt(M,tx,ty))return true;return false}
+function moveEnt(e,dx,dy){let moved=false;if(!hitsWall(e.x+dx,e.y,e.r)){e.x+=dx;moved=true}if(!hitsWall(e.x,e.y+dy,e.r)){e.y+=dy;moved=true}return moved}
+function roomAt(x,y,m=0){
+  const M=R.map,gx=Math.floor(x/TS/CW),gy=Math.floor(y/TS/CH),r=M.grid[gx+','+gy];if(!r)return null;
+  if(x>=r.ox*TS+m&&x<=(r.ox+RW)*TS-m&&y>=r.oy*TS+m&&y<=(r.oy+RH)*TS-m)return r;return null;
+}
+function renderMapCanvas(M){
+  const c=document.createElement('canvas');c.width=M.W*TS;c.height=M.H*TS;const g=c.getContext('2d');
+  const pals={1:{a:'#2c4a55',b:'#284450',fl:'#3a6070',wall:'#336b66',top:'#5fb3a0',edge:'#142630'},2:{a:'#3a2a5e',b:'#33255a',fl:'#4a3878',wall:'#5d43a3',top:'#8d6fe0',edge:'#1d1438'},3:{a:'#4a2a2a',b:'#432626',fl:'#5e3434',wall:'#8a3a3a',top:'#ff8a5c',edge:'#240f0f'}};
+  const pal=M.arena?{a:'#4a2f3f',b:'#43293a',fl:'#5e3c50',wall:'#7a3f5a',top:'#ff8fb1',edge:'#24101c'}:pals[M.floor];
+  g.fillStyle='#0d0a1c';g.fillRect(0,0,c.width,c.height);
+  const walk=(x,y)=>{if(x<0||y<0||x>=M.W||y>=M.H)return false;const t=M.tiles[y*M.W+x];return t===1||t===3};
+  for(let y=0;y<M.H;y++)for(let x=0;x<M.W;x++){
+    if(walk(x,y)){g.fillStyle=(x+y)%2?pal.a:pal.b;g.fillRect(x*TS,y*TS,TS,TS);
+      if(Math.random()<.18){g.fillStyle=pal.fl;g.fillRect(x*TS+ri(4,24),y*TS+ri(4,24),ri(2,5),ri(2,4))}}
+  }
+  for(let y=0;y<M.H;y++)for(let x=0;x<M.W;x++){
+    if(walk(x,y))continue;
+    let near=false;for(let dy=-1;dy<=1&&!near;dy++)for(let dx=-1;dx<=1;dx++)if(walk(x+dx,y+dy)){near=true;break}
+    if(!near)continue;
+    g.fillStyle=pal.wall;g.fillRect(x*TS,y*TS,TS,TS);
+    g.fillStyle=pal.top;g.fillRect(x*TS,y*TS,TS,6);
+    g.fillStyle=pal.edge;g.fillRect(x*TS,y*TS+TS-4,TS,4);
+    if(walk(x,y+1)){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x*TS,(y+1)*TS,TS,6)}
+    g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x*TS+(y%2?4:18),y*TS+12,10,2);
+  }
+  return c;
+}
+
+/* ---------- raid setup ---------- */
+function makeComp(c){
+  const st=stats(c);
+  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:12,hp:Math.max(1,Math.min(c.hp,st.hp)),maxHp:st.hp,atk:st.atk,spd:st.spd,obey:st.obey,
+    cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,stuck:0,seed:Math.random()*9};
+}
+function startRaid(mode){
+  closeModal();
+  const M=genMap(1,mode==='arena');
+  R={mode,id:mode==='arena'?'arena':S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'?0:600,
+    p:{x:M.start.cx,y:M.start.cy+40,r:11,hp:100,maxHp:100,roll:0,rollCd:0,rvx:0,rvy:0,inv:0,hurt:0,slow:0,fireCd:0},
+    comps:[null,null],slot3:null,enemies:[],bullets:[],fields:[],floats:[],fx:[],items:[],trail:[],
+    bag:{coin:0,ore:0,food:0},cages:{basic:0,gilded:0},guns:['pistol',null],active:0,spin:0,burst:[],
+    buffs:{},leechAcc:0,aim:0,firing:false,mouse:null,shield:0,prism:0,taunt:0,tauntEnt:null,
+    msg:'',msgT:0,prompt:'',ext:0,stairT:0,cur:M.start,paused:false,over:false,last:0,saved:{},shops:{},taken:[]};
+  if(mode==='scav'){R.cages.basic=1;S.stats.raids++;R.id=S.stats.raids;msg('Scav run: a loaner pistol and one cage. Nothing of yours is at risk.')}
+  else{
+    validGuns();
+    const sl=S.loadout.slots.map(byId);
+    if(mode==='arena'){sl.forEach(c=>{if(c)R.saved[c.id]=c.hp});R.cages={basic:99,gilded:0};R.guns=[...S.loadout.guns]}
+    else{
+      let n=3;const g=Math.min(n,S.cages.gilded);S.cages.gilded-=g;n-=g;const b=Math.min(n,S.cages.basic);S.cages.basic-=b;R.cages={basic:b,gilded:g};
+      R.guns=[...S.loadout.guns];R.guns.forEach(k=>{if(k&&k!=='pistol'){S.guns[k]--;R.taken.push(k)}});
+      S.stats.raids++;
+    }
+    R.comps=[sl[0]?makeComp(sl[0]):null,sl[1]?makeComp(sl[1]):null];
+    R.slot3=sl[2]?{c:sl[2]}:null;
+    msg(mode==='arena'?'Arena: spawn foes from the panel. Leave from the pause menu.':'Floor 1 of 3. Find the stairs or the gate.');
+  }
+  refreshSupport();R.p.hp=R.p.maxHp;
+  save();
+  $('#app').hidden=true;$('#raid').hidden=false;$('#touch').hidden=!TOUCH;$('#hudKeys').hidden=TOUCH;
+  $('#arenaPanel').hidden=mode!=='arena';if(mode==='arena')buildArenaPanel();
+  $('#pause').hidden=true;
+  resize();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+const B=k=>R.buffs[k]||0;
+function refreshSupport(){
+  const c=R.slot3&&R.slot3.c.captureRaid!==R.id?R.slot3.c:null;
+  R.sup=new Set(c?typesOf(c):[]);
+  const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.round((100+25*B('hp'))*(R.sup.has('warden')?1.15:1));R.p.hp=Math.max(1,Math.round(R.p.maxHp*ratio));
+  R.reveal=S.settings.reveal||online('roost')||R.sup.has('echo');
+}
+function applyBuff(k,silent){
+  R.buffs[k]=(R.buffs[k]||0)+1;
+  if(k==='hp'){refreshSupport();R.p.hp=Math.min(R.p.maxHp,R.p.hp+25)}
+  if(k==='time')R.time+=60;
+  if(!silent){float(R.p.x,R.p.y-30,BUFFS[k].name,'#5de8b0');msg(`${BUFFS[k].name}: ${BUFFS[k].desc}.`)}
+}
+function msg(t){R.msg=t;R.msgT=3}
+function float(x,y,text,col){R.floats.push({x,y,text:String(text),col:col||'#f6eedb',t:1});if(R.floats.length>60)R.floats.shift()}
+function partyHas(type){return R.comps.some(m=>m&&!m.downed&&typesOf(m.c).includes(type))||(R.slot3&&typesOf(R.slot3.c).includes(type))}
+function partyTrait(tr){return R.comps.some(m=>m&&m.c.traits.includes(tr))||(R.slot3&&R.slot3.c.traits.includes(tr))}
+const capRadius=()=>95*(1+.4*B('cage'));
+const tierFor=f=>clamp(f-1,0,2);
+
+/* ---------- spawning ---------- */
+function spawnPos(r){
+  for(let i=0;i<40;i++){const x=(r.ox+rnd(1.5,RW-1.5))*TS,y=(r.oy+rnd(1.5,RH-1.5))*TS;if(!hitsWall(x,y,18)&&Math.hypot(x-R.p.x,y-R.p.y)>180)return{x,y}}
+  return{x:r.cx,y:r.cy};
+}
+function baseEnemy(pos,room){return{x:pos.x,y:pos.y,room,stun:0,slow:0,face:1,flash:0,hitCd:0,wind:0,rot:Math.random()*6,phase:0,queue:[],chargeT:0,strafe:pick([-1,1]),seed:Math.random()*9}}
+function spawnWild(pos,species,room,level){
+  const f=R.map.floor;const lv=level||(f===1?ri(2,4):f===2?ri(4,6):ri(6,9));
+  const c=makeCreature(species,'wild',lv,{floor:f,bond:5});const st=stats(c);
+  const fire=WILD_FIRE[c.type];
+  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'wild',c,r:14,hp:Math.round(st.hp*1.2),maxHp:Math.round(st.hp*1.2),dmg:st.atk*.7,spd:st.spd*.65,
+    fire,every:fire.every/Math.max(.6,st.rate),cd:rnd(.8,1.8),melee:fire.kind==='charge'||c.type==='warden',bcol:SPECIES[c.species].col}));
+}
+function spawnFoe(pos,fam,tier,room){
+  const d=FOES[fam][tier];
+  R.enemies.push(Object.assign(baseEnemy(pos,room),{kind:'foe',fam,tier,def:d,r:d.r,hp:d.hp,maxHp:d.hp,dmg:d.dmg,spd:d.spd,fire:d.fire,every:d.fire.every,cd:rnd(.9,2),melee:!!d.melee,bcol:d.bcol||'#ff6b6b'}));
+}
+function enterRoom(r){
+  r.visited=true;if(r.spawned||!r.plan)return;r.spawned=true;
+  const t=tierFor(R.map.floor);
+  r.plan.foes.forEach(f=>spawnFoe(spawnPos(r),f,t,r));
+  r.plan.wilds.forEach(s=>spawnWild(spawnPos(r),s,r));
+  if(R.enemies.some(e=>e.room===r)){
+    r.locked=true;
+    R.comps.forEach(m=>{if(m&&!roomAt(m.x,m.y,8)){m.x=R.p.x+rnd(-20,20);m.y=R.p.y+rnd(-20,20)}});
+    const w=r.plan.wilds;
+    if(w.length){const rare=w.find(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3);msg(rare?`Doors sealed. A rare ${SPECIES[rare].name} is here!`:`Doors sealed. A wild ${SPECIES[w[0]].name} is here.`)}
+    else msg('Doors sealed. Clear the room.');
+  }
+}
+function buildArenaPanel(){
+  R.arenaLv=4;
+  const spOpts=TYPE_IDS.map(t=>`<optgroup label="${TYPES[t].name}">${speciesOf(t).map(k=>`<option value="${k}">${SPECIES[k].name}</option>`).join('')}</optgroup>`).join('');
+  $('#arenaPanel').innerHTML=`<details ${TOUCH?'':'open'}><summary>Test spawns</summary><div class="ap">
+  <span class="lab">Enemy</span>
+  <div class="row"><select id="arFoe" aria-label="Enemy family">${FOE_IDS.map(k=>`<option value="${k}">${k[0].toUpperCase()+k.slice(1)}</option>`).join('')}</select>
+  <select id="arTier" aria-label="Floor tier"><option value="0">Floor 1</option><option value="1">Floor 2</option><option value="2">Floor 3</option></select></div>
+  <div class="row"><button class="btn small" data-spawn="foe">Spawn enemy</button></div>
+  <span class="lab">Wild creature · Lv <span id="arenaLv">4</span></span>
+  <div class="row"><select id="arSp" aria-label="Species">${spOpts}</select><button class="btn small" data-spawn="lv-">−</button><button class="btn small" data-spawn="lv+">+</button></div>
+  <div class="row"><button class="btn small" data-spawn="wild">Spawn wild</button></div>
+  <div class="row"><button class="btn small" data-spawn="gun">Random gun</button><button class="btn small" data-spawn="buff">Random buff</button></div>
+  <div class="row"><button class="btn small" data-spawn="clear">Clear</button><button class="btn small" data-spawn="heal">Heal party</button></div></div></details>`;
+}
+$('#arenaPanel').addEventListener('click',e=>{
+  const b=e.target.closest('[data-spawn]');if(!b||!R)return;const k=b.dataset.spawn;const r=R.map.start;
+  if(k==='lv-'||k==='lv+'){R.arenaLv=clamp(R.arenaLv+(k==='lv+'?1:-1),1,30);$('#arenaLv').textContent=R.arenaLv;return}
+  if(k==='clear'){R.enemies=[];R.bullets=[];return}
+  if(k==='heal'){R.p.hp=R.p.maxHp;R.comps.forEach(m=>{if(m){m.downed=false;m.hp=m.maxHp}});return}
+  if(k==='foe')spawnFoe(spawnPos(r),$('#arFoe').value,+$('#arTier').value,r);
+  if(k==='wild')spawnWild(spawnPos(r),$('#arSp').value,r,R.arenaLv);
+  if(k==='gun'){const g=pick(GUN_IDS.filter(x=>x!=='pistol'));R.items.push({kind:'gun',id:g,x:R.p.x+40,y:R.p.y});msg(`${GUNS[g].name} dropped. Stand on it and press Use.`)}
+  if(k==='buff')applyBuff(pick(BUFF_IDS));
+});
+
+/* ---------- combat helpers ---------- */
+function hurtEnemy(e,dmg,quiet,src){
+  if(e.hp<=0)return;e.hp-=dmg;e.flash=.08;
+  if(src==='p'&&B('leech')){R.leechAcc+=dmg*B('leech');while(R.leechAcc>=25){R.leechAcc-=25;healPlayer(1)}}
+  if(src&&src.c&&src.st.vamp)src.hp=Math.min(src.maxHp,src.hp+dmg*src.st.vamp);
+  if(!quiet)float(e.x+rnd(-6,6),e.y-e.r-8,Math.round(dmg),'#ffe38a');
+  if(e.kind==='wild'&&e.hp>0&&e.hp/e.maxHp<=.5&&!e.weakShown){e.weakShown=true;float(e.x,e.y-e.r-24,'Weak! Get close and cage it','#ffcf4a')}
+}
+function hurtPlayer(d,slow){
+  const p=R.p;if(S.settings.god||p.roll>0||R.shield>0||p.inv>0)return;
+  if(R.sup.has('crystal')&&Math.random()<.2){float(p.x,p.y-24,'Blocked','#ff8fe0');p.inv=.2;return}
+  p.hp-=d;p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;R.shake=.18;
+  if(p.hp<=0)playerDown();
+}
+function hurtComp(m,d){
+  if(m.downed)return;
+  d*=m.st.taken*Math.pow(.8,B('ptough'));if(R.taunt>0&&R.tauntEnt===m)d*=.5;
+  m.hp-=d;m.flash=.08;
+  if(m.hp<=0){m.hp=0;m.downed=true;m.rev=0;float(m.x,m.y-22,'Down!','#ff6688');msg(`${m.c.name} is down! Stand next to it to revive.`)}
+}
+const healPlayer=a=>{R.p.hp=Math.min(R.p.maxHp,R.p.hp+a)};
+function playerDown(){
+  if(R.mode==='arena'){R.p.hp=R.p.maxHp;R.enemies=[];R.bullets=[];msg('You fell. The arena resets.');return}
+  endRaid('dead');
+}
+function shoot(team,x,y,ang,speed,dmg,o={}){
+  R.bullets.push({team,x,y,vx:Math.cos(ang)*speed,vy:Math.sin(ang)*speed,r:o.r||5,dmg,life:o.life||2.4,age:0,col:o.col||'#ff5c7a',slow:o.slow||0,
+    pierce:o.pierce||0,hit:o.pierce?new Set():null,bounce:o.bounce||0,explode:o.explode||0,split:o.split||0,homing:o.homing||0,src:o.src||null});
+}
+const critMul=st=>st&&st.crit&&Math.random()<st.crit?2:1;
+function nearestEnemy(from,range,spareWeak){let best=null,bd=range;for(const e of R.enemies){if(e.hp<=0)continue;if(spareWeak&&e.kind==='wild'&&e.hp/e.maxHp<=.5)continue;const d=dist(from,e);if(d<bd){bd=d;best=e}}return best}
+function pickTarget(e){
+  if(R.taunt>0&&R.tauntEnt&&!R.tauntEnt.downed)return R.tauntEnt;
+  let best=R.p,bd=dist(e,R.p);
+  for(const m of R.comps){if(!m||m.downed)continue;const d=dist(e,m)*1.3;if(d<bd){bd=d;best=m}}
+  return best;
+}
+function explodeAt(x,y,rad,dmg,team){
+  R.fx.push({x,y,r:rad,t:.35,max:.35,col:team==='e'?'#ff6b6b':'#ffcf4a',fill:true});
+  if(team==='e'){if(dist({x,y},R.p)<rad+R.p.r)hurtPlayer(dmg)}
+  else R.enemies.forEach(e=>{if(e.hp>0&&dist({x,y},e)<rad+e.r)hurtEnemy(e,dmg,false,'p')});
+}
+
+/* ---------- player actions ---------- */
+function useAbility(i){
+  const m=R.comps[i];if(!m){msg('That combat slot is empty.');return}
+  if(m.downed){msg(`${m.c.name} is down.`);return}
+  if(m.abil>0)return;
+  const max=8*m.st.abil*Math.max(.4,1-.25*B('abil'));
+  if(Math.random()>m.obey){m.abil=max*.5;float(m.x,m.y-26,'Ignores you','#ff6688');return}
+  m.abil=max;const T=abilType(m.c),atk=m.atk*(1+.2*B('pdmg'));
+  if(T==='ember'){for(let k=0;k<12;k++)shoot('p',m.x,m.y,k/12*Math.PI*2,360,atk*1.3,{col:TYPES.ember.color,r:6,src:m});float(m.x,m.y-26,'Flame Ring','#ff7a3d')}
+  else if(T==='fungal'){const tg=nearestEnemy(m,420)||{x:R.p.x+Math.cos(R.aim)*120,y:R.p.y+Math.sin(R.aim)*120};R.fields.push({x:tg.x,y:tg.y,r:110,t:4,dps:atk*.9});float(m.x,m.y-26,'Spore Field','#e0527a')}
+  else if(T==='tide'){R.shield=3;healPlayer(15);float(R.p.x,R.p.y-26,'Shielded','#58c2ff')}
+  else if(T==='echo'){R.enemies.forEach(e=>{if(dist(e,m)<240){e.stun=1.6;e.wind=0;hurtEnemy(e,atk*critMul(m.st),false,m)}});R.fx.push({x:m.x,y:m.y,r:240,t:.4,max:.4,col:'#9b7bff'})}
+  else if(T==='gale'){const tg=nearestEnemy(m,420);if(!tg){m.abil=1;float(m.x,m.y-26,'No target','#b4a9d8');return}const a=Math.atan2(tg.y-m.y,tg.x-m.x);m.dash=.32;m.dvx=Math.cos(a)*620;m.dvy=Math.sin(a)*620;m.dashHit=new Set();m.dashDmg=atk*2.5;float(m.x,m.y-26,'Gust Dash','#4fe0c8')}
+  else if(T==='crystal'){R.prism=3;float(R.p.x,R.p.y-26,'Prism Ward','#ff8fe0')}
+  else if(T==='warden'){R.taunt=4;R.tauntEnt=m;float(m.x,m.y-26,'Taunt!','#e3b04b')}
+}
+function doRoll(){
+  const p=R.p;if(p.rollCd>0||p.roll>0)return;
+  let{mx,my}=moveVec();if(!mx&&!my){mx=Math.cos(R.aim);my=Math.sin(R.aim)}
+  const l=Math.hypot(mx,my)||1;p.roll=.3;p.rollCd=.75*Math.pow(.65,B('roll'));p.rvx=mx/l*440;p.rvy=my/l*440;
+}
+function useCage(){
+  if(R.slot3){msg('Slot 3 is full. A caught creature needs a free slot 3.');return}
+  const kind=R.cages.gilded>0?'gilded':R.cages.basic>0?'basic':null;
+  if(!kind){msg('No cages left.');return}
+  const rad=capRadius();
+  const near=R.enemies.filter(e=>e.kind==='wild'&&e.hp>0&&dist(e,R.p)<rad+e.r);
+  if(!near.length){msg('No wild creature inside the cage ring. Get closer.');return}
+  const weak=near.filter(e=>S.settings.instant||e.hp/e.maxHp<=.5).sort((a,b)=>dist(a,R.p)-dist(b,R.p));
+  if(!weak.length){msg('Weaken it below half health first.');return}
+  R.cages[kind]--;
+  R.fx.push({x:R.p.x,y:R.p.y,r:rad,t:.45,max:.45,col:'#ffcf4a'});
+  tryCapture(weak[0],kind);
+}
+function swapSlot3(i){
+  if(!R.slot3){msg('Slot 3 is empty.');return}
+  const cur=R.comps[i];
+  if(cur&&cur.downed){msg(`${cur.c.name} is down and can't be swapped out.`);return}
+  const inc=R.slot3.c;
+  if(cur){cur.c.hp=Math.round(cur.hp);R.slot3={c:cur.c}}else R.slot3=null;
+  const m=makeComp(inc);m.x=R.p.x+(i?20:-20);m.y=R.p.y+10;
+  R.comps[i]=m;refreshSupport();
+  float(m.x,m.y-26,`Go, ${inc.name}!`,'#ffcf4a');
+  if(inc.captureRaid===R.id)msg(`Testing ${inc.name} in slot ${i+1}. Wild catches may ignore you. Keep it alive until extraction.`);
+}
+function switchGun(){
+  if(!R.guns[1-R.active]){msg('Your other gun slot is empty.');return}
+  R.active=1-R.active;R.burst=[];R.spin=0;float(R.p.x,R.p.y-26,GUNS[R.guns[R.active]].name,'#ffe38a');
+}
+function tryCapture(e,kind){
+  const hpf=e.hp/e.maxHp,tier=TYPES[e.c.type].tier,rare=SPECIES[e.c.species].w===1?.85:1;
+  let ch=(1-hpf)*1.15*(kind==='gilded'?1.7:1)*[1,1,.8,.6,.45][tier]*rare+(partyTrait('lucky')?.1:0)+.1*B('cage');
+  if(e.stun>0)ch+=.1;
+  if(S.settings.instant||Math.random()<ch){
+    const c=e.c,st=stats(c);c.hp=Math.max(1,Math.round(st.hp*hpf));c.captureRaid=R.id;c.bond=5;
+    e.hp=0;e.captured=true;R.slot3={c};refreshSupport();
+    float(e.x,e.y-e.r-12,'Caught!','#ffcf4a');msg(`Caught a wild ${sexSym(c.sex)} ${SPECIES[c.species].name}: ${c.name}! It's in slot 3. Swap it into slot 1 or 2 to test it.`);
+    R.fx.push({x:e.x,y:e.y,r:60,t:.5,max:.5,col:'#ffcf4a'});
+    return true;
+  }
+  float(e.x,e.y-e.r-12,'Broke free!','#ff6688');e.stun=0;e.cd=.3;return false;
+}
+function nearestItem(){let best=null,bd=40;for(const it of R.items){if(it.kind!=='gun')continue;const d=dist(it,R.p);if(d<bd){bd=d;best=it}}return best}
+function nearNpc(){const r=R.cur;if(!r||(r.kind!=='shop'&&r.kind!=='shrine'))return null;return dist(R.p,{x:r.cx,y:r.cy})<60?r:null}
+function interact(){
+  const it=nearestItem();
+  if(it){
+    R.items=R.items.filter(x=>x!==it);
+    if(!R.guns[1]&&R.guns[0]){R.guns[1]=it.id;R.active=1}
+    else{const old=R.guns[R.active];R.guns[R.active]=it.id;if(old)R.items.push({kind:'gun',id:old,x:R.p.x+rnd(-14,14),y:R.p.y+18})}
+    R.burst=[];R.spin=0;float(R.p.x,R.p.y-26,GUNS[it.id].name,'#ffe38a');return;
+  }
+  const r=nearNpc();if(!r)return;
+  if(r.kind==='shop')openShop(r);else openShrine(r);
+}
+
+/* ---------- shops and shrines ---------- */
+const gunTierRoll=f=>wpick([1,2,3,4],t=>f===1?[6,3,.6,0][t-1]:f===2?[3,5,2,.3][t-1]:[1,4,5,1][t-1]);
+const gunOfTier=t=>pick(GUN_IDS.filter(k=>GUNS[k].tier===t));
+function payCoin(n){if(R.bag.coin+S.coin<n)return false;const fb=Math.min(n,R.bag.coin);R.bag.coin-=fb;S.coin-=n-fb;return true}
+function openShop(r){
+  if(!R.shops[r.idx]){
+    const f=R.map.floor,bs=BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena').sort(()=>Math.random()-.5);
+    const gt=gunTierRoll(f),g=gunOfTier(gt);
+    R.shops[r.idx]=[{kind:'buff',id:bs[0],price:30+15*f},{kind:'buff',id:bs[1],price:30+15*f},{kind:'gun',id:g,price:[0,55,85,125,170][gt]},{kind:'heal',price:25+5*f},{kind:'cage',price:30}];
+  }
+  const offers=R.shops[r.idx];
+  showOverlay(`<h2>Wandering Peddler</h2><p class="hint">Pays from coin found this raid first, then your bank. You have ${R.bag.coin} raid coin + ${S.coin} banked.</p>
+    <div class="choose-list">${offers.map((o,i)=>{const label=o.kind==='buff'?`${BUFFS[o.id].name}<small>${BUFFS[o.id].desc}</small>`:o.kind==='gun'?`${GUNS[o.id].name}<small>Tier ${GUNS[o.id].tier} gun · ${GUNS[o.id].desc}</small>`:o.kind==='heal'?'Patch Kit<small>Heal yourself and your companions 50%</small>':'Snare Cage<small>One more basic cage for this raid</small>';
+      return`<button class="choice" data-p="buy" data-i="${i}" ${o.sold||R.bag.coin+S.coin<o.price?'disabled':''}><span style="flex:1"><span class="nm">${label}</span></span><b style="font-family:var(--display);color:var(--gold)">${o.sold?'Sold':o.price+'c'}</b></button>`}).join('')}</div>
+    <button class="btn primary" data-p="resume">Back to the raid</button>`);
+  R.shopRoom=r;
+}
+function buy(i){
+  const o=R.shops[R.shopRoom.idx][i];if(!o||o.sold||!payCoin(o.price))return;
+  o.sold=true;
+  if(o.kind==='buff')applyBuff(o.id,true);
+  if(o.kind==='gun')R.items.push({kind:'gun',id:o.id,x:R.p.x+30,y:R.p.y+20});
+  if(o.kind==='heal'){healPlayer(R.p.maxHp*.5);R.comps.forEach(m=>{if(m&&!m.downed)m.hp=Math.min(m.maxHp,m.hp+m.maxHp*.5)})}
+  if(o.kind==='cage')R.cages.basic++;
+  openShop(R.shopRoom);
+}
+function openShrine(r){
+  if(r.used){msg('The shrine has gone quiet.');return}
+  if(!r.choices)r.choices=BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena').sort(()=>Math.random()-.5).slice(0,3);
+  showOverlay(`<h2>Old Shrine</h2><p class="hint">Choose one blessing. It lasts until this raid ends.</p>
+    <div class="choose-list">${r.choices.map(k=>`<button class="choice" data-p="bless" data-k="${k}"><span class="nm">${BUFFS[k].name}<small>${BUFFS[k].desc}</small></span></button>`).join('')}</div>
+    <button class="btn" data-p="resume">Decide later</button>`);
+  R.shrineRoom=r;
+}
+
+/* ---------- update ---------- */
+function moveVec(){
+  let mx=0,my=0;
+  if(keys.has('KeyW')||keys.has('ArrowUp'))my-=1;if(keys.has('KeyS')||keys.has('ArrowDown'))my+=1;
+  if(keys.has('KeyA')||keys.has('ArrowLeft'))mx-=1;if(keys.has('KeyD')||keys.has('ArrowRight'))mx+=1;
+  if(touch.move){const dx=touch.move.x-touch.move.ox,dy=touch.move.y-touch.move.oy,l=Math.hypot(dx,dy);if(l>6){const k=Math.min(1,l/50)/l;mx=dx*k;my=dy*k}}
+  else{const l=Math.hypot(mx,my);if(l>1){mx/=l;my/=l}}
+  return{mx,my};
+}
+function fireGun(){
+  const p=R.p,id=R.guns[R.active];if(!id)return;const g=GUNS[id];
+  const dm=g.dmg*(1+.15*B('dmg'))*(R.sup.has('ember')?1.1:1);
+  const o={col:g.col,r:g.r||4,pierce:(g.pierce||0)+B('pierce'),life:g.life||1.2,bounce:g.bounce,explode:g.explode,split:g.split,homing:g.homing,src:'p'};
+  const mx=p.x+Math.cos(R.aim)*16,my=p.y+Math.sin(R.aim)*16;
+  const one=(ang)=>shoot('p',mx,my,ang,g.speed*rnd(.94,1.04),dm,o);
+  if(g.ring){for(let k=0;k<g.ring;k++)one(R.aim+k/g.ring*Math.PI*2)}
+  else if(g.burst){for(let k=0;k<g.burst;k++)R.burst.push({t:k*g.burstGap,f:()=>one(R.aim+rnd(-g.spread,g.spread))})}
+  else for(let k=0;k<(g.pellets||1);k++)one(R.aim+rnd(-(g.spread||0),g.spread||0));
+  let rate=g.rate*(1+.15*B('rate'));
+  if(g.spin)rate*=.3+.7*R.spin;
+  p.fireCd=1/rate;
+}
+function update(dt){
+  R.t+=dt;const p=R.p;
+  if(R.mode!=='arena'&&!S.settings.noTimer){R.time-=dt;if(R.time<=0){endRaid('collapse');return}}
+  R.shield=Math.max(0,R.shield-dt);R.prism=Math.max(0,R.prism-dt);R.taunt=Math.max(0,R.taunt-dt);R.shake=Math.max(0,(R.shake||0)-dt);
+  if(R.msgT>0)R.msgT-=dt;
+  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy;if(Math.hypot(dx,dy)>12){R.aim=Math.atan2(dy,dx);R.firing=true}else R.firing=false}
+  else if(R.mouse){const s=R.scale;const wx=(R.mouse.x-R.vw/2)/s+R.camx,wy=(R.mouse.y-R.vh/2)/s+R.camy;R.aim=Math.atan2(wy-p.y,wx-p.x)}
+  p.rollCd-=dt;p.inv=Math.max(0,p.inv-dt);p.hurt=Math.max(0,p.hurt-dt);p.slow=Math.max(0,p.slow-dt);p.fireCd-=dt;
+  if(R.sup.has('tide'))healPlayer(dt);
+  if(p.roll>0){p.roll-=dt;moveEnt(p,p.rvx*dt,p.rvy*dt)}
+  else{const{mx,my}=moveVec();const sp=200*(R.sup.has('gale')?1.1:1)*(1+.12*B('speed'))*(p.slow>0?.6:1);moveEnt(p,mx*sp*dt,my*sp*dt);if(!R.mouse&&!touch.aim&&(mx||my))R.aim=Math.atan2(my,mx)}
+  if(!R.trail.length||dist(R.trail[0],p)>12){R.trail.unshift({x:p.x,y:p.y});if(R.trail.length>60)R.trail.pop()}
+  const gun=R.guns[R.active]?GUNS[R.guns[R.active]]:null;
+  if(gun&&gun.spin)R.spin=R.firing?Math.min(1,R.spin+dt):Math.max(0,R.spin-dt*2);
+  for(let i=R.burst.length-1;i>=0;i--){R.burst[i].t-=dt;if(R.burst[i].t<=0){R.burst[i].f();R.burst.splice(i,1)}}
+  if(R.firing&&p.fireCd<=0&&p.roll<=0&&!R.burst.length)fireGun();
+  R.comps.forEach((m,i)=>m&&updComp(m,dt,i));
+  R.enemies.forEach(e=>updEnemy(e,dt));
+  updBullets(dt);if(R.over)return;
+  R.fields.forEach(f=>{f.t-=dt;R.enemies.forEach(e=>{if(dist(e,f)<f.r+e.r){e.slow=.3;hurtEnemy(e,f.dps*dt,true)}})});R.fields=R.fields.filter(f=>f.t>0);
+  for(const e of R.enemies)if(e.hp<=0&&!e.gone){e.gone=true;onEnemyDeath(e)}
+  R.enemies=R.enemies.filter(e=>!e.gone);
+  const r=roomAt(p.x,p.y,22);
+  if(r){R.cur=r;if(!r.spawned&&r.plan)enterRoom(r);r.visited=true}
+  else{const r2=roomAt(p.x,p.y,0);if(r2)R.cur=r2}
+  R.map.rooms.forEach(rm=>{if(rm.locked&&!R.enemies.some(e=>e.room===rm)){rm.locked=false;rm.cleared=true;msg('Room clear. The doors open.')}else if(rm.spawned&&!rm.locked)rm.cleared=true});
+  R.map.rooms.forEach(rm=>{if(rm.chest&&!rm.chest.open&&!rm.locked&&dist(p,rm.chest)<34)openChest(rm)});
+  for(let i=R.items.length-1;i>=0;i--){const it=R.items[i];if(it.kind==='buff'&&dist(it,p)<26){R.items.splice(i,1);applyBuff(it.id)}}
+  objectives(dt);
+  R.floats.forEach(f=>{f.t-=dt*.9;f.y-=24*dt});R.floats=R.floats.filter(f=>f.t>0);
+  R.fx.forEach(f=>f.t-=dt);R.fx=R.fx.filter(f=>f.t>0);
+}
+function updComp(m,dt,idx){
+  const p=R.p;m.flash=Math.max(0,m.flash-dt);
+  if(m.downed){
+    if(dist(m,p)<48){m.rev+=dt;if(m.rev>=1.5){m.downed=false;m.hp=Math.round(m.maxHp*.35);m.rev=0;float(m.x,m.y-22,'Revived','#5de8b0')}}else m.rev=Math.max(0,m.rev-dt);
+    return;
+  }
+  m.abil=Math.max(0,m.abil-dt);m.cd-=dt;
+  if(m.st.regen)m.hp=Math.min(m.maxHp,m.hp+m.maxHp*m.st.regen*dt);
+  if(typesOf(m.c).includes('tide'))healPlayer(1.2*dt);
+  if(m.obey<1&&m.sulk<=0){m.obeyCheck-=dt;if(m.obeyCheck<=0){m.obeyCheck=rnd(4,6);if(Math.random()>m.obey+.15){m.sulk=1.6;float(m.x,m.y-24,'?','#ffcf4a')}}}
+  m.sulk=Math.max(0,m.sulk-dt);
+  if(m.dash>0){
+    m.dash-=dt;moveEnt(m,m.dvx*dt,m.dvy*dt);
+    R.enemies.forEach(e=>{if(e.hp>0&&!m.dashHit.has(e)&&dist(e,m)<e.r+m.r+6){m.dashHit.add(e);hurtEnemy(e,m.dashDmg*critMul(m.st),false,m);const a=Math.atan2(e.y-m.y,e.x-m.x);if(e.spd>0)moveEnt(e,Math.cos(a)*24,Math.sin(a)*24)}});
+    return;
+  }
+  // always follow the player along their trail
+  const tr=R.trail,want=tr[Math.min(tr.length-1,(idx+1)*4)]||p;
+  const dx=want.x-m.x,dy=want.y-m.y,l=Math.hypot(dx,dy);
+  if(l>14){const sp=Math.max(m.spd,215)*(l>110?1.6:1);const st=Math.min(l,sp*dt);if(!moveEnt(m,dx/l*st,dy/l*st))m.stuck+=dt;else m.stuck=Math.max(0,m.stuck-dt)}
+  if(dist(m,p)>320||m.stuck>.8){m.x=p.x+rnd(-18,18);m.y=p.y+rnd(-6,18);m.stuck=0}
+  if(Math.abs(dx)>2)m.face=dx<0?-1:1;
+  if(m.sulk>0)return;
+  const tgt=nearestEnemy(m,340,true);if(!tgt)return;
+  const a=Math.atan2(tgt.y-m.y,tgt.x-m.x),T=m.c.type,atk=m.atk*critMul(m.st)*(1+.2*B('pdmg')),rate=m.st.rate,reach=m.st.reach;
+  m.face=Math.cos(a)<0?-1:1;
+  if(m.cd>0)return;
+  const col=SPECIES[m.c.species].col,o={col,src:m,life:1.3*reach};
+  if(T==='gale'||T==='warden'){
+    const d=dist(m,tgt);
+    if(d<(T==='gale'?190:120)&&dist(tgt,p)<260){const sp=T==='gale'?560:420;m.dash=Math.min(.32,d/sp+.05);m.dvx=Math.cos(a)*sp;m.dvy=Math.sin(a)*sp;m.dashHit=new Set();m.dashDmg=T==='gale'?atk:atk*.9;m.cd=(T==='gale'?1.3:1.6)/rate}
+    return;
+  }
+  const sp=reach;
+  if(T==='ember'){shoot('p',m.x,m.y,a,380*sp,atk,{...o,r:5});m.cd=1.1/rate}
+  else if(T==='fungal'){shoot('p',m.x,m.y,a,260*sp,atk*.8,{...o,r:6,slow:1.2});m.cd=1.3/rate}
+  else if(T==='tide'){shoot('p',m.x,m.y,a,280*sp,atk*.7,{...o,r:6});m.cd=1.2/rate}
+  else if(T==='echo'){shoot('p',m.x,m.y,a-.06,420*sp,atk*.6,{...o,r:4});shoot('p',m.x,m.y,a+.06,420*sp,atk*.6,{...o,r:4});m.cd=1/rate}
+  else if(T==='crystal'){[-.25,0,.25].forEach(k=>shoot('p',m.x,m.y,a+k,340*sp,atk*.5,{...o,r:4}));m.cd=1.4/rate}
+}
+function updEnemy(e,dt){
+  e.flash=Math.max(0,e.flash-dt);e.hitCd-=dt;
+  for(let i=e.queue.length-1;i>=0;i--){const q=e.queue[i];q.t-=dt;if(q.t<=0){e.queue.splice(i,1);if(e.hp>0)q.f()}}
+  if(e.stun>0){e.stun-=dt;return}
+  e.slow=Math.max(0,e.slow-dt);
+  const tgt=pickTarget(e);const dx=tgt.x-e.x,dy=tgt.y-e.y,d=Math.hypot(dx,dy)||1;
+  const sp=e.spd*(e.slow>0?.5:1),a=Math.atan2(dy,dx);
+  if(e.chargeT>0){
+    e.chargeT-=dt;const moved=moveEnt(e,e.cvx*dt,e.cvy*dt);
+    if(e.chargeT<=0||!moved){e.chargeT=0;if(e.fire.ring)ringShot(e,e.fire.ring,e.fire.rspd||130)}
+  }else if(e.wind>0){
+    e.wind-=dt;if(e.wind<=0)release(e,tgt);
+  }else{
+    e.face=dx<0?-1:1;
+    if(e.spd>0){
+      if(e.melee)moveEnt(e,dx/d*sp*dt,dy/d*sp*dt);
+      else{
+        let mx=0,my=0;
+        if(d>260){mx=dx/d;my=dy/d}else if(d<170){mx=-dx/d;my=-dy/d}else{mx=-dy/d*e.strafe;my=dx/d*e.strafe}
+        if(e.fam==='bat'){mx+=Math.sin(R.t*4+e.seed)*.6;my+=Math.cos(R.t*3+e.seed)*.6}
+        if(!moveEnt(e,mx*sp*dt,my*sp*dt))e.strafe*=-1;
+      }
+    }
+    e.cd-=dt;
+    if(e.cd<=0&&d<560){
+      if(e.fire.kind==='spiral'){pattern(e,a);e.cd=e.every}
+      else if(e.fire.kind==='charge'){if(d<300){e.wind=.5;e.cd=e.every*rnd(.9,1.1)}}
+      else{e.wind=.42;e.cd=e.every*rnd(.9,1.1)}
+    }
+  }
+  if(e.melee&&d<e.r+tgt.r+3&&e.hitCd<=0){e.hitCd=.9;tgt===R.p?hurtPlayer(e.dmg):hurtComp(tgt,e.dmg)}
+}
+function release(e,tgt){
+  const a=Math.atan2(tgt.y-e.y,tgt.x-e.x);
+  if(e.fire.kind==='charge'){e.chargeT=.5;const cs=e.fire.cspd||400;e.cvx=Math.cos(a)*cs;e.cvy=Math.sin(a)*cs}
+  else pattern(e,a);
+}
+function ringShot(e,n,spd,off=0){for(let i=0;i<n;i++)shoot('e',e.x,e.y,e.rot+off+i/n*Math.PI*2,spd,e.dmg,{col:e.bcol,r:5});e.rot+=e.fire.rot||0}
+function pattern(e,a){
+  const P=e.fire,dm=e.dmg;
+  const sh=(ang,spd,r)=>shoot('e',e.x,e.y,ang,spd,dm,{col:e.bcol,r:r||5,slow:P.slow});
+  switch(P.kind){
+    case'fan':{const fire=()=>{const tg=pickTarget(e),aa=Math.atan2(tg.y-e.y,tg.x-e.x);for(let i=0;i<P.n;i++){const t=P.n===1?0:i/(P.n-1)-.5;sh(aa+t*P.spread,P.spd)}};fire();if(P.waves>1)e.queue.push({t:.32,f:fire});break}
+    case'ring':{ringShot(e,P.n,P.spd);if(P.waves>1)e.queue.push({t:.35,f:()=>ringShot(e,P.n,P.spd,Math.PI/P.n)});break}
+    case'cross':{for(let i=0;i<4;i++)sh(e.rot+i*Math.PI/2,P.spd);e.rot+=Math.PI/4;break}
+    case'spiral':{for(let i=0;i<P.n;i++)sh(e.rot+i/P.n*Math.PI*2,P.spd);e.rot+=P.step;break}
+    case'burst':{for(let i=0;i<P.n;i++)e.queue.push({t:i*P.gap,f:()=>{const tg=pickTarget(e);sh(Math.atan2(tg.y-e.y,tg.x-e.x),P.spd)}});break}
+    case'brute':{if(e.phase%2===0)for(let i=0;i<P.n;i++)sh(i/P.n*Math.PI*2+e.rot,P.spd,7);else for(let i=0;i<7;i++)sh(a+(i/6-.5)*1.1,P.spd*1.2);e.phase++;e.rot+=.2;break}
+  }
+}
+function updBullets(dt){
+  const M=R.map;
+  for(let i=R.bullets.length-1;i>=0;i--){
+    const b=R.bullets[i];b.age+=dt;b.life-=dt;
+    if(b.split&&b.age>=.22){R.bullets.splice(i,1);const a=Math.atan2(b.vy,b.vx),sp=Math.hypot(b.vx,b.vy);[-.35,0,.35].forEach(o=>shoot(b.team,b.x,b.y,a+o,sp,b.dmg*.75,{col:b.col,r:b.r-1,life:b.life,src:b.src}));continue}
+    if(b.homing&&b.team==='p'){const tg=nearestEnemy(b,280);if(tg){const cur=Math.atan2(b.vy,b.vx),want=Math.atan2(tg.y-b.y,tg.x-b.x);let df=want-cur;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;const na=cur+clamp(df,-b.homing*dt,b.homing*dt),sp=Math.hypot(b.vx,b.vy);b.vx=Math.cos(na)*sp;b.vy=Math.sin(na)*sp}}
+    const ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;
+    let dead=b.life<=0;
+    if(!dead&&solidAt(M,Math.floor(b.x/TS),Math.floor(b.y/TS))){
+      if(b.bounce>0){b.bounce--;if(solidAt(M,Math.floor(b.x/TS),Math.floor(oy/TS)))b.vx*=-1;if(solidAt(M,Math.floor(ox/TS),Math.floor(b.y/TS)))b.vy*=-1;b.x=ox;b.y=oy}
+      else dead=true;
+    }
+    if(!dead){
+      if(b.team==='e'){
+        if(R.prism>0&&dist(b,R.p)<150){b.team='p';b.vx*=-1.2;b.vy*=-1.2;b.col='#ff8fe0';b.dmg*=1.5;b.life=1.5;b.src='p';continue}
+        if(dist(b,R.p)<b.r+R.p.r-2){if(R.p.roll<=0){hurtPlayer(b.dmg,b.slow);dead=true}if(R.over)return}
+        else for(const m of R.comps){if(m&&!m.downed&&dist(b,m)<b.r+m.r){hurtComp(m,b.dmg);dead=true;break}}
+      }else{
+        for(const e of R.enemies){
+          if(e.hp<=0||(b.hit&&b.hit.has(e)))continue;
+          if(dist(b,e)<b.r+e.r){
+            if(b.explode){dead=true;break}
+            hurtEnemy(e,b.dmg,false,b.src);if(b.slow)e.slow=b.slow;
+            if(b.pierce>0){b.pierce--;b.hit.add(e)}else{dead=true;break}
+          }
+        }
+      }
+    }
+    if(dead){if(b.explode)explodeAt(b.x,b.y,b.explode,b.dmg,b.team);R.bullets.splice(i,1)}
+  }
+}
+function onEnemyDeath(e){
+  const f=R.map.floor,gm=1+.3*B('greed');
+  if(!e.captured){
+    if(e.kind==='wild'){const coin=Math.round(10*f*gm);R.bag.coin+=coin;R.bag.ore+=1;float(e.x,e.y,`+${coin} coin +1 ore`,'#ffcf4a');float(e.x,e.y+14,`Wild ${SPECIES[e.c.species].name} fainted`,'#b4a9d8')}
+    else{const coin=Math.round((ri(3,7)*f+(e.fam==='brute'?25:0))*gm);R.bag.coin+=coin;float(e.x,e.y,`+${coin}`,'#ffcf4a');if(e.fam==='brute'){R.bag.ore+=2;if(Math.random()<.5)R.items.push({kind:'buff',id:pick(BUFF_IDS),x:e.x,y:e.y})}}
+  }
+  const xp=e.kind==='wild'?14:e.fam==='brute'?30:6+4*e.tier;
+  R.comps.forEach(m=>{if(m&&!m.downed)m.xpGain+=xp});
+}
+function openChest(r){
+  r.chest.open=true;const f=R.map.floor,gm=1+.3*B('greed');
+  const coin=Math.round(ri(15,35)*f*gm),ore=ri(1,2)+f-1,food=ri(1,3);R.bag.coin+=coin;R.bag.ore+=ore;R.bag.food+=food;
+  float(r.chest.x,r.chest.y-20,`+${coin} coin +${ore} ore +${food} food`,'#ffcf4a');
+  if(Math.random()<.3){R.cages.basic++;float(r.chest.x,r.chest.y-36,'+1 cage','#5de8b0')}
+  if(Math.random()<(r.kind==='lair'?.9:.45)){const g=gunOfTier(gunTierRoll(f));R.items.push({kind:'gun',id:g,x:r.chest.x+rnd(-30,30),y:r.chest.y+30});msg(`The chest held a ${GUNS[g].name}. Stand on it and press Use to take it.`)}
+  if(Math.random()<.3)R.items.push({kind:'buff',id:pick(BUFF_IDS.filter(k=>k!=='time'||R.mode!=='arena')),x:r.chest.x+rnd(-30,30),y:r.chest.y-30});
+}
+function objectives(dt){
+  const p=R.p,r=R.cur;R.prompt='';
+  const it=nearestItem();
+  if(it){const cur=R.guns[R.active];R.prompt=`${TOUCH?'Use':'G'}: take ${GUNS[it.id].name}${!R.guns[1]&&R.guns[0]?' into your empty slot':cur?' (drops your '+GUNS[cur].name+')':''}`;return}
+  const npc=nearNpc();if(npc){R.prompt=npc.kind==='shop'?`${TOUCH?'Use':'G'}: trade with the peddler`:npc.used?'The shrine has gone quiet':`${TOUCH?'Use':'G'}: pray at the shrine`;return}
+  if(R.mode==='arena'||!r)return;
+  if(r.kind==='stairs'){
+    if(dist(p,{x:r.cx,y:r.cy})<40&&!r.locked){R.stairT+=dt;R.prompt='Descending… '+Math.max(0,1.2-R.stairT).toFixed(1)+'s';if(R.stairT>=1.2)descend()}
+    else{R.stairT=0;if(!r.locked)R.prompt=`Stand on the stairs to go down to Floor ${R.map.floor+1}`}
+    return;
+  }
+  if(['gate','rift','cliff'].includes(r.kind)){
+    const d=dist(p,{x:r.cx,y:r.cy});
+    if(d<52){
+      let ok=true,why='';
+      if(r.locked){ok=false;why='Clear the room first'}
+      else if(r.kind==='gate'&&R.bag.coin+S.coin<20){ok=false;why='The gate costs 20 coin'}
+      else if(r.kind==='cliff'&&!partyHas('gale')){ok=false;why='The cliff needs a Gale in your party'}
+      if(ok){R.ext+=dt;R.prompt=`Extracting… ${Math.max(0,2.5-R.ext).toFixed(1)}s`;if(R.ext>=2.5){if(r.kind==='gate')payCoin(20);endRaid('extract',r.kind);return}}
+      else{R.ext=0;R.prompt=why}
+    }else{R.ext=0;if(!r.locked)R.prompt={gate:'Gate extract · 20 coin · stand in the circle',rift:'Rift extract · free · stand in the circle',cliff:'Cliff extract · needs a Gale'}[r.kind]}
+  }
+}
+function descend(){
+  const f=R.map.floor+1;const M=genMap(f);R.map=M;R.mapCv=renderMapCanvas(M);R.cur=M.start;
+  R.p.x=M.start.cx;R.p.y=M.start.cy+40;R.trail=[];R.comps.forEach(m=>{if(m){m.x=R.p.x+rnd(-30,30);m.y=R.p.y+rnd(-10,30)}});
+  R.enemies=[];R.bullets=[];R.fields=[];R.items=[];R.stairT=0;
+  msg(f===FLOORS?`Floor ${f} of ${FLOORS}. Find the rift or the cliff to get out.`:`Floor ${f} of ${FLOORS}. Tougher enemies, rarer creatures.`);
+}
+
+/* ---------- end of raid ---------- */
+function endRaid(outcome,via){
+  if(!R||R.over)return;
+  R.over=true;cancelAnimationFrame(raf);
+  keys.clear();touch.move=touch.aim=null;
+  if(R.mode==='arena'){
+    R.comps.forEach(m=>{if(m&&R.saved[m.c.id]!=null)m.c.hp=R.saved[m.c.id]});
+    if(R.slot3&&R.saved[R.slot3.c.id]!=null)R.slot3.c.hp=R.saved[R.slot3.c.id];
+    let kept='';
+    const caught=[R.slot3&&R.slot3.c,...R.comps.map(m=>m&&m.c)].filter(c=>c&&c.captureRaid==='arena');
+    caught.forEach(c=>{c.captureRaid=S.stats.raids;if(S.settings.keepArena){S.creatures.push(c);kept+=c.name+' '}});
+    exitRaid();
+    openModal(`<h2 class="res-title">Left the arena</h2><p class="hint">Your creatures are back at their pre-arena health.${kept?' Kept: '+esc(kept)+'(unproven).':''}</p><div class="row"><button class="btn primary" data-act="close">Back to the lab</button></div>`);
+    save();return;
+  }
+  const L={home:[],lost:[],caught:[],proven:[],levels:[],loot:[],notes:[]};
+  R.comps.forEach(m=>{if(m)m.c.hp=m.downed?0:Math.round(m.hp)});
+  const party=R.comps.filter(Boolean);
+  const vault=R.mode!=='scav'&&online('vault'),vault2=R.mode!=='scav'&&upgraded('vault');
+  const isNew=c=>!S.creatures.includes(c);
+  const held=R.guns.filter(g=>g&&g!=='pistol');
+  if(outcome==='extract'){
+    S.stats.extracts++;
+    const coinMul=1+.15*party.filter(m=>!m.downed&&m.c.traits.includes('hoard')).length;
+    const coin=Math.round(R.bag.coin*coinMul),food=R.bag.food+(R.sup.has('fungal')?2:0);
+    S.coin+=coin;S.ore+=R.bag.ore;S.food+=food;
+    held.forEach(g=>S.guns[g]=(S.guns[g]||0)+1);
+    S.cages.basic+=R.mode==='scav'?0:R.cages.basic;S.cages.gilded+=R.cages.gilded;
+    L.loot.push(`+${coin} coin`,`+${R.bag.ore} ore`,`+${food} food`);
+    held.forEach(g=>L.loot.push(`${GUNS[g].name}${R.taken.includes(g)?'':' (new)'}`));
+    R.taken.forEach(g=>{if(!held.includes(g))L.lost.push(`${GUNS[g].name} (left in the dungeon)`)});
+    const handle=(c,downed,xp)=>{
+      if(downed){if(isNew(c))L.lost.push(`${c.name} (new catch, never revived)`);else{L.lost.push(`${c.name} (never revived)`);killCreature(c)}return}
+      if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name}, a wild ${sexSym(c.sex)} ${SPECIES[c.species].name} (Lv ${c.level})`);return}
+      c.raids++;const ups=gainXp(c,xp);if(ups)L.levels.push(`${c.name} reached Lv ${c.level}`);
+      if(!c.proven&&c.captureRaid>=0&&c.captureRaid<R.id){c.proven=true;L.proven.push(`${c.name} is proven. Traits: ${c.traits.map(t=>TRAITS[t].name).join(', ')}`)}
+      L.home.push(c.name);
+    };
+    party.forEach(m=>handle(m.c,m.downed,25+m.xpGain));
+    if(R.slot3)handle(R.slot3.c,false,10);
+  }else{
+    S.stats.deaths++;
+    L.notes.push(outcome==='collapse'?'The dungeon collapsed around you.':'You were knocked out.');
+    party.forEach(m=>{if(isNew(m.c))L.lost.push(`${m.c.name} (new catch)`);else{L.lost.push(m.c.name);killCreature(m.c)}});
+    if(R.slot3){
+      const c=R.slot3.c;
+      if(vault){if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name} (saved by the Vault)`)}else L.home.push(`${c.name} (saved by the Vault)`)}
+      else{if(isNew(c))L.lost.push(`${c.name} (new catch)`);else{L.lost.push(c.name);killCreature(c)}}
+    }
+    if(vault2){held.forEach(g=>{S.guns[g]=(S.guns[g]||0)+1;L.home.push(`${GUNS[g].name} (saved by the Vault)`)})}
+    else{held.forEach(g=>L.lost.push(GUNS[g].name));R.taken.forEach(g=>{if(!held.includes(g))L.lost.push(GUNS[g].name)})}
+    const lostLoot=[R.bag.coin&&R.bag.coin+' coin',R.bag.ore&&R.bag.ore+' ore',R.bag.food&&R.bag.food+' food'].filter(Boolean);
+    if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
+    const cg=R.mode==='scav'?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
+  }
+  validGuns();
+  const title=outcome==='extract'?(via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
+  addLog(`${R.mode==='scav'?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
+  processDay();save();exitRaid();
+  const sec=(h,arr,col)=>arr.length?`<h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+  openModal(`<h2 class="res-title ${outcome==='extract'?'win':'lose'}">${title}</h2>${L.notes.map(n=>`<p>${esc(n)}</p>`).join('')}
+    ${sec('Caught',L.caught,'var(--gold)')}${sec('Proven',L.proven,'var(--mint)')}${sec('Came home',L.home)}${sec('Level ups',L.levels)}${sec('Loot banked',L.loot)}${sec('Lost',L.lost,'var(--rose)')}
+    <p class="status">Day ${S.day} begins. ${esc(S.log[0].msg)}</p>
+    <div class="row"><button class="btn primary" data-act="close">Back to the hideout</button></div>`);
+}
+function exitRaid(){
+  $('#raid').hidden=true;$('#app').hidden=false;
+  ui.tab=R&&R.mode==='arena'?'lab':'raid';
+  const done=R;renderAll();
+  setTimeout(()=>{if(R===done)R=null},0);
+}
+
+/* ---------- drawing ---------- */
+let ctx,cv,mini,mctx;
+function resize(){
+  const dpr=window.devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;
+  if(R){R.vw=innerWidth;R.vh=innerHeight;R.dpr=dpr;R.scale=clamp(Math.min(innerWidth,innerHeight)/(TS*10.5),.7,1.6)}
+}
+function draw(){
+  const g=ctx,p=R.p,s=R.scale,dpr=R.dpr,t=R.t,M=R.map;
+  R.camx=p.x;R.camy=p.y;
+  const sx=R.shake>0?rnd(-3,3):0,sy=R.shake>0?rnd(-3,3):0;
+  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle='#0d0a1c';g.fillRect(0,0,R.vw,R.vh);
+  g.imageSmoothingEnabled=false;
+  g.setTransform(dpr*s,0,0,dpr*s,dpr*(R.vw/2-R.camx*s+sx),dpr*(R.vh/2-R.camy*s+sy));
+  const vx0=R.camx-R.vw/2/s-TS,vy0=R.camy-R.vh/2/s-TS,vw=R.vw/s+TS*2,vh=R.vh/s+TS*2;
+  const cx0=Math.max(0,vx0),cy0=Math.max(0,vy0),cw=Math.min(R.mapCv.width-cx0,vw),ch=Math.min(R.mapCv.height-cy0,vh);
+  if(cw>0&&ch>0)g.drawImage(R.mapCv,cx0,cy0,cw,ch,cx0,cy0,cw,ch);
+  M.rooms.forEach(r=>{if(!r.locked)return;r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#5a1d33';g.fillRect(x,y,TS,TS);g.fillStyle='#ff6688';for(let k=4;k<TS;k+=9)g.fillRect(x+k,y,3,TS);g.fillRect(x,y,TS,3)})});
+  g.font='600 12px "Pixelify Sans", monospace';g.textAlign='center';
+  M.rooms.forEach(r=>{
+    if(r.kind==='stairs'){g.fillStyle='#120c24';g.fillRect(r.cx-26,r.cy-26,52,52);for(let k=0;k<4;k++){g.fillStyle=k%2?'#3a2e66':'#4b3d85';g.fillRect(r.cx-26+k*4,r.cy-26+k*13,52-k*8,11)}g.fillStyle='#ffcf4a';g.fillText('STAIRS DOWN',r.cx,r.cy-34)}
+    if(['gate','rift','cliff'].includes(r.kind)){
+      const col={gate:'#ffcf4a',rift:'#9b7bff',cliff:'#4fe0c8'}[r.kind];const pulse=4+Math.sin(t*3)*4;
+      g.globalAlpha=.25;g.fillStyle=col;g.beginPath();g.arc(r.cx,r.cy,50+pulse,0,7);g.fill();g.globalAlpha=1;
+      g.strokeStyle=col;g.lineWidth=3;g.setLineDash([8,6]);g.lineDashOffset=-t*20;g.beginPath();g.arc(r.cx,r.cy,50,0,7);g.stroke();g.setLineDash([]);
+      if(R.cur===r&&R.ext>0){g.strokeStyle='#fff';g.lineWidth=5;g.beginPath();g.arc(r.cx,r.cy,58,-Math.PI/2,-Math.PI/2+R.ext/2.5*Math.PI*2);g.stroke()}
+      g.fillStyle=col;g.fillText({gate:'GATE · 20 COIN',rift:'RIFT',cliff:'CLIFF · NEEDS GALE'}[r.kind],r.cx,r.cy-64);
+    }
+    if(r.kind==='shop'){drawPeddler(g,r.cx,r.cy,t);g.fillStyle='#ffcf4a';g.fillText('PEDDLER',r.cx,r.cy-34)}
+    if(r.kind==='shrine'){drawShrine(g,r.cx,r.cy,t,r.used);g.fillStyle=r.used?'#b4a9d8':'#5de8b0';g.fillText(r.used?'SHRINE (USED)':'SHRINE',r.cx,r.cy-36)}
+    if(r.chest){const c=r.chest;g.fillStyle=c.open?'#5c4a2a':'#c98a2b';g.strokeStyle=OL;g.lineWidth=2;g.fillRect(c.x-14,c.y-10,28,20);g.strokeRect(c.x-14,c.y-10,28,20);g.fillStyle=c.open?'#3a2e1a':'#ffcf4a';g.fillRect(c.x-14,c.y-10,28,6);g.fillRect(c.x-3,c.y-4,6,6)}
+  });
+  R.items.forEach(it=>{
+    const b=Math.sin(t*4+it.x)*2;
+    if(it.kind==='gun'){const G=GUNS[it.id];g.fillStyle='rgba(255,207,74,.18)';g.beginPath();g.arc(it.x,it.y,16,0,7);g.fill();g.save();g.translate(it.x,it.y+b);g.rotate(-.4);g.fillStyle=G.col;g.strokeStyle=OL;g.lineWidth=2;g.fillRect(-10,-3,20,6);g.strokeRect(-10,-3,20,6);g.fillRect(-10,-3,5,10);g.strokeRect(-10,-3,5,10);g.restore();g.font='600 10px "Pixelify Sans", monospace';g.fillStyle=G.col;g.fillText(G.name.toUpperCase(),it.x,it.y-18)}
+    else{g.fillStyle='#5de8b0';g.strokeStyle=OL;g.lineWidth=2;g.beginPath();g.arc(it.x,it.y+b,8,0,7);g.fill();g.stroke();g.fillStyle='#fff';g.fillRect(it.x-1.5,it.y+b-5,3,10);g.fillRect(it.x-5,it.y+b-1.5,10,3)}
+  });
+  R.fields.forEach(f=>{g.globalAlpha=.22+.06*Math.sin(t*6);g.fillStyle='#e0527a';g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill();g.globalAlpha=1});
+  // cage ring
+  const rad=capRadius();
+  const weakNear=R.enemies.some(e=>e.kind==='wild'&&e.hp>0&&e.hp/e.maxHp<=.5&&dist(e,p)<rad*2.5);
+  if(weakNear&&!R.slot3){const inRange=R.enemies.some(e=>e.kind==='wild'&&e.hp>0&&e.hp/e.maxHp<=.5&&dist(e,p)<rad+e.r);g.strokeStyle=inRange?'rgba(255,207,74,.9)':'rgba(255,207,74,.35)';g.lineWidth=2;g.setLineDash([6,6]);g.lineDashOffset=t*15;g.beginPath();g.arc(p.x,p.y,rad,0,7);g.stroke();g.setLineDash([])}
+  const ents=[];
+  R.enemies.forEach(e=>ents.push({y:e.y,f:()=>drawEnemy(g,e)}));
+  R.comps.forEach(m=>m&&ents.push({y:m.y,f:()=>drawComp(g,m)}));
+  ents.push({y:p.y,f:()=>drawPlayer(g)});
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+  R.bullets.forEach(b=>{
+    if(b.team==='e'){g.fillStyle='#fff';g.beginPath();g.arc(b.x,b.y,b.r+2,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
+    else{g.fillStyle=OL;g.beginPath();g.arc(b.x,b.y,b.r+1.5,0,7);g.fill();g.fillStyle=b.col;g.beginPath();g.arc(b.x,b.y,b.r,0,7);g.fill()}
+  });
+  R.fx.forEach(f=>{const k=f.t/f.max;g.globalAlpha=k;if(f.fill){g.fillStyle=f.col;g.globalAlpha=k*.45;g.beginPath();g.arc(f.x,f.y,f.r,0,7);g.fill()}else{g.strokeStyle=f.col;g.lineWidth=4;g.beginPath();g.arc(f.x,f.y,f.r*(1-k)+10,0,7);g.stroke()}g.globalAlpha=1});
+  if(R.prism>0){g.strokeStyle='rgba(255,143,224,.6)';g.lineWidth=2;g.beginPath();g.arc(p.x,p.y,150,0,7);g.stroke()}
+  g.font='600 13px "Pixelify Sans", monospace';
+  R.floats.forEach(f=>{g.globalAlpha=clamp(f.t*1.5,0,1);g.fillStyle=OL;g.fillText(f.text,f.x+1,f.y+1);g.fillStyle=f.col;g.fillText(f.text,f.x,f.y)});g.globalAlpha=1;
+  g.setTransform(dpr,0,0,dpr,0,0);
+  [touch.move,touch.aim].forEach((tc,i)=>{if(!tc)return;g.strokeStyle=i?'rgba(255,207,74,.5)':'rgba(255,255,255,.35)';g.lineWidth=3;g.beginPath();g.arc(tc.ox,tc.oy,50,0,7);g.stroke();
+    const dx=tc.x-tc.ox,dy=tc.y-tc.oy,l=Math.hypot(dx,dy),k=l>50?50/l:1;g.fillStyle=i?'rgba(255,207,74,.6)':'rgba(255,255,255,.45)';g.beginPath();g.arc(tc.ox+dx*k,tc.oy+dy*k,20,0,7);g.fill()});
+}
+function drawPeddler(g,x,y,t){
+  g.save();g.translate(x,y);g.strokeStyle=OL;g.lineWidth=2;
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,16,16,4,0,0,7);g.fill();
+  g.fillStyle='#8a5a3a';g.fillRect(-22,4,14,12);g.strokeRect(-22,4,14,12);
+  g.fillStyle='#4a6fd8';g.beginPath();g.moveTo(-10,16);g.lineTo(0,-10);g.lineTo(10,16);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#ffcf4a';g.beginPath();g.moveTo(-12,-6);g.lineTo(0,-24);g.lineTo(12,-6);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#f3d2a8';g.fillRect(-4,-8,8,6);g.fillStyle='#ffe066';g.globalAlpha=.6+.4*Math.sin(t*5);g.beginPath();g.arc(14,-2,5,0,7);g.fill();g.globalAlpha=1;
+  g.restore();
+}
+function drawShrine(g,x,y,t,used){
+  g.save();g.translate(x,y);g.strokeStyle=OL;g.lineWidth=2;
+  g.fillStyle='#6b6a8a';g.fillRect(-16,0,32,16);g.strokeRect(-16,0,32,16);g.fillRect(-10,-14,20,14);g.strokeRect(-10,-14,20,14);
+  g.fillStyle=used?'#4a4a5a':'#5de8b0';g.globalAlpha=used?1:.7+.3*Math.sin(t*4);g.beginPath();g.moveTo(0,-30);g.lineTo(7,-20);g.lineTo(0,-12);g.lineTo(-7,-20);g.closePath();g.fill();g.stroke();g.globalAlpha=1;
+  g.restore();
+}
+function hpOver(g,x,y,w,f,col){g.fillStyle=OL;g.fillRect(x-w/2-1,y-1,w+2,6);g.fillStyle='#3a1424';g.fillRect(x-w/2,y,w,4);g.fillStyle=col;g.fillRect(x-w/2,y,w*clamp(f,0,1),4)}
+function drawPlayer(g){
+  const p=R.p,t=R.t;
+  g.save();g.translate(p.x,p.y);
+  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,13,10,3.5,0,0,7);g.fill();
+  if(p.inv>0&&Math.floor(t*20)%2)g.globalAlpha=.5;
+  if(p.roll>0)g.rotate((.3-p.roll)/.3*Math.PI*2*(p.rvx<0?-1:1));
+  const face=Math.cos(R.aim)<0?-1:1;g.scale(face,1);
+  g.strokeStyle=OL;g.lineWidth=2.2;g.lineJoin='round';
+  g.fillStyle=p.hurt>0?'#fff':'#3f8f7a';g.beginPath();g.moveTo(-10,12);g.lineTo(-7,-4);g.lineTo(7,-4);g.lineTo(10,12);g.closePath();g.fill();g.stroke();
+  g.fillStyle=p.hurt>0?'#fff':'#ffcf4a';g.beginPath();g.arc(0,-6,8,Math.PI,0);g.lineTo(9,0);g.lineTo(-9,0);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#f3d2a8';g.fillRect(-1,-6,7,5);g.strokeRect(-1,-6,7,5);g.fillStyle=OL;g.fillRect(3,-5,2,2);
+  g.restore();
+  const id=R.guns[R.active];
+  if(id){const G=GUNS[id],len=G.tier>=3?20:G.tier===2?17:14;g.save();g.translate(p.x,p.y+2);g.rotate(R.aim);g.fillStyle=G.col;g.strokeStyle=OL;g.lineWidth=2;g.fillRect(6,-3,len,6);g.strokeRect(6,-3,len,6);g.restore()}
+  if(R.shield>0){g.strokeStyle='rgba(88,194,255,.8)';g.lineWidth=3;g.beginPath();g.arc(p.x,p.y,20+Math.sin(t*10)*2,0,7);g.stroke()}
+}
+function drawComp(g,m){
+  if(m.downed)g.globalAlpha=.55;
+  drawCreature(g,m.c,m.x,m.y,.85,R.t,{face:m.face,flash:m.flash>0,seed:m.seed});
+  g.globalAlpha=1;
+  if(m.downed){g.strokeStyle='#5de8b0';g.lineWidth=3;g.beginPath();g.arc(m.x,m.y,22,-Math.PI/2,-Math.PI/2+m.rev/1.5*Math.PI*2);g.stroke();g.fillStyle='#ff6688';g.font='600 11px "Pixelify Sans", monospace';g.fillText('REVIVE',m.x,m.y-26)}
+  else hpOver(g,m.x,m.y-24,26,m.hp/m.maxHp,'#5de8b0');
+  if(R.taunt>0&&R.tauntEnt===m){g.strokeStyle='#e3b04b';g.lineWidth=2;g.beginPath();g.arc(m.x,m.y,24,0,7);g.stroke()}
+}
+function drawEnemy(g,e){
+  const t=R.t;
+  if(e.wind>0){const k=1-e.wind/.5;g.fillStyle=`rgba(255,${e.fire.kind==='charge'?90:220},90,${.25+.35*k})`;g.beginPath();g.arc(e.x,e.y,e.r+6+k*6,0,7);g.fill()}
+  if(e.kind==='wild'){
+    drawCreature(g,e.c,e.x+(e.wind>0?rnd(-1,1):0),e.y,.9,t,{face:e.face,flash:e.flash>0,seed:e.seed});
+    const f=e.hp/e.maxHp;hpOver(g,e.x,e.y-28,30,f,f<=.5?'#ffcf4a':'#ff6688');
+    g.font='600 10px "Pixelify Sans", monospace';g.fillStyle=SPECIES[e.c.species].col;g.fillText(`WILD ${SPECIES[e.c.species].name.toUpperCase()} ${sexSym(e.c.sex)} LV${e.c.level}`,e.x,e.y-33);
+    if(f<=.5){g.strokeStyle='#ffcf4a';g.lineWidth=2;g.setLineDash([4,4]);g.lineDashOffset=t*20;g.beginPath();g.arc(e.x,e.y,22+Math.sin(t*6)*2,0,7);g.stroke();g.setLineDash([])}
+  }else{
+    const d=e.def,fl=e.flash>0,c=fl?'#fff':d.col;
+    g.save();g.translate(e.x+(e.wind>0&&e.fire.kind==='charge'?rnd(-1.5,1.5):0),e.y);
+    g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(0,e.r,e.r,e.r*.3,0,0,7);g.fill();
+    g.strokeStyle=OL;g.lineWidth=2.2;
+    if(e.fam==='husk'){const b=Math.sin(t*5+e.seed)*1.5;g.fillStyle=c;g.beginPath();g.ellipse(0,b,e.r,e.r-1,0,0,7);g.fill();g.stroke();g.fillStyle='rgba(0,0,0,.25)';g.fillRect(-e.r,4+b,e.r*2,5);
+      if(e.tier>=2){g.fillStyle='#f6eedb';[-1,1].forEach(s=>{g.beginPath();g.moveTo(s*5,-e.r+3+b);g.lineTo(s*9,-e.r-7+b);g.lineTo(s*10,-e.r+5+b);g.closePath();g.fill();g.stroke()})}
+      g.fillStyle='#ffef9a';g.beginPath();g.arc(e.face*3,-2+b,4,0,7);g.fill();g.stroke();g.fillStyle='#d6243f';g.fillRect(e.face*3-1,-3+b,2,2)}
+    else if(e.fam==='bat'){const w=Math.sin(t*16+e.seed)*5;g.fillStyle=c;[-1,1].forEach(s=>{g.beginPath();g.moveTo(s*4,0);g.lineTo(s*(e.r+7),-7+w);g.lineTo(s*(e.r+2),5);g.closePath();g.fill();g.stroke()});g.beginPath();g.arc(0,0,e.r-3,0,7);g.fill();g.stroke();g.fillStyle='#ff4f6e';g.fillRect(-4,-2,3,3);g.fillRect(2,-2,3,3)}
+    else if(e.fam==='crawler'){const dir=e.chargeT>0?Math.atan2(e.cvy,e.cvx):(e.face<0?Math.PI:0);g.rotate(dir);g.fillStyle=c;[-12,-5].forEach((x,i)=>{g.beginPath();g.arc(x,0,e.r-4-i*-1,0,7);g.fill();g.stroke()});g.beginPath();g.arc(4,0,e.r-2,0,7);g.fill();g.stroke();g.fillStyle=OL;g.beginPath();g.moveTo(8,-4);g.lineTo(e.r+3,0);g.lineTo(8,4);g.closePath();g.fill();g.fillStyle='#ffef9a';g.fillRect(4,-6,3,3);g.fillRect(4,3,3,3)}
+    else if(e.fam==='totem'){g.fillStyle=c;g.fillRect(-11,-18,22,32);g.strokeRect(-11,-18,22,32);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(-11,-18,22,6);g.fillStyle=d.bcol;g.globalAlpha=.6+.4*Math.sin(t*4+e.seed);g.beginPath();g.arc(0,0,5,0,7);g.fill();g.globalAlpha=1}
+    else{g.fillStyle=c;g.fillRect(-e.r,-e.r,e.r*2,e.r*2-4);g.strokeRect(-e.r,-e.r,e.r*2,e.r*2-4);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(-e.r,-e.r,e.r*2,8);g.fillStyle=d.bcol;g.fillRect(-10,-6,7,5);g.fillRect(3,-6,7,5);g.fillStyle=OL;g.fillRect(-8,6,16,4)}
+    g.restore();
+    hpOver(g,e.x,e.y-e.r-12,e.fam==='brute'?44:26,e.hp/e.maxHp,'#ff6688');
+    if(e.fam==='brute'){g.font='600 10px "Pixelify Sans", monospace';g.fillStyle='#ffa04f';g.fillText(d.name.toUpperCase(),e.x,e.y-e.r-16)}
+  }
+  if(e.stun>0){g.fillStyle='#9b7bff';g.font='600 11px "Pixelify Sans", monospace';g.fillText('STUN',e.x,e.y+e.r+14)}
+}
+function drawMini(){
+  const g=mctx,M=R.map,W=240;g.clearRect(0,0,W,W);
+  const n=M.G,cell=Math.floor((W-16)/n),pad=(W-cell*n)/2,box=cell-14;
+  const show=r=>r.visited||R.reveal;
+  const pos=r=>[pad+r.gx*cell+7,pad+r.gy*cell+7];
+  g.strokeStyle='#4b3e87';g.lineWidth=4;
+  M.rooms.forEach(r=>r.links.forEach(o=>{if(r.idx<o.idx&&(show(r)||show(o))){const[a,b]=pos(r),[c,d]=pos(o);g.beginPath();g.moveTo(a+box/2,b+box/2);g.lineTo(c+box/2,d+box/2);g.stroke()}}));
+  const col={start:'#5de8b0',stairs:'#ffcf4a',gate:'#ffcf4a',rift:'#9b7bff',cliff:'#4fe0c8',chest:'#c98a2b',lair:'#ff6688',fight:'#6a5cab',arena:'#ff8fb1',shop:'#58c2ff',shrine:'#5de8b0'};
+  const lab={stairs:'S',gate:'G',rift:'R',cliff:'C',chest:'$',lair:'!',shop:'P',shrine:'+'};
+  g.font='600 20px "Pixelify Sans", monospace';g.textAlign='center';g.textBaseline='middle';
+  M.rooms.forEach(r=>{
+    if(!show(r))return;const[x,y]=pos(r);
+    g.globalAlpha=r.visited?1:.5;g.fillStyle=col[r.kind];g.fillRect(x,y,box,box);
+    if(r.locked){g.strokeStyle='#ff6688';g.lineWidth=3;g.strokeRect(x,y,box,box)}
+    g.globalAlpha=1;g.fillStyle=OL;if(lab[r.kind])g.fillText(lab[r.kind],x+box/2,y+box/2+1);
+    if(upgraded('roost')&&r.plan&&!r.cleared&&r.plan.wilds.some(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3)){g.fillStyle='#fff';g.fillText('*',x+box-6,y+8)}
+    if(r===R.cur){g.strokeStyle='#fff';g.lineWidth=3;g.strokeRect(x-3,y-3,box+6,box+6)}
+  });
+  g.textBaseline='alphabetic';
+}
+function updHud(){
+  const p=R.p;
+  $('#hudHp').style.width=clamp(p.hp/p.maxHp,0,1)*100+'%';$('#hudHpTxt').textContent=`${Math.ceil(Math.max(0,p.hp))}/${p.maxHp} HP`;
+  $('#hudGun').innerHTML=R.guns.map((g,i)=>g?`<span class="${i===R.active?'on':''}">${GUNS[g].name}</span>`:'').filter(Boolean).join(' / ')||'No gun';
+  $('#hudFloor').textContent=R.mode==='arena'?'Test arena':`Floor ${R.map.floor}/${FLOORS}${R.mode==='scav'?' · Scav':''}`;
+  if(R.mode==='arena'||S.settings.noTimer)$('#hudTime').textContent='No timer';
+  else{const s=Math.max(0,Math.ceil(R.time));$('#hudTime').textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;$('#hudTime').style.color=s<60?'var(--rose)':''}
+  let h=R.comps.map((m,i)=>{const k=i?'E':'Q';if(!m)return`<div class="pc"><span class="key">${k}</span><span style="color:var(--muted)">Empty</span></div>`;
+    return`<div class="pc ${m.downed?'down':''}"><span class="key">${k}</span><span>${esc(m.c.name)} ${m.downed?'· DOWN':m.abil>0?'':'· ready'}</span><div class="mini-bar"><i style="width:${m.hp/m.maxHp*100}%"></i></div><div class="cdb"><i style="width:${m.abil>0?(1-m.abil/(8*m.st.abil*Math.max(.4,1-.25*B('abil'))))*100:100}%"></i></div></div>`}).join('');
+  if(R.slot3){const c=R.slot3.c,caged=c.captureRaid===R.id;h+=`<div class="pc ${caged?'caged':''}"><span class="key">3</span><span>${esc(c.name)} · ${caged?'caged':'support'}</span></div>`}
+  else h+=`<div class="pc"><span class="key">3</span><span style="color:var(--muted)">Free for a catch</span></div>`;
+  $('#hudParty').innerHTML=h;
+  const bf=Object.entries(R.buffs).map(([k,n])=>`<span class="bchip" title="${esc(BUFFS[k].desc)}">${BUFFS[k].name}${n>1?' ×'+n:''}</span>`).join('');
+  $('#hudBag').innerHTML=`<div class="hud-line"><span>${R.bag.coin}c · ${R.bag.ore} ore · ${R.bag.food} food</span><span>Cages ${R.mode==='arena'?'∞':R.cages.basic+R.cages.gilded}</span></div>${bf?`<div class="bchips">${bf}</div>`:''}`;
+  const mEl=$('#hudMsg');if(R.msgT>0){mEl.hidden=false;mEl.textContent=R.msg}else mEl.hidden=true;
+  const pr=$('#hudPrompt');if(R.prompt){pr.hidden=false;pr.textContent=R.prompt}else pr.hidden=true;
+  drawMini();
+}
+let hudT=0;
+function loop(ts){
+  if(!R||R.over)return;
+  const dt=Math.min(.04,(ts-(R.last||ts))/1000);R.last=ts;
+  if(!R.paused)update(dt);
+  if(!R||R.over)return;
+  draw();hudT+=dt;if(hudT>.1){hudT=0;updHud()}
+  raf=requestAnimationFrame(loop);
+}
+function showOverlay(html){R.paused=true;R.firing=false;keys.clear();$('#pause').hidden=false;$('#pauseBox').innerHTML=html}
+function setPause(on){
+  if(!R)return;R.paused=on;$('#pause').hidden=!on;if(!on){R.last=0;return}
+  const arena=R.mode==='arena';
+  const bl=Object.entries(R.buffs).map(([k,n])=>`<li><b>${BUFFS[k].name}${n>1?' ×'+n:''}</b> · ${BUFFS[k].desc}</li>`).join('');
+  showOverlay(`<h2>Paused</h2>
+    <p class="hint">${arena?'Leaving the arena restores your creatures.':'Abandoning counts as death: everything you brought is lost.'}</p>
+    <button class="btn primary" data-p="resume">Resume</button>
+    ${arena?'<button class="btn" data-p="leave">Leave the arena</button>':`<button class="btn danger" data-p="abandon">${R.abandonArm?'Confirm: abandon and lose loadout':'Abandon raid'}</button>`}
+    ${bl?`<h3>Run buffs</h3><ul class="plain">${bl}</ul>`:''}
+    <p class="status">${TOUCH?'Left thumb: move. Right thumb: aim and fire.':'WASD move · Mouse aim and fire · Space roll · Q/E abilities · 1/2 swap slot 3 · R switch gun · F cage · G use'}</p>`);
+}
+$('#pauseBox').addEventListener('click',e=>{
+  const b=e.target.closest('[data-p]');if(!b||!R||b.disabled)return;const k=b.dataset.p;
+  if(k==='resume'){R.abandonArm=false;setPause(false)}
+  if(k==='leave'){$('#pause').hidden=true;endRaid('arena')}
+  if(k==='abandon'){if(!R.abandonArm){R.abandonArm=true;setPause(true);return}$('#pause').hidden=true;endRaid('dead')}
+  if(k==='buy')buy(+b.dataset.i);
+  if(k==='bless'){const r=R.shrineRoom;if(r&&!r.used){r.used=true;applyBuff(b.dataset.k,true);setPause(false);msg(`${BUFFS[b.dataset.k].name}: ${BUFFS[b.dataset.k].desc}.`)}}
+});
+$('#btnPause').addEventListener('click',()=>{if(R)setPause(!R.paused)});
+
+/* ---------- input ---------- */
+window.addEventListener('keydown',e=>{
+  if(!R||R.over)return;
+  if(e.target&&(e.target.tagName==='SELECT'||e.target.tagName==='INPUT'))return;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+  if(e.code==='Escape'){setPause(!R.paused);return}
+  if(R.paused||e.repeat)return;
+  keys.add(e.code);
+  const c=e.code;
+  if(c==='Space')doRoll();if(c==='KeyQ')useAbility(0);if(c==='KeyE')useAbility(1);if(c==='KeyF')useCage();
+  if(c==='Digit1')swapSlot3(0);if(c==='Digit2'||c==='KeyX')swapSlot3(1);if(c==='KeyR')switchGun();if(c==='KeyG')interact();
+});
+window.addEventListener('keyup',e=>keys.delete(e.code));
+window.addEventListener('blur',()=>{keys.clear();if(R)R.firing=false});
+function bindCanvas(){
+  cv.addEventListener('mousemove',e=>{if(R)R.mouse={x:e.clientX,y:e.clientY}});
+  cv.addEventListener('mousedown',e=>{if(!R||R.paused)return;R.mouse={x:e.clientX,y:e.clientY};if(e.button===2){doRoll();return}if(e.button===0)R.firing=true});
+  window.addEventListener('mouseup',e=>{if(R&&e.button===0&&!touch.aim)R.firing=false});
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
+  cv.addEventListener('touchstart',e=>{e.preventDefault();if(!R||R.paused)return;R.mouse=null;
+    for(const t of e.changedTouches){const o={id:t.identifier,ox:t.clientX,oy:t.clientY,x:t.clientX,y:t.clientY};
+      if(t.clientX<innerWidth/2&&!touch.move)touch.move=o;else if(!touch.aim)touch.aim=o}},{passive:false});
+  cv.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches){[touch.move,touch.aim].forEach(o=>{if(o&&o.id===t.identifier){o.x=t.clientX;o.y=t.clientY}})}},{passive:false});
+  const end=e=>{for(const t of e.changedTouches){if(touch.move&&touch.move.id===t.identifier)touch.move=null;if(touch.aim&&touch.aim.id===t.identifier){touch.aim=null;if(R)R.firing=false}}};
+  cv.addEventListener('touchend',end);cv.addEventListener('touchcancel',end);
+  $('#touch').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-t]');if(!b||!R)return;e.preventDefault();e.stopPropagation();const k=b.dataset.t;
+    if(k==='pause'){setPause(!R.paused);return}if(R.paused)return;
+    if(k==='roll')doRoll();if(k==='q')useAbility(0);if(k==='e')useAbility(1);if(k==='cage')useCage();if(k==='s1')swapSlot3(0);if(k==='s2')swapSlot3(1);if(k==='gun')switchGun();if(k==='use')interact()});
+}
+window.addEventListener('resize',()=>{if(cv)resize()});
+
+/* ================= Boot ================= */
+function start(data){
+  cv=$('#cv');ctx=cv.getContext('2d');mini=$('#mini');mctx=mini.getContext('2d');bindCanvas();
+  S=(data&&data.S&&data.S.v===2)?data.S:load();
+  if(!S)newGame();
+  save();renderAll();
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(()=>({S}))}catch(e){}}
+if(window.claude?.hot?.ready)window.claude.hot.ready(start);else start(window.claude?.hot?.data??{});
+
+</script>
