@@ -1,0 +1,92 @@
+{
+  "PERS": {
+    "brave": {"name":"Brave","desc":"Chases enemies farther. +10% attack."},
+    "timid": {"name":"Timid","desc":"Sticks close to you. Takes 15% less damage."},
+    "greedy": {"name":"Greedy","desc":"Enemies it defeats drop 50% more coin."},
+    "curious": {"name":"Curious","desc":"Sniffs out hollow walls and secret rooms."},
+    "loyal": {"name":"Loyal","desc":"Always obeys. Gains bond 50% faster."},
+    "fierce": {"name":"Fierce","desc":"+10% critical hit chance."},
+    "calm": {"name":"Calm","desc":"Ability recharges 15% faster."},
+    "playful": {"name":"Playful","desc":"Moves 15% faster and earns 20% more XP."}
+  },
+  "BOND_TH": [
+    0,
+    60,
+    180,
+    400,
+    750
+  ],
+  "BOND_PASSIVE": {
+    "ember": {"name":"Kindling","desc":"Its burns deal 50% more damage."},
+    "fungal": {"name":"Mend","desc":"Heals you 1.5 HP per second while it is near you."},
+    "tide": {"name":"Undertow","desc":"Enemies it soaks are also slowed."},
+    "echo": {"name":"Keen Ears","desc":"Hears hollow walls from twice as far."},
+    "gale": {"name":"Tailwind","desc":"You move 8% faster while it fights beside you."},
+    "crystal": {"name":"Facet Guard","desc":"10% chance to block a hit aimed at you."},
+    "warden": {"name":"Bulwark","desc":"Enemies prefer to attack it over you."},
+    "venom": {"name":"Lingering","desc":"Its poison lasts twice as long."},
+    "lumen": {"name":"Beacon","desc":"Its glare stuns for twice as long."}
+  },
+  "BOND_PERKS": [
+    "Bonded",
+    "+5% HP and attack",
+    "Bond passive unlocked",
+    "+12% HP and attack",
+    "Last Stand: survives one knockout per raid and unleashes its ability"
+  ],
+  "GENES": {
+    "pow": "Power",
+    "vig": "Vigor",
+    "swf": "Swift",
+    "tem": "Tempo",
+    "foc": "Focus",
+    "grt": "Grit",
+    "kn": "Knack",
+    "yld": "Yield"
+  },
+  "GENE_HINT": {
+    "pow": "attack",
+    "vig": "max HP",
+    "swf": "move speed",
+    "tem": "attack speed",
+    "foc": "ability recharge, crits and obedience",
+    "grt": "damage resistance",
+    "kn": "quality of hideout work (from Phase 2)",
+    "yld": "amount of hideout work (from Phase 2)"
+  },
+  "TRAITS": {
+    "thick": {"name":"Thick Hide","desc":"+12% max HP","w":3,"dom":true},
+    "glow": {"name":"Glowcore","desc":"+10% attack","w":3,"dom":true},
+    "quick": {"name":"Quickfoot","desc":"+12% move speed","w":3,"dom":true},
+    "rapid": {"name":"Rapid Pulse","desc":"+15% attack speed","w":3,"dom":true},
+    "keen": {"name":"Keen Eye","desc":"15% chance to deal double damage","w":2,"dom":false},
+    "sturdy": {"name":"Sturdy","desc":"Takes 15% less damage","w":2,"dom":true},
+    "regen": {"name":"Regrowth","desc":"Heals 1.5% of max HP per second in raids","w":2,"dom":false},
+    "reach": {"name":"Long Reach","desc":"Shots fly 30% farther and faster","w":2,"dom":true},
+    "focus": {"name":"Focused","desc":"Ability recharges 20% faster","w":2,"dom":true},
+    "vamp": {"name":"Leech Fang","desc":"Heals 8% of the damage it deals","w":1.5,"dom":false},
+    "lucky": {"name":"Lucky Charm","desc":"+10% capture chance while in your party","w":1.5,"dom":false},
+    "hoard": {"name":"Hoarder","desc":"+15% coin from raids it survives","w":1.5,"dom":false},
+    "worker": {"name":"Hard Worker","desc":"+50% contribution to hideout sections","w":2,"dom":true},
+    "lazy": {"name":"Drowsy","desc":"Ability recharges 25% slower","w":1.2,"dom":false},
+    "frail": {"name":"Frail","desc":"-10% max HP","w":1.2,"dom":false},
+    "clumsy": {"name":"Clumsy","desc":"-10% move speed","w":1.2,"dom":false},
+    "twin": {"name":"Twin Eggs","desc":"As a mother, 25% chance her clutch is two eggs","w":1.2,"dom":false},
+    "strongblood": {"name":"Strong Blood","desc":"Passes its better stat allele 75% of the time","w":1.2,"dom":false},
+    "ricochet": {"name":"Ricochet","desc":"Its shots bounce off walls once","w":1.5,"dom":false},
+    "thrifty": {"name":"Thrifty","desc":"Eats no food on days it works in the hideout","w":1.5,"dom":true},
+    "artisan": {"name":"Artisan","desc":"Crafting quality +1.5 at its station; as foreman, for the whole station","w":1.2,"dom":false},
+    "tireless": {"name":"Tireless","desc":"Tires half as fast while working","w":1.5,"dom":true},
+    "brittle": {"name":"Brittle","desc":"Defect: takes 20% more damage","w":0,"dom":false,"defect":true},
+    "shortlived": {"name":"Short-lived","desc":"Defect: can only breed twice","w":0,"dom":false,"defect":true}
+  },
+  "NEG_TRAITS": [
+    "lazy",
+    "frail",
+    "clumsy",
+    "brittle",
+    "shortlived"
+  ],
+  "HISTORY": {"max": 24, "nearDeath": 0.15, "text": {"before": "Came with you from before the records began.",
+ "start": "Was waiting for you at Ilsa’s hideout.", "caught": "Caught on {x}.", "hatched": "Hatched, the child of {x}.", "evolved": "Evolved into {x}.", "boss": "Was there when {x} fell, and came home.", "child": "{x} hatched: one of its children.", "title": "Earned the title {x}.", "neardeath": "Came home from {x} with almost nothing left.", "expedition": "Came back from the {x}."}}
+}

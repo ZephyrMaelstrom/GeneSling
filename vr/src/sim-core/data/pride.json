@@ -1,0 +1,87 @@
+{
+  "GRID": {
+    "tile": 50,
+    "cols": 20,
+    "baseRows": 7,
+    "top": 120,
+    "hillRows": 2
+  },
+  "FOOT": {
+    "station": [3, 2],
+    "board": [2, 1],
+    "den": [2, 1],
+    "bench": [2, 1],
+    "fountain": [2, 1]
+  },
+  "PLOTS": [
+    {"name": "Lower terrace", "rank": 4, "cost": {"coin": 400, "ore": 40}},
+    {"name": "Middle terrace", "rank": 7, "cost": {"coin": 900, "ingot": 10}},
+    {"name": "Upper terrace", "rank": 10, "cost": {"coin": 1800, "ingot": 15, "glass": 10}}
+  ],
+  "DECOR": {
+    "path": {"name": "Stone path", "comfort": 0, "make": 4, "cost": {"ore": 2}, "desc": "Four tiles of flagstone. Off-duty creatures wander along paths."},
+    "den": {"name": "Den", "comfort": 0, "make": 1, "cost": {"cloth": 2, "food": 4}, "desc": "Sleeps three. Tired creatures and everyone at night curl up here."},
+    "flowerbed": {"name": "Flower bed", "comfort": 2, "make": 1, "cost": {"herbs": 2, "food": 2}, "desc": "A bed of Bloom flowers that never quite stop moving."},
+    "lantern": {"name": "Lantern", "comfort": 2, "make": 1, "cost": {"ingot": 1, "glass": 1}, "desc": "Glows warmer at night."},
+    "banner": {"name": "Banner", "comfort": 2, "make": 1, "cost": {"cloth": 2}, "desc": "Flies your sigil if you have one."},
+    "mushlamp": {"name": "Mushroom lamp", "comfort": 3, "make": 1, "cost": {"silk": 2, "glass": 1}, "desc": "A spore-silk cap over a glass bulb."},
+    "bench": {"name": "Bench", "comfort": 3, "make": 1, "cost": {"ingot": 1, "hide": 2}, "desc": "Somewhere to sit and watch the creatures play."},
+    "totem": {"name": "Crystal totem", "comfort": 5, "make": 1, "cost": {"dust": 4, "lens": 1}, "desc": "Hums softly. Crystal creatures love it."},
+    "fountain": {"name": "Fountain", "comfort": 6, "make": 1, "cost": {"glass": 3, "ingot": 2}, "desc": "Clear water from the Spring, pumped up for show."}
+  },
+  "PLACED_COMFORT": {
+    "trophy": 2,
+    "statue": 3
+  },
+  "COMFORT": {
+    "perPoint": 0.005,
+    "cap": 0.2,
+    "repeatCap": 4
+  },
+  "LIFE": {
+    "denCap": 3,
+    "sleepFatigue": 50,
+    "dayLength": 240,
+    "nightFrom": 0.72,
+    "friendRaids": 3,
+    "friendBond": 2,
+    "maxDrawn": 14
+  },
+  "LEGEND": {
+    "minRaids": 8,
+    "minLevel": 15,
+    "maxStack": 3
+  },
+  "PERKS": {
+    "ember": {"name": "Ember's Blaze", "desc": "+3% weapon damage", "dmg": 0.03},
+    "fungal": {"name": "Fungal Feast", "desc": "+1 food a day", "food": 1},
+    "tide": {"name": "Tide's Rest", "desc": "Creatures shed 5 more fatigue on a day off", "rest": 5},
+    "echo": {"name": "Echo's Lesson", "desc": "+5% Keeper XP from raids", "kxp": 0.05},
+    "gale": {"name": "Gale's Breath", "desc": "+5 max HP for you in raids", "hp": 5},
+    "crystal": {"name": "Crystal Hoard", "desc": "+5% coin from extractions", "coin": 0.05},
+    "warden": {"name": "Warden's Watch", "desc": "Hatchlings start with +15 bond", "bond": 15},
+    "venom": {"name": "Venom's Cure", "desc": "+1 gene serum every few days (a third of one a day)", "serum": 0.34}
+  },
+  "TITLES": {
+    "wyrmslayer": {"name": "Wyrmslayer", "desc": "Came home from a raid where a boss fell"},
+    "ten": {"name": "Ten Extracts", "desc": "Came home from 10 raids", "raids": 10},
+    "fifty": {"name": "Fifty Extracts", "desc": "Came home from 50 raids", "raids": 50},
+    "last": {"name": "Last One Standing", "desc": "Came home when every other companion fell"}
+  },
+  "SIGIL": {
+    "shapes": ["shield", "circle", "diamond", "hex", "star"],
+    "colors": ["#ffcf4a", "#ff7a3d", "#7fd860", "#3fa9ff", "#9b7bff", "#ff8fe0", "#4fe0c8", "#f6eedb"],
+    "glyphs": ["✦", "☾", "✿", "♣", "♠", "♥", "◆", "☀", "❖", "⚘", "A", "M"]
+  },
+  "DEMO": {
+    "maxFloor": 3,
+    "maxRank": 10,
+    "goals": {"bosses": 1, "rank": 10, "tier2": 3}
+  },
+  "STATS": {
+    "collection": "stats",
+    "feedback": "feedback",
+    "returnHours": 8
+  },
+  "DEFAULT_LAYOUT": [["nursery",1,0], ["training",6,0], ["warroom",11,0], ["archive",16,0], ["board",9,2], ["forge",0,4], ["garden",4,4], ["spring",8,4], ["roost",12,4], ["vault",16,4], ["den",1,6],["apothecary",2,2], ["den",17,6], ["path",0,3], ["path",1,3], ["path",2,3], ["path",3,3], ["path",4,3], ["path",5,3], ["path",6,3], ["path",7,3], ["path",8,3], ["path",9,3], ["path",10,3], ["path",11,3], ["path",12,3], ["path",13,3], ["path",14,3], ["path",15,3], ["path",16,3], ["path",17,3], ["path",18,3], ["path",19,3], ["path",9,0], ["path",9,1], ["path",10,0], ["path",10,1]]
+}

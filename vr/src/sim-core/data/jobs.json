@@ -1,0 +1,112 @@
+{
+  "MATERIALS": {
+    "ore": {"name":"Ore","kind":"raw","sell":8,"desc":"Dug from the Bloom. The Forge smelts it into ingots."},
+    "hide": {"name":"Hide","kind":"raw","sell":6,"desc":"From wild creatures. The War Room weaves it into cloth."},
+    "dust": {"name":"Crystal dust","kind":"raw","sell":8,"desc":"From crystal creatures and chests. The Vault fires it into glass."},
+    "food": {"name":"Food","kind":"raw","sell":3,"desc":"Every creature eats 1 a day."},
+    "herbs": {"name":"Herbs","kind":"refined","sell":5,"desc":"Grown in the Garden. The Spring brews them into tonics."},
+    "silk": {"name":"Spore silk","kind":"refined","sell":6,"desc":"Grown in the Garden. Woven with hide into cloth."},
+    "ingot": {"name":"Ingot","kind":"refined","sell":22,"desc":"Smelted at the Forge from 2 ore."},
+    "cloth": {"name":"Cloth","kind":"refined","sell":18,"desc":"Woven in the War Room from hide and silk."},
+    "glass": {"name":"Glass","kind":"refined","sell":20,"desc":"Fired in the Vault from 2 crystal dust."},
+    "tonic": {"name":"Tonic","kind":"finished","sell":25,"desc":"Brewed at the Spring. Carry up to 3 into a raid: one is drunk automatically at 25% HP and heals 40%."},
+    "parts": {"name":"Weapon parts","kind":"component","sell":50,"desc":"Barrels, grips and edges for forging weapons."},
+    "core": {"name":"Cage core","kind":"component","sell":45,"desc":"The heart of every cage."},
+    "frame": {"name":"Bag frame","kind":"component","sell":45,"desc":"Stitched frames for satchels."},
+    "sap": {"name":"Bog sap","kind":"raw","sell":9,"desc":"From the Sump's pools and Venom creatures. The Apothecary brews it with herbs."},
+    "serum": {"name":"Gene serum","kind":"finished","sell":60,"desc":"Raises the weaker copy of a creature's lowest gene by 1, up to 10. Use it from the creature's card."},
+    "apexshard": {"name":"Apex shard","kind":"raw","sell":200,"desc":"Only from the Unbound Bloom. Fuels the Apex Chamber."},
+    "bloomscar": {"name":"Bloomscar serum","kind":"finished","sell":250,"desc":"Writes the Bloomscar shine into one copy of a creature's shine gene. Only from Unbound tier 8 and deeper."},
+    "lens": {"name":"Lens","kind":"component","sell":45,"desc":"Ground glass for gilded cages and satchel clasps."}
+  },
+  "STATIONS": {
+    "forge": {"verb":"smelts","in":{"ore":2},"out":{"ingot":1}},
+    "garden": {"verb":"grows","in":{},"out":{"food":3,"herbs":0.5,"silk":0.5}},
+    "spring": {"verb":"brews","in":{"herbs":2},"out":{"tonic":1},"rate":0.5},
+    "vault": {"verb":"fires","in":{"dust":2},"out":{"glass":1}},
+    "warroom": {"verb":"weaves","in":{"hide":1,"silk":1},"out":{"cloth":1}},
+    "apothecary": {"verb":"brews","in":{"sap":1,"herbs":1},"out":{"serum":1},"rate":0.5}
+  },
+  "WORK": {"base":0.5,"perYield":0.1,"perLevel":0.02,"perStage":0.1,"match":1,"secondary":0.8,"offType":0.5,"worker":1.5,
+    "gardenTier":[1,1.1,1.2,1.35,1.5,1.7],"apothecaryTier":[1,1,1,1,1.25,1.25]},
+  "FATIGUE": {"work":12,"expedition":8,"rest":30,"maxPenalty":0.4,"tireless":0.5},
+  "WORK_TRAITS": ["worker","thrifty","artisan","tireless"],
+  "CHEMISTRY": [
+    {"station":"garden","types":["fungal","tide"],"name":"Irrigation","bonus":0.25,"desc":"+25% Garden output"},
+    {"station":"forge","types":["ember","gale"],"name":"Bellows","bonus":0.2,"desc":"+20% ingots"},
+    {"station":"vault","types":["crystal","ember"],"name":"Kiln heat","bonus":0.2,"desc":"+20% glass"},
+    {"station":"warroom","types":["gale","fungal"],"name":"Silk lines","bonus":0.2,"desc":"+20% cloth"},
+    {"station":"spring","types":["tide","fungal"],"name":"Herbal baths","bonus":0.2,"desc":"+20% tonics"}
+  ],
+  "CLASHES": [["brave","timid"],["fierce","calm"],["greedy","loyal"]],
+  "CLASH_PENALTY": 0.1,
+  "CLASH_MAX": 0.3,
+  "QUALITY": {
+    "names": ["Crude","Fine","Superior","Masterwork","Legendary"],
+    "thresholds": [0,6.5,9,11.5,13.5],
+    "roll": 4,
+    "emptyKnack": 3,
+    "artisan": 1.5,
+    "printBonus": 2,
+    "dmg": [1,1.05,1.1,1.15,1.25],
+    "dur": [6,8,10,13,18],
+    "satchelSlots": [2,3,4,5,6],
+    "cageBonus": [0,0,1,1,2]
+  },
+  "MASTERY": {"thresholds":[5,15,30,60],"perLevel":0.75},
+  "RECIPES": {
+    "parts": {"kind":"component","name":"Weapon parts","in":{"ingot":2},"out":{"parts":1}},
+    "core": {"kind":"component","name":"Cage core","in":{"ingot":1,"glass":1},"out":{"core":1}},
+    "frame": {"kind":"component","name":"Bag frame","in":{"cloth":2,"ingot":1},"out":{"frame":1}},
+    "lens": {"kind":"component","name":"Lens","in":{"glass":2},"out":{"lens":1}},
+    "cages": {"kind":"finished","name":"Cages","station":"vault","in":{"core":1},"cages":2,"desc":"Two cages, more at higher quality."},
+    "gilded": {"kind":"finished","name":"Gilded cage","station":"vault","in":{"core":1,"lens":1},"gilded":1,"needForge":3,"desc":"A cage that catches far more often."},
+    "satchel": {"kind":"finished","name":"Satchel","station":"warroom","in":{"frame":2},"satchel":true,"desc":"Worn into raids for extra bag slots. Lost if you fall."}
+  },
+  "WEAPON_PARTS": [0,1,2,3,4],
+  "DURABILITY": {"perRaid":1,"repairPerPoint":0.5,"foundFraction":[0.4,0.8],"foundQuality":[0.7,0.3]},
+  "PRINTS": {"chest":0.06,"boss":0.5,"minTier":2},
+  "BAG": {"slots":12,"stack":10,"hauler":4},
+  "TONIC": {"carry":3,"at":0.25,"heal":0.4},
+  "ROLES": {
+    "striker": {"name":"Striker","desc":"Hits hardest: +20% damage, and its combos hit 30% harder.","dmg":0.2,"combo":0.3,"combat":true},
+    "bulwark": {"name":"Bulwark","desc":"+25% HP, and you take 15% less damage while it fights near you.","hp":0.25,"shield":0.15,"range":140,"combat":true},
+    "medic": {"name":"Medic","desc":"Heals you and the party 0.8% a second, and 4% a second for 3s after its ability.","regen":0.008,"burst":0.04,"burstTime":3,"combat":true},
+    "scout": {"name":"Scout","desc":"Reveals the map, hidden doors and rare creatures.","combat":false},
+    "hauler": {"name":"Hauler","desc":"+4 bag slots.","bag":4,"combat":false},
+    "catcher": {"name":"Catcher","desc":"Cage radius +30% and +10% catch chance on weakened wilds.","radius":0.3,"catch":0.1,"combat":false}
+  },
+  "SPECIES_ROLE": {
+    "cindlet":"scout","pyrrox":"striker","magmaul":"bulwark",
+    "puffcap":"medic","shroomite":"bulwark","mycelisk":"catcher",
+    "dewdrip":"medic","coralisk":"hauler","tidewyrm":"striker",
+    "chirrup":"scout","vesperbat":"catcher","umbrowl":"striker",
+    "zephling":"scout","kestrix":"striker","stormwing":"hauler",
+    "shardling":"catcher","prismoth":"medic","geodon":"hauler",
+    "pebblet":"hauler","bastion":"bulwark","monolord":"bulwark",
+    "blazewing":"striker","bogbloom":"medic","resonyx":"scout","forgeheart":"bulwark","squallfin":"hauler","duskcap":"catcher","gemguard":"bulwark"
+  },
+  "ROSTER": {"base":16,"perPen":4,"maxPens":6,"penCost":{"coin":120,"ingot":4,"cloth":2}},
+  "EXPEDITIONS": {
+    "forage": {"name":"Rootworks forage","days":2,"desc":"A short trip for food, herbs and hide.","loot":{"food":[6,12],"herbs":[2,5],"hide":[2,4]},"egg":0,"injury":0.1},
+    "seams": {"name":"Ore seams","days":3,"desc":"Dig the old seams for ore and crystal dust.","loot":{"ore":[8,16],"dust":[2,5]},"egg":0,"injury":0.15},
+    "hollows": {"name":"Crystal hollows","days":4,"need":["crystal","echo"],"desc":"Needs a Crystal or Echo creature to find the way. Dust, glass and sometimes an egg.","loot":{"dust":[6,12],"glass":[1,3],"coin":[30,80]},"egg":0.1,"injury":0.15},
+    "galleries": {"name":"Drowned galleries","days":5,"need":["tide"],"desc":"Needs a Tide creature to swim the flooded lanes. Hide, herbs, memory shards and eggs.","loot":{"hide":[4,8],"herbs":[3,6],"coin":[60,140],"shard":[0,1]},"egg":0.2,"injury":0.2}
+  },
+  "EXPEDITION_TEAM": 3,
+  "EXPEDITION_SCALE": {"perLevel":0.02,"perSwift":0.04},
+  "LEGACY_BOND": 0.25,
+  "MARKET_BUY": {"food1":5,"food10":42,"cage":15,"ore":18},
+  "SUPPLY_SIM": {
+    "days": 7,
+    "roster": 25,
+    "startCoin": 300,
+    "startFood": 30,
+    "startCages": 4,
+    "death": 0.15,
+    "cagesUsed": [1,2],
+    "raid": {"coin":[140,260],"ore":[6,14],"hide":[3,8],"dust":[1,5],"food":[2,6]},
+    "keepCages": 4,
+    "keepTonics": 2
+  }
+}

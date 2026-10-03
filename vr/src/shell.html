@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1b1430">
+<title>GeneSlingVR</title>
+<style>
+  :root{--ink:#f6f1ff;--quiet:#bdb3d6;--panel:rgba(22,16,40,.86);--acc:#ffb347;--bloom:#b45cff;--good:#7ee08a}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#1b1430;color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+  canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none}
+  #cross{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid rgba(255,255,255,.75);border-radius:50%}
+  #cross.hot{border-color:var(--acc);box-shadow:0 0 8px var(--acc)}
+  #status{position:absolute;left:12px;top:12px;background:var(--panel);padding:8px 12px;border-radius:10px;min-width:220px;font-size:13px}
+  #status b{color:var(--acc)}
+  .bar{height:7px;background:rgba(255,255,255,.15);border-radius:4px;margin:3px 0 6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--good)}
+  #obj{position:absolute;right:12px;top:12px;background:var(--panel);padding:8px 12px;border-radius:10px;max-width:300px;font-size:13px}
+  #obj h4{margin:0 0 4px;font-size:13px;color:var(--acc)}
+  #toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center}
+  #toast div{background:var(--panel);padding:6px 14px;border-radius:999px;font-size:14px;animation:fade 3.2s forwards}
+  @keyframes fade{0%{opacity:0;transform:translateY(8px)}8%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+  #hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--panel);padding:6px 14px;border-radius:10px;font-size:13px;color:var(--quiet);white-space:nowrap}
+  #prompt{position:absolute;left:50%;top:calc(50% + 26px);transform:translateX(-50%);font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
+  #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#3a2a5e,#140e24 70%);z-index:5}
+  #start .card{max-width:560px;padding:28px;text-align:center}
+  #start h1{margin:0 0 6px;font-size:42px;letter-spacing:.02em}
+  #start h1 span{color:var(--bloom)}
+  #start p{color:var(--quiet);margin:6px 0 18px}
+  #start button{font:600 16px system-ui;padding:12px 22px;margin:6px;border:0;border-radius:12px;cursor:pointer;background:var(--acc);color:#2a1a08}
+  #start button.alt{background:#4a3a78;color:var(--ink)}
+  #start button:disabled{opacity:.45;cursor:not-allowed}
+  #keys{margin-top:16px;font-size:12.5px;color:var(--quiet);text-align:left;columns:2;column-gap:24px}
+  #keys kbd{background:#2c2148;border-radius:4px;padding:0 5px;color:var(--ink)}
+  #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .35s}
+</style>
+</head>
+<body>
+<div id="start"><div class="card">
+  <h1>GeneSling<span>VR</span></h1>
+  <p>Walk into the Bloom. Catch it, tame it, breed it, and take the valley back.</p>
+  <button id="btnVR" disabled>Checking for VR…</button>
+  <button id="btnDesk" class="alt">Play on this screen</button>
+  <div id="keys">
+    <div><kbd>WASD</kbd> move · <kbd>Shift</kbd> run · <kbd>C</kbd> crouch</div>
+    <div><kbd>Left mouse</kbd> hold, release: sling</div>
+    <div><kbd>Right mouse</kbd> hold, release: throw cage</div>
+    <div><kbd>F</kbd> hold: offer food (tame)</div>
+    <div><kbd>E</kbd> use / gather / talk</div>
+    <div><kbd>Q</kbd> send companions · <kbd>X</kbd> recall</div>
+    <div><kbd>1</kbd> <kbd>2</kbd> companion skills (both = combo)</div>
+    <div><kbd>Tab</kbd> wrist panel · <kbd>Esc</kbd> free mouse</div>
+  </div>
+</div></div>
+<div id="hud">
+  <div id="cross"></div><div id="prompt"></div>
+  <div id="status"></div><div id="obj"></div>
+  <div id="toast"></div><div id="hint"></div>
+</div>
+<div id="fade"></div>
+<script>/*__GAME__*/</script>
+</body>
+</html>
