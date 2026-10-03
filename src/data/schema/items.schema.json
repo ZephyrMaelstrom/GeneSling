@@ -1,0 +1,175 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/items.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "GUNS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "tier": {
+      "type": "number"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "rate": {
+      "type": "number"
+     },
+     "spread": {
+      "type": "number"
+     },
+     "speed": {
+      "type": "number"
+     },
+     "life": {
+      "type": "number"
+     },
+     "col": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "pellets": {
+      "type": "number"
+     },
+     "elem": {
+      "type": "string"
+     },
+     "burst": {
+      "type": "number"
+     },
+     "burstGap": {
+      "type": "number"
+     },
+     "pierce": {
+      "type": "number"
+     },
+     "r": {
+      "type": "number"
+     },
+     "explode": {
+      "type": "number"
+     },
+     "bounce": {
+      "type": "number"
+     },
+     "split": {
+      "type": "number"
+     },
+     "homing": {
+      "type": "number"
+     },
+     "spin": {
+      "type": "boolean"
+     },
+     "ring": {
+      "type": "number"
+     },
+     "melee": {
+      "type": "boolean"
+     },
+     "range": {
+      "type": "number"
+     },
+     "arc": {
+      "type": "number"
+     },
+     "lunge": {
+      "type": "number"
+     },
+     "knock": {
+      "type": "number"
+     },
+     "shock": {
+      "type": "number"
+     },
+     "reflect": {
+      "type": "boolean"
+     },
+     "hits": {
+      "type": "number"
+     },
+     "leech": {
+      "type": "number"
+     },
+     "wave": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name",
+     "tier",
+     "dmg",
+     "rate",
+     "col",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "WEAPON_COST": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "coin": {
+      "type": "number"
+     },
+     "ore": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "coin",
+     "ore"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "SCRAP_ORE": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "DONATE_PTS": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "BUFFS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "GUNS",
+  "WEAPON_COST",
+  "SCRAP_ORE",
+  "DONATE_PTS",
+  "BUFFS"
+ ],
+ "additionalProperties": false
+}

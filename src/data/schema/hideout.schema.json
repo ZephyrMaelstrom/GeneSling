@@ -1,0 +1,134 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/hideout.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "SEC_TH": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "SECTIONS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "type": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "gene": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "blurb": {
+      "type": "string"
+     },
+     "tiers": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "unlock": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "type",
+     "gene",
+     "col",
+     "blurb",
+     "tiers"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ARMORY_TH": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "ARMORY_TIERS": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "KEEPER_PERKS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "RESEARCH": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "nodes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "name",
+     "col",
+     "nodes"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "RES_COST": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "coin": {
+      "type": "number"
+     },
+     "ore": {
+      "type": "number"
+     },
+     "shard": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "coin",
+     "ore",
+     "shard"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "SEC_TH",
+  "SECTIONS",
+  "ARMORY_TH",
+  "ARMORY_TIERS",
+  "KEEPER_PERKS",
+  "RESEARCH",
+  "RES_COST"
+ ],
+ "additionalProperties": false
+}

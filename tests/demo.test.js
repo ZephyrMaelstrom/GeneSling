@@ -12,7 +12,7 @@ const idbMain = name => page.evaluate(async n => {
 }, name);
 before(async () => {
   srv = await startServer(); browser = await launch();
-  ({context, page, errors} = await openGame(browser, srv.url, {page: '/dist/demo/index.html'}));
+  ({context, page, errors} = await openGame(browser, srv.url, {page: '/dist-dev/demo/index.html'}));
   await page.evaluate(() => window.gameReady);
   await page.evaluate(() => closeModal());
 });

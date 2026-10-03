@@ -41,9 +41,9 @@ test('the raid controls are laid out for a phone held sideways', async () => {
 });
 
 test('left-handed layout mirrors the controls', async () => {
-  const x = await page.evaluate(async () => { S.opts.hand = 'left'; applyOpts(); await new Promise(r => setTimeout(r, 50));
+  const x = await page.evaluate(async () => { OPTS.hand = 'left'; applyOpts(); await new Promise(r => setTimeout(r, 50));
     const b = id => document.getElementById(id).getBoundingClientRect(); const out = {aim: stickBases().aim, q: b('tQ').left, cage: b('tCage').right};
-    S.opts.hand = 'right'; applyOpts(); return out; });
+    OPTS.hand = 'right'; applyOpts(); return out; });
   assert.ok(x.aim.x < 200 && x.q < 200 && x.cage < 400);
 });
 

@@ -1,0 +1,540 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/exchange.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "FEES": {
+   "type": "object",
+   "properties": {
+    "post": {
+     "type": "number"
+    },
+    "tax": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "post",
+    "tax"
+   ],
+   "additionalProperties": false
+  },
+  "COMMODITIES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "ref": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "ref"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "UNIQUES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "ref": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "ref"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "BASKET": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "BELIEF": {
+   "type": "object",
+   "properties": {
+    "filled": {
+     "type": "number"
+    },
+    "missed": {
+     "type": "number"
+    },
+    "min": {
+     "type": "number"
+    },
+    "max": {
+     "type": "number"
+    },
+    "spread": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "filled",
+    "missed",
+    "min",
+    "max",
+    "spread"
+   ],
+   "additionalProperties": false
+  },
+  "UPKEEP": {
+   "type": "object",
+   "properties": {
+    "rate": {
+     "type": "number"
+    },
+    "flat": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "rate",
+    "flat"
+   ],
+   "additionalProperties": false
+  },
+  "INVENTORY_DAYS": {
+   "type": "number"
+  },
+  "QUARTERMASTER": {
+   "type": "object",
+   "properties": {
+    "bid": {
+     "type": "number"
+    },
+    "ask": {
+     "type": "number"
+    },
+    "exportCap": {
+     "type": "number"
+    },
+    "treasury": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "bid",
+    "ask",
+    "exportCap",
+    "treasury"
+   ],
+   "additionalProperties": false
+  },
+  "ARCHETYPES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "coin": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "income": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "produce": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "consume": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "list": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "wantsUnique": {
+      "type": "object",
+      "properties": {
+       "gun": {
+        "type": "number"
+       },
+       "print": {
+        "type": "number"
+       },
+       "creature": {
+        "type": "number"
+       },
+       "egg": {
+        "type": "number"
+       }
+      },
+      "additionalProperties": false
+     },
+     "death": {
+      "type": "number"
+     },
+     "convert": {
+      "type": "array",
+      "items": {
+       "type": "array",
+       "items": {
+        "type": [
+         "string",
+         "number"
+        ]
+       }
+      }
+     },
+     "bounty": {
+      "type": "number"
+     },
+     "rareOnly": {
+      "type": "boolean"
+     },
+     "edge": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "count",
+     "coin",
+     "income",
+     "consume"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "AUCTION": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "step": {
+     "type": "number"
+    },
+    "buyoutOver": {
+     "type": "number"
+    },
+    "startUnder": {
+     "type": "number"
+    },
+    "playerDays": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "days",
+    "step",
+    "buyoutOver",
+    "startUnder",
+    "playerDays"
+   ],
+   "additionalProperties": false
+  },
+  "BOUNTY": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "number"
+    },
+    "minGrade": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "reward": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "shineBonus": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "days",
+    "minGrade",
+    "reward",
+    "shineBonus"
+   ],
+   "additionalProperties": false
+  },
+  "SHOCKS": {
+   "type": "object",
+   "properties": {
+    "chance": {
+     "type": "number"
+    },
+    "list": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "days": {
+        "type": "number"
+       },
+       "produce": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "number"
+        }
+       },
+       "news": {
+        "type": "string"
+       },
+       "flood": {
+        "type": "string"
+       },
+       "dump": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "name",
+       "days",
+       "news"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "chance",
+    "list"
+   ],
+   "additionalProperties": false
+  },
+  "NEWS_MOVE": {
+   "type": "number"
+  },
+  "HISTORY_DAYS": {
+   "type": "number"
+  },
+  "TARGETS": {
+   "type": "object",
+   "properties": {
+    "coinGrowthWeek": {
+     "type": "number"
+    },
+    "basketBand": {
+     "type": "number"
+    },
+    "actSpread": {
+     "type": "number"
+    },
+    "fromDay": {
+     "type": "number"
+    },
+    "days": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "coinGrowthWeek",
+    "basketBand",
+    "actSpread",
+    "fromDay",
+    "days"
+   ],
+   "additionalProperties": false
+  },
+  "KEEPER_XP": {
+   "type": "object",
+   "properties": {
+    "craft": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "component": {
+     "type": "number"
+    },
+    "hatch": {
+     "type": "number"
+    },
+    "bounty": {
+     "type": "number"
+    },
+    "sale": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "craft",
+    "component",
+    "hatch",
+    "bounty",
+    "sale"
+   ],
+   "additionalProperties": false
+  },
+  "PLAYSTYLES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "raidsPerDay": {
+      "type": "number"
+     },
+     "craftsPerDay": {
+      "type": "number"
+     },
+     "eggsPerDay": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "raidsPerDay",
+     "craftsPerDay",
+     "eggsPerDay"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ACT3": {
+   "type": "object",
+   "properties": {
+    "keeperRank": {
+     "type": "number"
+    },
+    "cutFreeGen": {
+     "type": "number"
+    },
+    "gearScore": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "keeperRank",
+    "cutFreeGen",
+    "gearScore"
+   ],
+   "additionalProperties": false
+  },
+  "AGENT": {
+   "type": "object",
+   "properties": {
+    "raidXp": {
+     "type": "number"
+    },
+    "raidCoin": {
+     "type": "number"
+    },
+    "raidRaw": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number"
+     }
+    },
+    "craftXp": {
+     "type": "number"
+    },
+    "hatchXp": {
+     "type": "number"
+    },
+    "gearPerGun": {
+     "type": "number"
+    },
+    "generationEggs": {
+     "type": "number"
+    },
+    "craftInput": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number"
+     }
+    },
+    "craftOutput": {
+     "type": "string"
+    },
+    "_note": {
+     "type": "string"
+    },
+    "bidOver": {
+     "type": "number"
+    },
+    "lotsPerDay": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "raidXp",
+    "raidCoin",
+    "raidRaw",
+    "craftXp",
+    "hatchXp",
+    "gearPerGun",
+    "generationEggs",
+    "craftInput",
+    "craftOutput",
+    "_note",
+    "bidOver",
+    "lotsPerDay"
+   ],
+   "additionalProperties": false
+  },
+  "WARMUP_DAYS": {
+   "type": "number"
+  }
+ },
+ "required": [
+  "FEES",
+  "COMMODITIES",
+  "UNIQUES",
+  "BASKET",
+  "BELIEF",
+  "UPKEEP",
+  "INVENTORY_DAYS",
+  "QUARTERMASTER",
+  "ARCHETYPES",
+  "AUCTION",
+  "BOUNTY",
+  "SHOCKS",
+  "NEWS_MOVE",
+  "HISTORY_DAYS",
+  "TARGETS",
+  "KEEPER_XP",
+  "PLAYSTYLES",
+  "ACT3",
+  "AGENT",
+  "WARMUP_DAYS"
+ ],
+ "additionalProperties": false
+}

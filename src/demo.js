@@ -12,10 +12,12 @@
 import {BOSSES,PRIDE as P,SECTION_IDS} from './content.js';
 import FB from './data/firebase.json';
 import {DEMO} from './flags.js';
-import {S,secTier} from './state.js';
+import {S,secTier,ui} from './state.js';
 import {save} from './save.js';
-import {esc} from './util.js';
-import {queueModal} from './ui.js';
+import {esc,$} from './util.js';
+import {queueModal,closeModal,openModal,renderMain} from './ui.js';
+import {on} from './events.js';
+import {onAct,onChange} from './actions.js';
 
 const ISSUES='https://github.com/ZephyrMaelstrom/GeneSling/issues/new';
 
@@ -65,6 +67,9 @@ function track(ev,data={}){
   post(P.STATS.collection,e);
   return e;
 }
+// After every raid: the play stat, then the demo's end screen if Act I is done. The day and rank are as they
+// stood when the raid ended, before the next day began.
+on('raid:done',r=>{track('raid_end',{outcome:r.outcome,floor:r.floor,deepest:r.deepest,mode:r.mode,day:r.day,rank:r.rank});demoProgress()});
 function setStats(on){
   S.telemetry=Object.assign(S.telemetry||{},{asked:true,on:!!on});
   if(on&&!S.telemetry.id)S.telemetry.id=installId();
@@ -109,4 +114,9 @@ const statsPanel=()=>`<h3>Play stats</h3><p class="hint">Opt-in and anonymous. $
   ${statsOn()&&sent.length?`<p class="status">Latest: ${sent.slice(0,4).map(e=>esc(e.ev)).join(', ')}</p>`:''}
   <div class="row"><button class="btn small" data-act="feedback">Send feedback</button></div>`;
 
+/* ---------- actions ---------- */
+onAct('feedback',d=>{openModal(feedbackHtml())});
+onAct('sendfeedback',d=>{const rate=$('#fb-rate').value,text=$('#fb-text').value;sendFeedback(rate,text).then(how=>{const st=$('#fb-status');if(st)st.textContent=how==='empty'?'Write something first.':how==='firebase'?'Thank you! Sent.':'Thank you! Finish sending it on GitHub.'})});
+onAct('stats',d=>{setStats(d.k==='1');closeModal();if(ui.tab==='settings')renderMain()});
+onChange('statsopt',el=>{setStats(el.checked);renderMain()});
 export {DEMO,demoGoals,demoComplete,demoProgress,demoEndHtml,demoGoalsHtml,sent,configured,statsOn,track,setStats,sessionStart,askStats,tutorialDone,feedbackHtml,sendFeedback,statsPanel,toFields};

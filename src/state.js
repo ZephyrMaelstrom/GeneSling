@@ -1,5 +1,6 @@
 /* ================= State ================= */
 import {rand} from './rng.js';
+import {emit} from './events.js';
 import {clamp,pick} from './util.js';
 import {BALANCE,ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
@@ -88,7 +89,6 @@ function grantBonusSlot(c){
   const t=GOOD_TRAITS.filter(x=>!c.traits.includes(x)),pick1=t[Math.floor(rand()*t.length)];
   G.t4=[pick1,pick1];return pick1;
 }
-function defaultOpts(){return{fullscreen:true,stick:'fixed',stickSize:'M',btnSize:'M',hand:'right',dmgNums:true,shake:true,hudAlpha:.82,autoFire:true,vol:.7,music:.5,sfx:.8,mute:false,palette:'normal',aimAssist:false,slowBullets:false,quality:'auto'}}
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
   S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
@@ -97,7 +97,7 @@ function newGame(){
     loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0,map:null},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
     settings:{god:false,reveal:false,instant:false,noTimer:false,keepArena:true,genes:false},tree:{},
-    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,opts:defaultOpts(),nextId:1,startedAt:Date.now()};
+    mats:{},items:[],nextUid:1,prints:[],mastery:{},pens:0,expeditions:[],prod:{},keeperName:'',market:null,marketSync:1,nextId:1,startedAt:Date.now()};
   const a=makeCreature('pyrrox','bred',4,{name:'Cinder',sex:'M',pers:'brave',traits:['glow','rapid'],genes:{vig:6,pow:7,swf:5,hst:6,tmp:5}});
   const b=makeCreature('puffcap','bred',4,{name:'Morel',sex:'F',pers:'calm',traits:['thick','sturdy'],genes:{vig:7,pow:5,swf:4,hst:5,tmp:6}});
   const c=makeCreature('dewdrip','wild',3,{name:'Ripple',sex:'F',pers:'curious',proven:true,bondXp:70,traits:['lucky','regen'],genes:{vig:7,pow:6,swf:7,hst:6,tmp:5}});
@@ -244,6 +244,9 @@ function processDay(){
   endgameDay(notes);
   addLog(`Day ${S.day}. `+(notes.join(' ')||'A quiet day at the hideout.'));
 }
+// A day passing in the real game: the day itself, then everything that follows it (the playtest pace, the market).
+// Simulations call processDay() alone, so they never touch the market or send stats.
+function passDay(){processDay();emit('day:passed')}
 
 /* ---------- breeding rules ---------- */
 // Extra mutation chance per gene from research and the Nursery.
@@ -327,4 +330,4 @@ function layEgg(mom,dad){
   return laid;
 }
 
-export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,defaultOpts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,hybridChance,breed,layEgg};
+export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,passDay,hybridChance,breed,layEgg};

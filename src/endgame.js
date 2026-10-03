@@ -13,6 +13,7 @@ import {mixSeed,rand,withSeed} from './rng.js';
 import {pick,ri} from './util.js';
 import {GRADE_LOCI,STAT_LOCI,cutFree,express,hasApexAllele,isApex} from './genetics.js';
 import {canPay,costText,give,masteryLevel,pay} from './jobs.js';
+import {on} from './events.js';
 
 /* ---------- state ---------- */
 const story=()=>S.story||(S.story={ilsa:false,heart:false,ending:null,endings:{}});
@@ -213,6 +214,12 @@ function recordDeepening(week,score){
   D.history.unshift({week,score,rank});D.history=D.history.slice(0,20);
   return{score,rank,best:D.best};
 }
+// The Deepening's score is settled when its raid ends.
+on('raid:end',r=>{
+  if(r.deepening==null)return;
+  const d=recordDeepening(r.deepening,deepeningScore({deepest:r.deepest,kills:r.kills,coin:r.bag.coin,extracted:r.extracted,caught:r.caught.length}));
+  r.notes.push(`Deepening, week ${r.deepening}: ${d.score} points, rank ${d.rank} of 100. Your best this week: ${d.best}.`);
+},{order:20});
 
 /* ---------- seasons ---------- */
 const SE=E.SEASON;

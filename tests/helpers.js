@@ -10,7 +10,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json'};
 export const wait = ms => new Promise(r => setTimeout(r, ms));
 
-// Serve the repo root, so tests can open dist/index.html and the archived v5 build.
+// Serve the repo root, so tests can open the dev build (dist-dev/), the release build (dist/) and the archived v5 build.
 export async function startServer() {
   const server = http.createServer(async (req, res) => {
     const file = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
@@ -37,7 +37,7 @@ export async function openGame(browser, base, opts = {}) {
   page.on('pageerror', e => errors.push(e.message + ' ' + (e.stack || '').split('\n').slice(1, 3).join(' ')));
   await page.setViewport(opts.viewport || {width: 1200, height: 820});
   if (opts.before) await opts.before(page);
-  await page.goto(base + (opts.page || '/dist/index.html'));
+  await page.goto(base + (opts.page || '/dist-dev/index.html'));
   if (!opts.page) await page.evaluate(() => window.gameReady);
   else await wait(500);
   return {context, page, errors};

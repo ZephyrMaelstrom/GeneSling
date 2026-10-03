@@ -4,7 +4,11 @@
 import {esc} from './util.js';
 import {LORE as L,LORE_INTRO} from './content.js';
 import {runeWall} from './endgame.js';
-import {currentAct,journal,murals,storyByAct,fragments,FRAGMENT_TOTAL,loreState} from './lore.js';
+import {currentAct,journal,murals,storyByAct,fragments,FRAGMENT_TOTAL,loreState,labLore,whisper} from './lore.js';
+import {onAct} from './actions.js';
+import {addLog} from './state.js';
+import {renderAll} from './ui.js';
+import {save} from './save.js';
 
 function journalView(){
   const pages=journal(),a=currentAct();
@@ -34,4 +38,7 @@ function muralView(){
 const labLorePanel=()=>{const st=loreState();return`<h3>Lore</h3><p class="hint">Act ${currentAct()} · ${st.pages.length} found pages · ${st.walls.length} walls · ${st.whispers.length} whispers.</p>
   <div class="row"><button class="btn small" data-act="lab-lore" data-k="all">Reveal every fragment</button><button class="btn small" data-act="lab-lore" data-k="none">Forget them</button><button class="btn small" data-act="lab-whisper">Hear a whisper</button></div>`};
 
+/* ---------- actions ---------- */
+onAct('lab-lore',d=>{labLore(d.k==='all');save();renderAll()});
+onAct('lab-whisper',d=>{const w=whisper();addLog(w?'Whisper: '+w.text:'No whisper is left to hear in this act.');save();renderAll()});
 export {journalView,storyView,muralView,labLorePanel};

@@ -2,16 +2,18 @@
    News ticker, commodities (order book, price chart, buy and sell now, limit orders),
    auctions (bid, buy out, list your own), genetic bounties, and your open orders.
    Reads the market's view from exchange/market.js; every action goes through it. */
-import {esc} from './util.js';
+import {esc,$} from './util.js';
 import {SPECIES,TYPES,GENES,GUNS,TRAITS} from './content.js';
 import {S,ui,formName} from './state.js';
 import {EXCHANGE as X,GOODS,CATS,REF,meetsBounty} from './exchange/engine.js';
-import {marketView,stock,appraiseOwn,canList} from './exchange/market.js';
+import {marketView,stock,appraiseOwn,canList,bid,buyNow,buyout,cancelOrder,fulfilBounty,listItem,postOrder,sellNow} from './exchange/market.js';
 import {matName,QN} from './jobs.js';
 import {geneSight,looksText} from './geneui.js';
 import {lineChart,sparkline} from './chart.js';
 import {runSandbox} from './exchange/sandbox.js';
 import {bredBy} from './prideui.js';
+import {onAct,onChange} from './actions.js';
+import {openModal,renderAll,renderMain} from './ui.js';
 
 const name=g=>g==='cage'?'Cage':g==='gilded'?'Gilded cage':matName(g);
 const c0=v=>Math.round(v);
@@ -147,4 +149,25 @@ function economyPanel(E){
       <label class="field">On day<input type="number" min="1" value="${E.injDay||1}" data-act="eco" data-k="injDay"></label></div>
     <div class="row">${[7,30,90].map(d=>`<button class="btn ${d===90?'primary':''}" data-act="lab-eco" data-k="${d}">Fast-forward ${d} days</button>`).join('')}</div>${res}`;
 }
+/* ---------- actions ---------- */
+// Exchange actions are async: re-render when the market answers, and explain a refusal.
+function mkDone(p){Promise.resolve(p).then(res=>{if(res&&res.ok===false&&res.why)openModal(`<h2>Not this time</h2><p>${esc(res.why)}</p><div class="row"><button class="btn primary" data-act="close">OK</button></div>`);renderAll()})}
+onAct('lab-eco',d=>{runEconomy({...ui.eco,days:+d.k});renderMain()});
+onAct('mktab',d=>{ui.mk.tab=d.k;renderMain()});
+onAct('mkgood',d=>{ui.mk.good=ui.mk.good===d.k?null:d.k;ui.mk.price='';renderMain()});
+onAct('mktrade',d=>{ui.tab='exchange';ui.mk.tab='goods';ui.mk.good=d.k;renderAll()});
+onAct('mkcat',d=>{ui.mk.cat=d.k;renderMain()});
+onAct(['mkbuy','mksell'],(d,a)=>{const b=marketView().books[d.k],q=Math.max(1,+ui.mk.qty||1);
+      const p=a==='mkbuy'?buyNow(d.k,q,Math.ceil(b.asks[0].price*1.1*100)/100):sellNow(d.k,q,Math.floor(b.bids[0].price*.9*100)/100);mkDone(p)});
+onAct('mkpost',d=>{mkDone(postOrder(d.k,d.side,Math.max(.1,+ui.mk.price||marketView().books[d.k].last),Math.max(1,+ui.mk.qty||1)))});
+onAct('mkcancel',d=>{mkDone(cancelOrder(+d.id))});
+onAct('mkbid',d=>{mkDone(bid(+d.id,+d.min))});
+onAct('mkbuyout',d=>{mkDone(buyout(+d.id))});
+onAct('mklist',d=>{const ref=$('#mk-listref').value,start=Math.max(1,+$('#mk-start').value||1),bo=+$('#mk-buyout').value||null;mkDone(listItem(d.k,d.k==='print'?ref:+ref,start,bo&&bo>start?bo:null))});
+onAct('mkbounty',d=>{const sel=$('#bounty-'+d.id);if(sel)mkDone(fulfilBounty(+d.id,+sel.value))});
+onChange('eco',el=>{ui.eco[el.dataset.k]=el.type==='number'?+el.value:el.value});
+onChange('mkqty',el=>{ui.mk.qty=Math.max(1,+el.value||1);renderMain()});
+onChange('mkprice',el=>{ui.mk.price=el.value;renderMain()});
+onChange('mklistkind',el=>{ui.mk.listKind=el.value;ui.mk.listRef='';renderMain()});
+onChange('mklistref',el=>{ui.mk.listRef=el.value;renderMain()});
 export {viewExchange,economyPanel,runEconomy};

@@ -204,7 +204,7 @@ test('a v11 save loads into v12', async () => {
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, story: S.story, unbound: S.unbound.cleared, ribbons: S.creatures.every(c => Array.isArray(c.ribbons)), season: S.season.n}));
-  assert.deepEqual(s, {v: 14, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
+  assert.deepEqual(s, {v: 15, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

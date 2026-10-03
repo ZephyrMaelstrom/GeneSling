@@ -7,9 +7,13 @@
        exact breeding odds.
    The Test Lab's "Reveal genomes" switch turns the Gene Lens view on for testing. */
 import {esc} from './util.js';
-import {GENES,GENE_HINT,GENETICS as GX,TRAITS,SPECIES,LINES,typesOf} from './content.js';
-import {S,breedsLeft,byId,hybridChance,inbred,lineage,mutBonus,sexSym} from './state.js';
-import {GRADE_LOCI,ALL_LOCI,LOOK_LOCI,breedOdds,carriedTraits,cutFree,hasPedigree,isApex,gradeStars,mutationRate,pureRun,simulate} from './genetics.js';
+import {GENES,GENE_HINT,GENETICS as GX,TRAITS,SPECIES,LINES,typesOf,rollTraits} from './content.js';
+import {S,breedsLeft,byId,hybridChance,inbred,lineage,mutBonus,sexSym,addLog,ui} from './state.js';
+import {GRADE_LOCI,ALL_LOCI,LOOK_LOCI,breedOdds,carriedTraits,cutFree,hasPedigree,isApex,gradeStars,mutationRate,pureRun,simulate,express,expressTrait} from './genetics.js';
+import {onAct,onChange} from './actions.js';
+import {openModal,renderAll,renderMain,renderSecPanel} from './ui.js';
+import {save} from './save.js';
+import {sfx} from './audio.js';
 
 /* ---------- sight ---------- */
 function toolOn(k){
@@ -152,4 +156,16 @@ function simPanel(L){
     <div class="row"><button class="btn primary" data-act="lab-sim">Run simulator</button></div>${res}`;
 }
 
+/* ---------- actions ---------- */
+onAct('genelab',d=>{const c=byId(+ui.gl.id);if(!c)return;const g=ui.gl.gene,pair=c.genome[g],w=pair[0]<=pair[1]?0:1,v=pair[w],cc={coin:20*(v+1),ore:2*(v+1)};if(v>=10||S.coin<cc.coin||S.ore<cc.ore)return;
+      S.coin-=cc.coin;S.ore-=cc.ore;pair[w]=v+1;express(c);addLog(`Gene Lab: ${c.name}'s weaker ${GENES[g]} copy rose to ${v+1}.`);sfx('level');save();renderAll()});
+onAct('tutor',d=>{const c=byId(+ui.tt.id);if(!c||S.coin<60||S.ore<8)return;S.coin-=60;S.ore-=8;const k=ui.tt.slot,old=expressTrait(c.genome[k]);const nt=rollTraits(1,c.traits,true)[0];c.genome[k]=[nt,nt];express(c);
+      addLog(`Trait Tutor: ${c.name} ${old?`swapped ${TRAITS[old].name} for`:'learned'} ${TRAITS[nt].name}.`);save();renderAll()});
+onAct('tree',d=>{const c=byId(+d.id);if(c)openModal(treeHtml(c))});
+onAct('lab-sim',d=>{runSim(ui.sim);renderMain()});
+onChange('glc',el=>{ui.gl.id=el.value;renderSecPanel()});
+onChange('glg',el=>{ui.gl.gene=el.value;renderSecPanel()});
+onChange('ttc',el=>{ui.tt.id=el.value;ui.tt.slot='0';renderSecPanel()});
+onChange('tts',el=>{ui.tt.slot=el.value});
+onChange('sim',el=>{ui.sim[el.dataset.k]=Math.max(+el.min||0,Math.min(+el.max||1e9,+el.value||0))});
 export {toolOn,geneSight,lookName,looksText,genomeBlock,lineageChips,treeHtml,previewHtml,simPanel,runSim,traitName};

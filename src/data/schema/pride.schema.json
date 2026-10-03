@@ -1,0 +1,410 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/pride.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "GRID": {
+   "type": "object",
+   "properties": {
+    "tile": {
+     "type": "number"
+    },
+    "cols": {
+     "type": "number"
+    },
+    "baseRows": {
+     "type": "number"
+    },
+    "top": {
+     "type": "number"
+    },
+    "hillRows": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "tile",
+    "cols",
+    "baseRows",
+    "top",
+    "hillRows"
+   ],
+   "additionalProperties": false
+  },
+  "FOOT": {
+   "type": "object",
+   "properties": {
+    "station": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "board": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "den": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "bench": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "fountain": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "station",
+    "board",
+    "den",
+    "bench",
+    "fountain"
+   ],
+   "additionalProperties": false
+  },
+  "PLOTS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "rank": {
+      "type": "number"
+     },
+     "cost": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     }
+    },
+    "required": [
+     "name",
+     "rank",
+     "cost"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "DECOR": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "comfort": {
+      "type": "number"
+     },
+     "make": {
+      "type": "number"
+     },
+     "cost": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "comfort",
+     "make",
+     "cost",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "PLACED_COMFORT": {
+   "type": "object",
+   "properties": {
+    "trophy": {
+     "type": "number"
+    },
+    "statue": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "trophy",
+    "statue"
+   ],
+   "additionalProperties": false
+  },
+  "COMFORT": {
+   "type": "object",
+   "properties": {
+    "perPoint": {
+     "type": "number"
+    },
+    "cap": {
+     "type": "number"
+    },
+    "repeatCap": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "perPoint",
+    "cap",
+    "repeatCap"
+   ],
+   "additionalProperties": false
+  },
+  "LIFE": {
+   "type": "object",
+   "properties": {
+    "denCap": {
+     "type": "number"
+    },
+    "sleepFatigue": {
+     "type": "number"
+    },
+    "dayLength": {
+     "type": "number"
+    },
+    "nightFrom": {
+     "type": "number"
+    },
+    "friendRaids": {
+     "type": "number"
+    },
+    "friendBond": {
+     "type": "number"
+    },
+    "maxDrawn": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "denCap",
+    "sleepFatigue",
+    "dayLength",
+    "nightFrom",
+    "friendRaids",
+    "friendBond",
+    "maxDrawn"
+   ],
+   "additionalProperties": false
+  },
+  "LEGEND": {
+   "type": "object",
+   "properties": {
+    "minRaids": {
+     "type": "number"
+    },
+    "minLevel": {
+     "type": "number"
+    },
+    "maxStack": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "minRaids",
+    "minLevel",
+    "maxStack"
+   ],
+   "additionalProperties": false
+  },
+  "PERKS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "food": {
+      "type": "number"
+     },
+     "rest": {
+      "type": "number"
+     },
+     "kxp": {
+      "type": "number"
+     },
+     "hp": {
+      "type": "number"
+     },
+     "coin": {
+      "type": "number"
+     },
+     "bond": {
+      "type": "number"
+     },
+     "serum": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "TITLES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "raids": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "SIGIL": {
+   "type": "object",
+   "properties": {
+    "shapes": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "colors": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "glyphs": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "shapes",
+    "colors",
+    "glyphs"
+   ],
+   "additionalProperties": false
+  },
+  "DEMO": {
+   "type": "object",
+   "properties": {
+    "maxFloor": {
+     "type": "number"
+    },
+    "maxRank": {
+     "type": "number"
+    },
+    "goals": {
+     "type": "object",
+     "properties": {
+      "bosses": {
+       "type": "number"
+      },
+      "rank": {
+       "type": "number"
+      },
+      "tier2": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "bosses",
+      "rank",
+      "tier2"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "maxFloor",
+    "maxRank",
+    "goals"
+   ],
+   "additionalProperties": false
+  },
+  "STATS": {
+   "type": "object",
+   "properties": {
+    "collection": {
+     "type": "string"
+    },
+    "feedback": {
+     "type": "string"
+    },
+    "returnHours": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "collection",
+    "feedback",
+    "returnHours"
+   ],
+   "additionalProperties": false
+  },
+  "DEFAULT_LAYOUT": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "items": {
+     "type": [
+      "string",
+      "number"
+     ]
+    }
+   }
+  }
+ },
+ "required": [
+  "GRID",
+  "FOOT",
+  "PLOTS",
+  "DECOR",
+  "PLACED_COMFORT",
+  "COMFORT",
+  "LIFE",
+  "LEGEND",
+  "PERKS",
+  "TITLES",
+  "SIGIL",
+  "DEMO",
+  "STATS",
+  "DEFAULT_LAYOUT"
+ ],
+ "additionalProperties": false
+}

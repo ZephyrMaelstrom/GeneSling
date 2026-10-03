@@ -1,8 +1,15 @@
 /* ================= Entry point =================
-   Loads every module in the old v5 load order, exposes the game's top-level names on
-   window (tests and the browser console drive the game through them, as in v5), then boots.
-   window.gameReady resolves once the save is loaded and the hideout is drawn. */
+   Loads every module in the old v5 load order, then boots. window.gameReady resolves once the
+   save is loaded and the hideout is drawn.
+
+   The dev build (dist-dev/, built for the tests and `npm run dev`) also exposes the game to the
+   browser console and the test suite: window.gs holds every module's exports, and each name is
+   also put on window itself, so tests can write startRaid(...) as before. The release build
+   (dist/, what GitHub Pages serves) exposes nothing but gameReady. */
 import * as rng from './rng.js';
+import * as events from './events.js';
+import * as actions from './actions.js';
+import * as device from './device.js';
 import * as util from './util.js';
 import * as content from './content.js';
 import * as genetics from './genetics.js';
@@ -40,10 +47,16 @@ import * as ui from './ui.js';
 import * as raid from './raid.js';
 import * as draw from './draw.js';
 
-for(const mod of [rng,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,endgame,endgameui,lore,loreui,balance,journey,journeyui,access,playtest,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
-  for(const k of Object.keys(mod)){
-    // Getters, so values a module reassigns (S, R, ...) always read live.
-    try{Object.defineProperty(window,k,{get:()=>mod[k],configurable:true,enumerable:false})}catch(e){}
+if(flags.DEV){
+  const gs={};
+  for(const mod of [rng,events,actions,device,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,endgame,endgameui,lore,loreui,balance,journey,journeyui,access,playtest,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
+    for(const k of Object.keys(mod)){
+      // Getters, so values a module reassigns (S, R, ...) always read live.
+      const get={get:()=>mod[k],configurable:true,enumerable:true};
+      Object.defineProperty(gs,k,get);
+      try{Object.defineProperty(window,k,{...get,enumerable:false})}catch(e){}
+    }
   }
+  window.gs=gs;
 }
 window.gameReady=draw.boot();

@@ -1,0 +1,84 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/dungeon.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "CURSES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ROOM_MODS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "col"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "MODES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "need": {
+      "type": "array",
+      "items": {
+       "type": [
+        "string",
+        "number"
+       ]
+      }
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "need",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "CURSES",
+  "ROOM_MODS",
+  "MODES"
+ ],
+ "additionalProperties": false
+}

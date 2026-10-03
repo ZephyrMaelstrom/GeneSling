@@ -1,0 +1,525 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/bloom.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "VEINS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "short": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "key": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "twist": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "blurb": {
+      "type": "string"
+     },
+     "pals": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "a": {
+         "type": "string"
+        },
+        "b": {
+         "type": "string"
+        },
+        "fl": {
+         "type": "string"
+        },
+        "wall": {
+         "type": "string"
+        },
+        "top": {
+         "type": "string"
+        },
+        "edge": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "a",
+        "b",
+        "fl",
+        "wall",
+        "top",
+        "edge"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "types": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "rich": {
+      "type": "object",
+      "properties": {
+       "ore": {
+        "type": "number"
+       },
+       "food": {
+        "type": "number"
+       },
+       "hide": {
+        "type": "number"
+       },
+       "shards": {
+        "type": "number"
+       },
+       "dust": {
+        "type": "number"
+       },
+       "sap": {
+        "type": "number"
+       },
+       "relic": {
+        "type": "number"
+       }
+      },
+      "additionalProperties": false
+     },
+     "extraFoes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "name",
+     "short",
+     "col",
+     "key",
+     "twist",
+     "blurb",
+     "pals",
+     "types",
+     "rich",
+     "extraFoes"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "VEIN_ORDER": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "TWISTS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "every": {
+      "type": "number"
+     },
+     "warn": {
+      "type": "number"
+     },
+     "radius": {
+      "type": "number"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "perRoom": {
+      "type": "number"
+     },
+     "burnT": {
+      "type": "number"
+     },
+     "burnDps": {
+      "type": "number"
+     },
+     "rise": {
+      "type": "number"
+     },
+     "slow": {
+      "type": "number"
+     },
+     "drown": {
+      "type": "number"
+     },
+     "deep": {
+      "type": "number"
+     },
+     "foeSlow": {
+      "type": "number"
+     },
+     "see": {
+      "type": "number"
+     },
+     "seeKey": {
+      "type": "number"
+     },
+     "hear": {
+      "type": "number"
+     },
+     "notice": {
+      "type": "number"
+     },
+     "push": {
+      "type": "number"
+     },
+     "keyPush": {
+      "type": "number"
+     },
+     "bullet": {
+      "type": "number"
+     },
+     "pools": {
+      "type": "number"
+     },
+     "dps": {
+      "type": "number"
+     },
+     "mutations": {
+      "type": "number"
+     },
+     "pull": {
+      "type": "number"
+     },
+     "dur": {
+      "type": "number"
+     },
+     "lumenMul": {
+      "type": "number"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "LAYOUTS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "boss": {
+      "type": "boolean"
+     },
+     "w": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "boss",
+     "w"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "LAYOUT_RULES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "rooms": {
+      "type": "number"
+     },
+     "secrets": {
+      "type": "number"
+     },
+     "foesMinus": {
+      "type": "number"
+     },
+     "sealAfter": {
+      "type": "number"
+     },
+     "after": {
+      "type": "number"
+     },
+     "warn": {
+      "type": "number"
+     },
+     "wilds": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "cages": {
+      "type": "number"
+     },
+     "foes": {
+      "type": "number"
+     },
+     "hp": {
+      "type": "number"
+     },
+     "pay": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     },
+     "speed": {
+      "type": "number"
+     },
+     "aggro": {
+      "type": "number"
+     },
+     "dmg": {
+      "type": "number"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "EVENTS": {
+   "type": "object",
+   "properties": {
+    "chance": {
+     "type": "number"
+    },
+    "list": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "herd": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        }
+       },
+       "dmg": {
+        "type": "number"
+       },
+       "loot": {
+        "type": [
+         "number",
+         "array"
+        ],
+        "items": {
+         "type": "number"
+        }
+       },
+       "hp": {
+        "type": "number"
+       },
+       "shards": {
+        "type": "number"
+       },
+       "n": {
+        "type": "number"
+       },
+       "steal": {
+        "type": "number"
+       },
+       "prints": {
+        "type": "number"
+       },
+       "coin": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        }
+       }
+      },
+      "required": [
+       "name",
+       "desc"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "chance",
+    "list"
+   ],
+   "additionalProperties": false
+  },
+  "VARIETY": {
+   "type": "object",
+   "properties": {
+    "memory": {
+     "type": "number"
+    },
+    "tries": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "memory",
+    "tries"
+   ],
+   "additionalProperties": false
+  },
+  "CONTRACTS": {
+   "type": "object",
+   "properties": {
+    "offers": {
+     "type": "number"
+    },
+    "list": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "n": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        }
+       },
+       "reward": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "number"
+        }
+       }
+      },
+      "required": [
+       "name",
+       "desc",
+       "reward"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "offers",
+    "list"
+   ],
+   "additionalProperties": false
+  },
+  "MAPS": {
+   "type": "object",
+   "properties": {
+    "needRoost": {
+     "type": "number"
+    },
+    "kinds": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "cost": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "number"
+        }
+       },
+       "wild": {
+        "type": "number"
+       },
+       "typeMul": {
+        "type": "number"
+       },
+       "coin": {
+        "type": "number"
+       },
+       "hp": {
+        "type": "number"
+       },
+       "dmg": {
+        "type": "number"
+       },
+       "kxp": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "name",
+       "desc",
+       "cost"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "needRoost",
+    "kinds"
+   ],
+   "additionalProperties": false
+  },
+  "SUMP_SAP": {
+   "type": "object",
+   "properties": {
+    "foe": {
+     "type": "number"
+    },
+    "wild": {
+     "type": "number"
+    },
+    "pool": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "foe",
+    "wild",
+    "pool"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "VEINS",
+  "VEIN_ORDER",
+  "TWISTS",
+  "LAYOUTS",
+  "LAYOUT_RULES",
+  "EVENTS",
+  "VARIETY",
+  "CONTRACTS",
+  "MAPS",
+  "SUMP_SAP"
+ ],
+ "additionalProperties": false
+}

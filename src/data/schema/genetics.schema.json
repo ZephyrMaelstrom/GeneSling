@@ -1,0 +1,417 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/genetics.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "STAT_LOCI": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "WORK_LOCI": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "TRAIT_LOCI": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "BONUS_LOCUS": {
+   "type": "string"
+  },
+  "LOOK_LOCI": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "GRADE": {
+   "type": "object",
+   "properties": {
+    "min": {
+     "type": "number"
+    },
+    "max": {
+     "type": "number"
+    },
+    "apex": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "min",
+    "max",
+    "apex"
+   ],
+   "additionalProperties": false
+  },
+  "EXPRESS": {
+   "type": "object",
+   "properties": {
+    "better": {
+     "type": "number"
+    },
+    "worse": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "better",
+    "worse"
+   ],
+   "additionalProperties": false
+  },
+  "INHERIT": {
+   "type": "object",
+   "properties": {
+    "fatherBetter": {
+     "type": "number"
+    },
+    "strongBlood": {
+     "type": "number"
+    },
+    "persMother": {
+     "type": "number"
+    },
+    "persFather": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "fatherBetter",
+    "strongBlood",
+    "persMother",
+    "persFather"
+   ],
+   "additionalProperties": false
+  },
+  "MUTATION": {
+   "type": "object",
+   "properties": {
+    "perLocus": {
+     "type": "number"
+    },
+    "bloomblood": {
+     "type": "number"
+    },
+    "research": {
+     "type": "number"
+    },
+    "nursery": {
+     "type": "number"
+    },
+    "statUp": {
+     "type": "number"
+    },
+    "traitDefect": {
+     "type": "number"
+    },
+    "bloomscar": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "perLocus",
+    "bloomblood",
+    "research",
+    "nursery",
+    "statUp",
+    "traitDefect",
+    "bloomscar"
+   ],
+   "additionalProperties": false
+  },
+  "INBREEDING": {
+   "type": "object",
+   "properties": {
+    "generations": {
+     "type": "number"
+    },
+    "defectChance": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "generations",
+    "defectChance"
+   ],
+   "additionalProperties": false
+  },
+  "LINEAGE": {
+   "type": "object",
+   "properties": {
+    "treeDepth": {
+     "type": "number"
+    },
+    "cutFreeGen": {
+     "type": "number"
+    },
+    "pedigreeRun": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "treeDepth",
+    "cutFreeGen",
+    "pedigreeRun"
+   ],
+   "additionalProperties": false
+  },
+  "TWIN_CHANCE": {
+   "type": "number"
+  },
+  "SHORT_LIVED_BREEDS": {
+   "type": "number"
+  },
+  "WILD": {
+   "type": "object",
+   "properties": {
+    "gradeMin": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "gradeMax": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "tenChance": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "traitAllele": {
+     "type": "number"
+    },
+    "hueNatural": {
+     "type": "number"
+    },
+    "patWeights": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "sizeWeights": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "prismatic": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "gradeMin",
+    "gradeMax",
+    "tenChance",
+    "traitAllele",
+    "hueNatural",
+    "patWeights",
+    "sizeWeights",
+    "prismatic"
+   ],
+   "additionalProperties": false
+  },
+  "BRED": {
+   "type": "object",
+   "properties": {
+    "gradeMin": {
+     "type": "number"
+    },
+    "gradeMax": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "gradeMin",
+    "gradeMax"
+   ],
+   "additionalProperties": false
+  },
+  "LEGACY_DEFAULT": {
+   "type": "number"
+  },
+  "EFFECTS": {
+   "type": "object",
+   "properties": {
+    "focusAbil": {
+     "type": "number"
+    },
+    "focusCrit": {
+     "type": "number"
+    },
+    "gritTaken": {
+     "type": "number"
+    },
+    "neutral": {
+     "type": "number"
+    },
+    "brittleTaken": {
+     "type": "number"
+    },
+    "sizeHp": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "sizeScale": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "sizeHitbox": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "focusAbil",
+    "focusCrit",
+    "gritTaken",
+    "neutral",
+    "brittleTaken",
+    "sizeHp",
+    "sizeScale",
+    "sizeHitbox"
+   ],
+   "additionalProperties": false
+  },
+  "HUES": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "PATTERNS": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "SIZES": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "SHINES": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "TOOLS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "npc": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "section": {
+      "type": "string"
+     },
+     "type": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "SIM": {
+   "type": "object",
+   "properties": {
+    "runs": {
+     "type": "number"
+    },
+    "maxGens": {
+     "type": "number"
+    },
+    "eggsPerGen": {
+     "type": "number"
+    },
+    "wildSeen": {
+     "type": "number"
+    },
+    "wildPerGen": {
+     "type": "number"
+    },
+    "floor": {
+     "type": "number"
+    },
+    "poolSize": {
+     "type": "number"
+    },
+    "pairs": {
+     "type": "number"
+    },
+    "tenWeight": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "runs",
+    "maxGens",
+    "eggsPerGen",
+    "wildSeen",
+    "wildPerGen",
+    "floor",
+    "poolSize",
+    "pairs",
+    "tenWeight"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "STAT_LOCI",
+  "WORK_LOCI",
+  "TRAIT_LOCI",
+  "BONUS_LOCUS",
+  "LOOK_LOCI",
+  "GRADE",
+  "EXPRESS",
+  "INHERIT",
+  "MUTATION",
+  "INBREEDING",
+  "LINEAGE",
+  "TWIN_CHANCE",
+  "SHORT_LIVED_BREEDS",
+  "WILD",
+  "BRED",
+  "LEGACY_DEFAULT",
+  "EFFECTS",
+  "HUES",
+  "PATTERNS",
+  "SIZES",
+  "SHINES",
+  "TOOLS",
+  "SIM"
+ ],
+ "additionalProperties": false
+}

@@ -12,6 +12,7 @@ import {S,makeCreature,recordLineage,unplace,addLog,addKeeperXp,byId,whereIs} fr
 import {amt,give,newItem,scrapItem,expAway} from '../jobs.js';
 import {save} from '../save.js';
 import {SPECIES} from '../content.js';
+import {on} from '../events.js';
 
 let client=null,ready=null,mview=null;const listeners=new Set();
 const onMarket=f=>{listeners.add(f);return()=>listeners.delete(f)};
@@ -131,6 +132,8 @@ function marketDay(){
   ready=marketReady().then(async()=>{while(S.marketSync<S.day)await advanceOne();save();listeners.forEach(f=>f())});
   return ready;
 }
+// Each day that passes in the real game moves the market on (the hideout's day advances first).
+on('day:passed',()=>{marketDay()},{order:20});
 // The appraised value of something you own, to suggest listing prices.
 function appraiseOwn(kind,ref){
   if(kind==='creature'){const c=byId(ref);return c?appraise({kind,c}):0}

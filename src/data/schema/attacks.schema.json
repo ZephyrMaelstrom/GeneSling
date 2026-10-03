@@ -1,0 +1,214 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/attacks.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "ATTACKS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "n": {
+      "type": "number"
+     },
+     "spd": {
+      "type": "number"
+     },
+     "mult": {
+      "type": "number"
+     },
+     "cd": {
+      "type": "number"
+     },
+     "spread": {
+      "type": "number"
+     },
+     "gap": {
+      "type": "number"
+     },
+     "life": {
+      "type": "number"
+     },
+     "r": {
+      "type": "number"
+     },
+     "explode": {
+      "type": "number"
+     },
+     "homing": {
+      "type": "number"
+     },
+     "pierce": {
+      "type": "number"
+     },
+     "sp": {
+      "type": "number"
+     },
+     "range": {
+      "type": "number"
+     },
+     "end": {
+      "type": "string"
+     },
+     "rad": {
+      "type": "number"
+     },
+     "slow": {
+      "type": "number"
+     },
+     "cloud": {
+      "type": "boolean"
+     },
+     "knock": {
+      "type": "number"
+     },
+     "bounce": {
+      "type": "number"
+     },
+     "delay": {
+      "type": "number"
+     },
+     "dur": {
+      "type": "number"
+     },
+     "pull": {
+      "type": "number"
+     },
+     "jumps": {
+      "type": "number"
+     },
+     "move": {
+      "type": "number"
+     },
+     "split": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "kind",
+     "mult",
+     "cd"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ABILITIES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "cd": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "cd"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "TYPE_ABIL": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "ELEM": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "col"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "REACTIONS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "a": {
+      "type": "string"
+     },
+     "b": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "a",
+     "b",
+     "name",
+     "col",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "COMBOS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "ATTACKS",
+  "ABILITIES",
+  "TYPE_ABIL",
+  "ELEM",
+  "REACTIONS",
+  "COMBOS"
+ ],
+ "additionalProperties": false
+}

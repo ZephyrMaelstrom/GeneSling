@@ -15,6 +15,7 @@ import {S,addKeeperXp,addLog,secTier} from './state.js';
 import {GRADE_LOCI} from './genetics.js';
 import {canPay,costText,give,pay} from './jobs.js';
 import {seasonTypeMul,tierTwists,unboundBoss} from './endgame.js';
+import {on} from './events.js';
 
 const VEIN_IDS=Object.keys(B.VEINS),DEEP=B.VEIN_ORDER,LAYOUT_IDS=Object.keys(B.LAYOUTS),EVENT_IDS=Object.keys(B.EVENTS.list);
 const veinIdx=v=>VEIN_IDS.indexOf(v);
@@ -122,6 +123,12 @@ function settleContract(res){
   c.done=(c.done||0)+1;addLog(`Contract complete: ${o.text} Paid ${rewardText(o.reward)}.`);
   return{ok:true,text:`Contract complete! ${rewardText(o.reward)}.`};
 }
+// A contract is settled at the end of a raid or scav run.
+on('raid:end',r=>{
+  if(r.mode!=='raid'&&!r.scav)return;
+  const cr=settleContract({extracted:r.extracted,bagCoin:r.bag.coin,bagOre:r.bag.ore,kills:r.kills,eliteKills:r.eliteKills,deepest:r.deepest,caught:r.caught});
+  if(cr)r.notes.push(cr.text);
+},{order:30});
 
 /* ---------- vein maps (crafted at the Roost) ---------- */
 const MK=B.MAPS.kinds;

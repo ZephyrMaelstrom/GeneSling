@@ -1,0 +1,190 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/enemies.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "FOES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "set": {
+      "type": "number"
+     },
+     "intro": {
+      "type": "number"
+     },
+     "body": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "bcol": {
+      "type": "string"
+     },
+     "hp": {
+      "type": "number"
+     },
+     "spd": {
+      "type": "number"
+     },
+     "r": {
+      "type": "number"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "fire": {
+      "type": "object",
+      "properties": {
+       "kind": {
+        "type": "string"
+       },
+       "n": {
+        "type": "number"
+       },
+       "spread": {
+        "type": "number"
+       },
+       "spd": {
+        "type": "number"
+       },
+       "every": {
+        "type": "number"
+       },
+       "cspd": {
+        "type": "number"
+       },
+       "turn": {
+        "type": "number"
+       },
+       "rot": {
+        "type": "number"
+       },
+       "blink": {
+        "type": "boolean"
+       },
+       "gap": {
+        "type": "number"
+       },
+       "fan": {
+        "type": "number"
+       },
+       "step": {
+        "type": "number"
+       },
+       "waves": {
+        "type": "number"
+       },
+       "ring": {
+        "type": "number"
+       },
+       "rspd": {
+        "type": "number"
+       },
+       "slow": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "kind",
+       "every"
+      ],
+      "additionalProperties": false
+     },
+     "lore": {
+      "type": "string"
+     },
+     "vein": {
+      "type": "string"
+     },
+     "melee": {
+      "type": "boolean"
+     },
+     "split": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "n": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "id",
+       "n"
+      ],
+      "additionalProperties": false
+     },
+     "summon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "set",
+     "intro",
+     "body",
+     "col",
+     "hp",
+     "spd",
+     "r",
+     "dmg",
+     "fire",
+     "vein"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "WILD_FIRE": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string"
+     },
+     "n": {
+      "type": "number"
+     },
+     "spread": {
+      "type": "number"
+     },
+     "spd": {
+      "type": "number"
+     },
+     "every": {
+      "type": "number"
+     },
+     "slow": {
+      "type": "number"
+     },
+     "gap": {
+      "type": "number"
+     },
+     "rot": {
+      "type": "number"
+     },
+     "cspd": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "kind",
+     "every"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "FOES",
+  "WILD_FIRE"
+ ],
+ "additionalProperties": false
+}

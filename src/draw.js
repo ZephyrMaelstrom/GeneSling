@@ -13,6 +13,7 @@ import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 import {runeWall} from './endgame.js';
 import {applyPalette,bulletCol,frameTime,renderScale} from './access.js';
+import {OPTS,saveOpts} from './device.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -23,7 +24,7 @@ function lockPage(on){
 // On phones a raid goes full screen and turns the screen sideways where the browser allows it
 // (Chrome on Android does, from a tap). Anywhere it doesn't, nothing happens.
 function goLandscape(){
-  if(S.opts.fullscreen===false)return;
+  if(OPTS.fullscreen===false)return;
   const el=document.documentElement,o=screen.orientation;
   const lock=()=>{try{if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(e){}};
   try{
@@ -161,7 +162,7 @@ function draw(){
   drawDark(g,s);
   if(modOn('dark')){const cx=R.vw/2,cy=R.vh/2,gr=g.createRadialGradient(cx,cy,90*s,cx,cy,190*s);gr.addColorStop(0,'rgba(5,3,15,0)');gr.addColorStop(1,'rgba(5,3,15,.95)');g.fillStyle=gr;g.fillRect(0,0,R.vw,R.vh)}
   if(TOUCH){
-    const rr=stickR(),fixed=S.opts.stick==='fixed',bases=stickBases();
+    const rr=stickR(),fixed=OPTS.stick==='fixed',bases=stickBases();
     [['move',touch.move,'rgba(255,255,255,'],['aim',touch.aim,'rgba(255,207,74,']].forEach(([k,tc,c])=>{
       let ox,oy,kx,ky;
       if(tc){ox=tc.ox;oy=tc.oy;const dx=tc.x-ox,dy=tc.y-oy,l=Math.hypot(dx,dy),q=l>rr?rr/l:1;kx=ox+dx*q;ky=oy+dy*q}
@@ -368,7 +369,7 @@ function menuOptions(){
   const safe=R.mode==='arena'||R.mode==='tutorial';
   return`<p class="hint">${safe?'Leaving restores your creatures. Nothing is lost.':'Abandoning counts as death: everything you brought is lost.'}</p>
     <div class="row">${safe?`<button class="btn" data-p="leave">${R.mode==='tutorial'?'Leave the tutorial':'Leave the arena'}</button>`:`<button class="btn danger" data-p="abandon">${R.abandonArm?'Confirm: abandon and lose loadout':'Abandon raid'}</button>`}
-    <button class="btn" data-p="mute">${S.opts.mute?'Sound on':'Mute'}</button>${TOUCH&&document.fullscreenEnabled?`<button class="btn" data-p="fullscreen">${document.fullscreenElement?'Leave full screen':'Full screen'}</button>`:''}</div>
+    <button class="btn" data-p="mute">${OPTS.mute?'Sound on':'Mute'}</button>${TOUCH&&document.fullscreenEnabled?`<button class="btn" data-p="fullscreen">${document.fullscreenElement?'Leave full screen':'Full screen'}</button>`:''}</div>
     <p class="status">${TOUCH?'Stick and button sizes and left-handed layout are in the hideout’s Settings tab.':'WASD move · Mouse aim and attack · Space roll · Q/E skills · C combo · 1/2 swap slot 3 · R switch weapon · F catch · G use · Esc menu'}</p>`;
 }
 $('#pauseBox').addEventListener('click',e=>{
@@ -380,7 +381,7 @@ $('#pauseBox').addEventListener('click',e=>{
   if(k==='swap'){swapSlot3(+b.dataset.i);setPause(true)}
   if(k==='switch'){switchGun();setPause(true)}
   if(k==='release'){const i=+b.dataset.i;if(R.releaseArm!==i){R.releaseArm=i;setPause(true);return}R.releaseArm=null;if(releaseCreature(i))setPause(false);else setPause(true)}
-  if(k==='mute'){S.opts.mute=!S.opts.mute;auVol();save();setPause(true)}
+  if(k==='mute'){OPTS.mute=!OPTS.mute;auVol();saveOpts();setPause(true)}
   if(k==='fullscreen'){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else goLandscape();setPause(true)}
   if(k==='leave'){$('#pause').hidden=true;endRaid(R.mode==='arena'?'arena':'quit')}
   if(k==='abandon'){if(!R.abandonArm){R.abandonArm=true;setPause(true);return}$('#pause').hidden=true;endRaid('dead')}
@@ -410,7 +411,7 @@ function bindCanvas(){
   window.addEventListener('mouseup',e=>{if(R&&e.button===0&&!touch.aim)R.firing=false});
   cv.addEventListener('contextmenu',e=>e.preventDefault());
   cv.addEventListener('touchstart',e=>{e.preventDefault();if(!R||R.paused)return;R.mouse=null;
-    const fixed=S.opts.stick==='fixed',bases=stickBases(),left=S.opts.hand==='left';
+    const fixed=OPTS.stick==='fixed',bases=stickBases(),left=OPTS.hand==='left';
     for(const t of e.changedTouches){
       const onLeft=t.clientX<innerWidth/2,kind=(onLeft!==left)?'move':'aim';
       if(touch[kind])continue;

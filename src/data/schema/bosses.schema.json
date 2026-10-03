@@ -1,0 +1,200 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/bosses.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "BOSSES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "set": {
+      "type": "number"
+     },
+     "body": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "col2": {
+      "type": "string"
+     },
+     "bcol": {
+      "type": "string"
+     },
+     "hp": {
+      "type": "number"
+     },
+     "r": {
+      "type": "number"
+     },
+     "spd": {
+      "type": "number"
+     },
+     "move": {
+      "type": "string"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "blurb": {
+      "type": "string"
+     },
+     "lore": {
+      "type": "string"
+     },
+     "p1": {
+      "type": "array",
+      "items": {
+       "type": "array",
+       "items": {
+        "type": [
+         "string",
+         "object"
+        ],
+        "properties": {
+         "arms": {
+          "type": "number"
+         },
+         "spd": {
+          "type": "number"
+         },
+         "dur": {
+          "type": "number"
+         },
+         "step": {
+          "type": "number"
+         },
+         "every": {
+          "type": "number"
+         },
+         "n": {
+          "type": "number"
+         },
+         "gap": {
+          "type": "number"
+         },
+         "foe": {
+          "type": "string"
+         },
+         "spread": {
+          "type": "number"
+         },
+         "waves": {
+          "type": "number"
+         },
+         "trail": {
+          "type": "boolean"
+         },
+         "ways": {
+          "type": "number"
+         },
+         "ring": {
+          "type": "number"
+         },
+         "turn": {
+          "type": "number"
+         }
+        },
+        "additionalProperties": false
+       }
+      }
+     },
+     "p2": {
+      "type": "array",
+      "items": {
+       "type": "array",
+       "items": {
+        "type": [
+         "string",
+         "object"
+        ],
+        "properties": {
+         "arms": {
+          "type": "number"
+         },
+         "spd": {
+          "type": "number"
+         },
+         "dur": {
+          "type": "number"
+         },
+         "step": {
+          "type": "number"
+         },
+         "every": {
+          "type": "number"
+         },
+         "n": {
+          "type": "number"
+         },
+         "gap": {
+          "type": "number"
+         },
+         "waves": {
+          "type": "number"
+         },
+         "foe": {
+          "type": "string"
+         },
+         "spread": {
+          "type": "number"
+         },
+         "ways": {
+          "type": "number"
+         },
+         "trail": {
+          "type": "boolean"
+         },
+         "ring": {
+          "type": "number"
+         },
+         "turn": {
+          "type": "number"
+         }
+        },
+        "additionalProperties": false
+       }
+      }
+     },
+     "vein": {
+      "type": "string"
+     },
+     "story": {
+      "type": "string"
+     },
+     "lord": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "set",
+     "body",
+     "col",
+     "col2",
+     "bcol",
+     "hp",
+     "r",
+     "spd",
+     "move",
+     "dmg",
+     "blurb",
+     "lore",
+     "p1",
+     "p2",
+     "vein"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "BOSSES"
+ ],
+ "additionalProperties": false
+}

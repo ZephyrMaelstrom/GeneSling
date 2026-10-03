@@ -3,6 +3,7 @@ import {fxRand} from './rng.js';
 import {fxRi,fxRnd} from './util.js';
 import {S} from './state.js';
 import {R} from './raid.js';
+import {OPTS} from './device.js';
 const AU={ctx:null,master:null,mus:null,fx:null,noise:null,last:{},track:null,timer:null,step:0,next:0,mel:[],bar:0};
 function auInit(){
   if(AU.ctx)return true;
@@ -12,7 +13,7 @@ function auInit(){
     const b=AU.ctx.createBuffer(1,Math.floor(AU.ctx.sampleRate*.6),AU.ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=fxRand()*2-1;AU.noise=b;
     auVol();AU.timer=setInterval(musicTick,25);return true}catch(e){AU.ctx=null;return false}
 }
-function auVol(){if(!AU.ctx||!S)return;const o=S.opts;AU.master.gain.value=o.mute?0:o.vol;AU.mus.gain.value=o.music*.32;AU.fx.gain.value=o.sfx*.5}
+function auVol(){if(!AU.ctx)return;const o=OPTS;AU.master.gain.value=o.mute?0:o.vol;AU.mus.gain.value=o.music*.32;AU.fx.gain.value=o.sfx*.5}
 function tone(freq,dur,type='square',vol=.3,slide=0,when=0,dest,abs){
   const c=AU.ctx,t0=abs!=null?abs:c.currentTime+when;const o=c.createOscillator(),g=c.createGain();
   o.type=type;o.frequency.setValueAtTime(freq,t0);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq*slide),t0+dur);
@@ -46,7 +47,7 @@ const SFX={
   coin:()=>{tone(988,.06,'square',.07);tone(1319,.1,'square',.07,0,.05)},
   quest:()=>[659,784,988,1319].forEach((f,i)=>tone(f,.18,'triangle',.18,0,i*.1)),
 };
-function sfx(n){if(!AU.ctx||!S||S.opts.mute)return;const now=performance.now();if(AU.last[n]&&now-AU.last[n]<45)return;AU.last[n]=now;try{SFX[n]&&SFX[n]()}catch(e){}}
+function sfx(n){if(!AU.ctx||OPTS.mute)return;const now=performance.now();if(AU.last[n]&&now-AU.last[n]<45)return;AU.last[n]=now;try{SFX[n]&&SFX[n]()}catch(e){}}
 
 const TRACKS={
   hideout:{bpm:76,root:57,scale:[0,2,4,7,9],bass:[0,null,null,null,null,null,null,null,5,null,null,null,null,null,null,null],bw:'triangle',lw:'triangle',dens:.3,hat:false,pad:[0,4,7]},
@@ -61,7 +62,7 @@ function musicTick(){
   if(!AU.ctx||!S)return;
   const want=musicFor();
   if(want!==AU.track){AU.track=want;AU.step=0;AU.bar=0;AU.next=AU.ctx.currentTime+.05;newMelody(TRACKS[want])}
-  if(S.opts.mute||S.opts.music<=0){AU.next=AU.ctx.currentTime+.05;return}
+  if(OPTS.mute||OPTS.music<=0){AU.next=AU.ctx.currentTime+.05;return}
   const T=TRACKS[AU.track],sixteenth=60/T.bpm/4;
   while(AU.next<AU.ctx.currentTime+.12){
     const st=AU.step%16,t0=AU.next;

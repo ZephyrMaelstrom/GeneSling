@@ -1,19 +1,21 @@
 // Build the game: bundle src/main.js with esbuild and inline it into src/shell.html,
 // producing one self-contained dist/index.html (works from a web server, a file:// URL or a Claude artifact),
 // and the demo (the Rootworks and Act I) as dist/demo/index.html, with __DEMO__ defined as true.
-//   node build.mjs           build both once
-//   node build.mjs --watch   rebuild on every change in src/
+// dist/ is the release build GitHub Pages serves. The same two are also built into dist-dev/ with __DEV__
+// defined as true, which exposes the game on window (window.gs and every name) for the tests and the console.
+//   node build.mjs           build all four once
+//   node build.mjs --watch   rebuild the full game (release and dev) on every change in src/
 import * as esbuild from 'esbuild';
 import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
 
-const OUT = 'dist/index.html', DEMO_OUT = 'dist/demo/index.html';
+const OUT = 'dist/index.html', DEMO_OUT = 'dist/demo/index.html', DEV = 'dist-dev/index.html', DEV_DEMO = 'dist-dev/demo/index.html';
 const options = {
   entryPoints: ['src/main.js'],
   bundle: true,
   format: 'iife',
   write: false,
   logLevel: 'warning',
-  define: {__DEMO__: 'false'},
+  define: {__DEMO__: 'false', __DEV__: 'false'},
 };
 
 // The Exchange worker is bundled on its own and handed to the page bundle as a string, so the
@@ -45,9 +47,16 @@ if (process.argv.includes('--watch')) {
     ...options,
     plugins: [workerPlugin, {name: 'emit', setup(b) { b.onEnd(r => { if (!r.errors.length) emit(r); }); }}],
   });
-  await ctx.watch();
+  const dev = await esbuild.context({
+    ...options, define: {...options.define, __DEV__: 'true'},
+    plugins: [workerPlugin, {name: 'emit', setup(b) { b.onEnd(r => { if (!r.errors.length) emit(r, DEV); }); }}],
+  });
+  await ctx.watch(); await dev.watch();
   console.log('watching src/ ...');
 } else {
-  emit(await esbuild.build(options));
-  emit(await esbuild.build({...options, define: {__DEMO__: 'true'}}), DEMO_OUT, true);
+  const build = (demo, dev) => esbuild.build({...options, define: {__DEMO__: String(demo), __DEV__: String(dev)}});
+  emit(await build(false, false));
+  emit(await build(true, false), DEMO_OUT, true);
+  emit(await build(false, true), DEV);
+  emit(await build(true, true), DEV_DEMO, true);
 }

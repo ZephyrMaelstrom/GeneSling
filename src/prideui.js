@@ -6,9 +6,13 @@ import {BOSSES,PRIDE as P,TYPES} from './content.js';
 import {S,byId,formName,ui} from './state.js';
 import {canPay,costText,matName,amt} from './jobs.js';
 import {sigilSvg} from './sprites.js';
-import {comfort,comfortPoints,foot,isStation,layItem,nextPlot,placeable,plotBlock,retireBlock,storable,titlesOf,trophyName,trophyStory} from './hideout.js';
+import {comfort,comfortPoints,foot,isStation,layItem,nextPlot,placeable,plotBlock,retireBlock,storable,titlesOf,trophyName,trophyStory,buyPlot,craftDecor,displayWeapon,retire,setSigil,storeItem,takeDownWeapon} from './hideout.js';
 import {HMAP} from './map.js';
-import {openModal} from './ui.js';
+import {openModal,renderAll,renderMain,renderSecPanel,validGuns} from './ui.js';
+import {onAct,onChange} from './actions.js';
+import {openShare,shareGo} from './share.js';
+import {save} from './save.js';
+import {sfx} from './audio.js';
 
 const pct=v=>`${Math.round(v*100)}%`;
 const itemLabel=i=>{
@@ -103,4 +107,23 @@ function sigilPanel(){
     <div class="row"><button class="btn small primary" data-act="sigilsave">${S.sigil?'Save changes':'Use this sigil'}</button>${S.sigil?'<button class="btn small" data-act="sigilclear">Remove sigil</button>':''}</div>`;
 }
 
+/* ---------- actions ---------- */
+onAct('buildmode',d=>{HMAP.build=!HMAP.build;HMAP.pick=null;renderMain()});
+onAct('placepick',d=>{HMAP.pick={kind:'place',key:d.k,ref:d.ref!=null?+d.ref:undefined};renderBuildPanel()});
+onAct('cancelpick',d=>{HMAP.pick=null;renderBuildPanel()});
+onAct('storeitem',d=>{if(storeItem(+d.id)){HMAP.pick=null;save();renderBuildPanel()}});
+onAct('buyplot',d=>{if(buyPlot()){sfx('level');save();renderAll()}});
+onAct('makedecor',d=>{if(craftDecor(d.k)){sfx('heavy');save();renderAll()}});
+onAct('retire',d=>{const c=byId(+ui.retire);if(!c)return;if(ui.retireArm!==c.id){ui.retireArm=c.id;renderSecPanel();return}ui.retireArm=null;const L=retire(c);if(L){ui.retire='';sfx('quest');save();renderAll();openLegend(L.id)}});
+onAct('takedown',d=>{if(takeDownWeapon(+d.id)){save();renderAll()}});
+onAct('displayweapon',d=>{if(displayWeapon(+d.uid)){validGuns();sfx('quest');save();renderAll()}});
+onAct('trophy',d=>{openTrophy(+d.id)});
+onAct('legend',d=>{openLegend(+d.id)});
+onAct('sigil',d=>{const Z=S.sigil||ui.sigilDraft||{};ui.sigilDraft={shape:Z.shape,color:Z.color,glyph:Z.glyph,[d.k]:d.v};if(S.sigil){setSigil(ui.sigilDraft);save()}renderMain()});
+onAct('sigilsave',d=>{setSigil(ui.sigilDraft||S.sigil||{});save();renderMain()});
+onAct('sigilclear',d=>{setSigil(null);ui.sigilDraft=null;save();renderMain()});
+onAct('sharecard',d=>{openShare('card',+d.id)});
+onAct('snapshot',d=>{openShare('snapshot')});
+onAct('sharego',d=>{shareGo()});
+onChange('retiresel',el=>{ui.retire=el.value;ui.retireArm=null;renderSecPanel()});
 export {itemLabel,comfortChip,mapTools,buildPanel,renderBuildPanel,legendSpr,perkList,hallPanel,openTrophy,openLegend,titleChips,bredBy,decorRecipes,sigilPanel};

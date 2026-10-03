@@ -1,0 +1,218 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/species.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "TYPES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "color": {
+      "type": "string"
+     },
+     "acc": {
+      "type": "string"
+     },
+     "tier": {
+      "type": "number"
+     },
+     "base": {
+      "type": "object",
+      "properties": {
+       "hp": {
+        "type": "number"
+       },
+       "atk": {
+        "type": "number"
+       },
+       "spd": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "hp",
+       "atk",
+       "spd"
+      ],
+      "additionalProperties": false
+     },
+     "elem": {
+      "type": "string"
+     },
+     "support": {
+      "type": "string"
+     },
+     "weight": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "color",
+     "acc",
+     "tier",
+     "base",
+     "elem",
+     "support",
+     "weight"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "TIER": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "SPECIES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "type": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "shade": {
+      "type": "string"
+     },
+     "size": {
+      "type": "number"
+     },
+     "mods": {
+      "type": "object",
+      "properties": {
+       "hp": {
+        "type": "number"
+       },
+       "atk": {
+        "type": "number"
+       },
+       "spd": {
+        "type": "number"
+       },
+       "rate": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "hp",
+       "atk",
+       "spd",
+       "rate"
+      ],
+      "additionalProperties": false
+     },
+     "w": {
+      "type": "number"
+     },
+     "blurb": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "type",
+     "col",
+     "shade",
+     "size",
+     "mods",
+     "w",
+     "blurb"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "HYBRIDS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "types": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "col": {
+      "type": "string"
+     },
+     "shade": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "types",
+     "col",
+     "shade"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "LINE_DATA": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "array",
+     "items": {
+      "type": [
+       "string",
+       "number",
+       "array"
+      ],
+      "items": {
+       "type": [
+        "string",
+        "number"
+       ]
+      }
+     }
+    }
+   }
+  },
+  "SYL": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   }
+  },
+  "END": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  }
+ },
+ "required": [
+  "TYPES",
+  "TIER",
+  "SPECIES",
+  "HYBRIDS",
+  "LINE_DATA",
+  "SYL",
+  "END"
+ ],
+ "additionalProperties": false
+}
