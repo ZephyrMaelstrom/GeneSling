@@ -228,6 +228,19 @@ Each evolution line has a raid role on top of its type. Three companion slots an
 - **Tutoring.** A high-level creature in the Training Grounds levels young ones faster. It also teaches them a learned technique, a skill that isn't genetic and has to be passed from creature to creature.
 - **Vein keys.** Some veins need certain types to enter or get through: Tide for flooded lanes, Echo to see in the Hollow Choir, Gale for cliff routes. A narrow roster closes off parts of the dungeon.
 
+### Every creature has a page
+
+With 20 to 40 creatures, lists have to stay short and each creature still has to feel like someone. So every list (the roster, the party picker, the breeding screen, a station's crew, the family tree) shows the same small card: sprite, name, level, form, types, sex, where it is, and at most one flag (Can evolve, then Hurt, Tired, Unproven, New). Tapping a card opens the creature's own page:
+
+- **Identity column:** sprite, name (tap to rename), form, types, level and XP, HP, bond, where it is, Evolve and Feed.
+- **Overview:** HP, Attack, Move and Rate, each opening to the factors that make it (type, species, gene, level, stage, bond, size, traits, personality); attack and ability; personality, raid role, slot-3 passive and bond passive; titles and ribbons; the evolution line.
+- **Genes:** the genome, as far as the Keeper's tools read it, and the family tree.
+- **Work:** what it would make at every open station, alone and before crew chemistry; its crew's chemistry and clashes and whether it's foreman; fatigue and when it's rested; how it would do on an expedition.
+- **Story:** its form's codex entry, its raids, extracts and kills, who bred it, and its own history: where it was caught, who its parents and children are, bosses it was there for, close calls, titles, evolutions and expeditions.
+- **Actions:** evolve, feed, put in a party slot, post to a station, breed, share its card, serums, sell, retire to the Hall of Legends.
+
+The page shows only what the player knows. Without a Sequencer, gene factors show as stars; an unproven catch keeps its traits secret until it comes home. Prev and next (or a swipe, or the arrow keys) step through the list it was opened from, and Back returns to that list where it was. In a raid, the ⚙ Creatures tab opens a compact, read-only version that fits the screen.
+
 ### Loss that hurts but builds
 
 When a creature dies, its station meter drops and its job goes unfilled. That should sting. Its legacy carries on: its closest bred descendant inherits 25% of its bond, and it joins the Memorial wall with its titles and raid count. Lineages make loss part of a family story instead of a delete button.

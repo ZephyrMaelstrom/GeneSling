@@ -5,7 +5,9 @@ Written October 2026, after Phase 8. A copy of the shared plan, kept here so the
 ## Progress
 
 - **Step 1, Groundwork: done.** The event bus (`src/events.js`), the action registry (`src/actions.js`), device options out of the save (`src/device.js`, save v15), the release build without globals (tests use the dev build in `dist-dev/`, with `window.gs`), and data schemas with a cross-reference test (`src/data/schema/`, `tests/data.test.js`). See `docs/CODE.md`.
-- Step 2, Creature pages: next.
+- **Step 2, Creature pages: done.** One small card (`creatureCard`) in the roster, the party picker, the breeding screen, station crews and the family tree; a page per creature with the identity column and the five tabs, prev and next through the list it came from, and a compact read-only page in the raid menu (`src/creatureui.js`). Each creature keeps a history (`src/history.js`, save v16). The history keeps 24 entries rather than 40, to keep saves small. Exchange listings and the expedition and station pickers still use their dropdowns.
+- Also fixed: each vein's "rich in" bonuses were never applied; now they are, in raids and in the Journey Simulator (still Act IV on day 58).
+- Step 3, Perk rework: next.
 
 ## Summary
 

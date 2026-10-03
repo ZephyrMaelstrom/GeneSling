@@ -181,7 +181,7 @@ test('the breeder’s sigil marks creatures you breed and travels through the Ex
     const child = laid && laid[0];
     const back = materialize({kind: 'creature', c: structuredClone(child)});
     const bc = byId(back);
-    ui.tab = 'roster'; renderAll(); const card = document.body.innerHTML.includes('Bred by Conner');
+    ui.tab = 'roster'; renderAll(); act('creature', {id: back}); act('ctab', {k: 'story'}); const card = document.body.innerHTML.includes('Bred by Conner'); act('cback');
     return {by: child && child.by, kept: bc && bc.by, card};
   });
   assert.deepEqual(r.by, {name: 'Conner', sigil: {shape: 'hex', color: '#7fd860', glyph: '☾'}});
@@ -255,7 +255,7 @@ test('a v9 save loads into the current version with the old map’s layout, and 
   void r;
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, layout: S.layout.length === defaultLayout().length, plots: S.plots, trophies: S.trophies.map(t => [t.boss, !!t.legacy]), placed: S.layout.some(i => i.key === 'trophy'), titles: S.creatures.every(c => Array.isArray(c.titles)), story: trophyStory(S.trophies[0])}));
-  assert.equal(s.v, 15);
+  assert.equal(s.v, 16);
   assert.equal(s.layout, true);
   assert.equal(s.plots, 0);
   assert.deepEqual(s.trophies, [['bloom', true]]);

@@ -13,6 +13,7 @@ import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,secTier,unpl
 import {rand} from './rng.js';
 import {GRADE_LOCI,ancestors,express} from './genetics.js';
 import {comfort,perk} from './hideout.js';
+import {logEvent} from './history.js';
 
 /* ---------- materials ---------- */
 // coin, ore, food and shards keep their v5 homes on S; everything else lives in S.mats.
@@ -223,7 +224,7 @@ function tickExpeditions(notes,makeEgg){
     for(const [mat,[lo,hi]] of Object.entries(D.loot)){const n=Math.round((lo+rand()*(hi-lo))*k);if(n>0){give(mat,n);got.push(`${n} ${matName(mat).toLowerCase()}${n>1&&mat==='shard'?'s':''}`)}}
     if(rand()<D.egg&&makeEgg){makeEgg(team);got.push('an egg')}
     const hurt=team.filter(()=>rand()<D.injury);hurt.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.5))});
-    team.forEach(c=>addBond(c,8));
+    team.forEach(c=>{addBond(c,8);logEvent(c,'expedition',D.name.toLowerCase())});
     notes.push(`The ${D.name.toLowerCase()} team came home with ${got.join(', ')||'nothing'}.${hurt.length?` ${hurt.map(c=>c.name).join(' and ')} came back hurt.`:''}`);
   }
 }

@@ -4,16 +4,17 @@ import {LORE,ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} 
 import {loadSave,migrate,save} from './save.js';
 import {S,formName,newGame,secTier,setS,sexSym,stats,supportText} from './state.js';
 import {itemName} from './jobs.js';
-import {OL,drawCreature} from './sprites.js';
+import {OL,drawCreature,paintSprites} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {openIntro,renderAll,weaponLine} from './ui.js';
-import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,releaseCreature,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo} from './raid.js';
+import {CU,R,RH,RW,TS,applyBuff,applyCurse,bagUsed,buy,cageReady,canRelease,releaseCreature,capRadius,comboReady,doRoll,endRaid,interact,isWeak,keys,modOn,msg,stickBases,stickR,swapSlot3,switchGun,touch,update,useAbility,useCage,useCombo,partyCreatures} from './raid.js';
 import {startMarket} from './exchange/market.js';
 import {pickEnding,chooseVein,drawDark,drawShadow,drawTwists} from './veins.js';
 import {sessionStart} from './demo.js';
 import {runeWall} from './endgame.js';
 import {applyPalette,bulletCol,frameTime,renderScale} from './access.js';
 import {OPTS,saveOpts} from './device.js';
+import {compactPage} from './creatureui.js';
 let ctx,cv,mini,mctx;
 // Pins the page while a raid is on screen and restores the hideout's scroll position after.
 let pageScroll=0;
@@ -325,8 +326,8 @@ function fitOverlay(){
 /* ---------- the raid menu (⚙, or Esc): backpack, creatures, weapons and settings; the raid waits while it's open ---------- */
 const MENU_TABS=[['bag','Backpack'],['party','Creatures'],['gear','Weapons'],['options','Settings']];
 function setPause(on){
-  if(!R)return;R.paused=on;$('#pause').hidden=!on;if(!on){R.last=0;R.releaseArm=null;R.abandonArm=false;return}
-  showOverlay(menuHtml());
+  if(!R)return;R.paused=on;$('#pause').hidden=!on;if(!on){R.last=0;R.releaseArm=null;R.abandonArm=false;R.viewing=null;return}
+  showOverlay(menuHtml());paintSprites($('#pauseBox'),id=>partyCreatures().find(c=>c.id===id));
 }
 function menuHtml(){
   const t=R.menuTab||'bag',where=R.mode==='arena'?'Arena':R.mode==='tutorial'?'Tutorial':`Floor ${R.map.floor}`;
@@ -343,13 +344,14 @@ function menuBag(){
     ${R.prints.length?`<h3>Prints</h3><p class="status">${R.prints.map(id=>GUNS[id].name).join(' · ')}</p>`:''}</div></div>`;
 }
 function menuParty(){
+  if(R.viewing!=null){const m=R.viewing===2?R.slot3:R.comps[R.viewing];if(m)return compactPage(m.c,R.viewing<2?m:null);R.viewing=null}
   const card=slot=>{
     const m=slot===2?R.slot3:R.comps[slot],label=slot===2?'Slot 3':`Combat ${slot+1}`;
     if(!m)return`<div class="mcre"><b>${label}</b><span class="status">${slot===2?'Free for a catch':'Empty'}</span></div>`;
     const c=m.c,caught=c.captureRaid===R.id,down=slot<2&&m.downed;
     const hp=slot===2?c.hp/stats(c).hp:m.hp/m.maxHp,armed=R.releaseArm===slot;
     const what=slot===2?(caught?'Caught this raid':`Support: ${supportText(c)}`):`Skill ${slot+1}: ${ABILITIES[m.st.abilId].name}${m.abil>0?` (${Math.ceil(m.abil)}s)`:''}`;
-    const btns=(slot===2?`<button class="btn small" data-p="swap" data-i="0">To combat 1</button><button class="btn small" data-p="swap" data-i="1">To combat 2</button>`:'')
+    const btns=`<button class="btn small" data-p="cview" data-i="${slot}">View</button>`+(slot===2?`<button class="btn small" data-p="swap" data-i="0">To combat 1</button><button class="btn small" data-p="swap" data-i="1">To combat 2</button>`:'')
       +(canRelease(slot)?`<button class="btn small ${armed?'danger':''}" data-p="release" data-i="${slot}">${armed?`Confirm: release`:'Release'}</button>`:'');
     return`<div class="mcre ${caught?'caught':''} ${down?'down':''}"><b>${label}: ${esc(c.name)}</b><small class="status">${esc(formName(c))} · Lv ${c.level} · ${TYPES[c.type].name}${c.type2?'/'+TYPES[c.type2].name:''}${down?' · down':''}</small>
       <div class="bagbar"><i style="width:${clamp(hp,0,1)*100}%;background:var(--rose)"></i></div><span class="status">${what}</span>
@@ -377,7 +379,8 @@ $('#pauseBox').addEventListener('click',e=>{
   if(k==='resume'){R.abandonArm=false;setPause(false)}
   if(k==='vein'){chooseVein(b.dataset.k);return}
   if(k==='ending'){pickEnding(b.dataset.k);return}
-  if(k==='mtab'){R.menuTab=b.dataset.k;R.releaseArm=null;setPause(true)}
+  if(k==='mtab'){R.menuTab=b.dataset.k;R.releaseArm=null;R.viewing=null;setPause(true)}
+  if(k==='cview'){const i=+b.dataset.i;R.viewing=i<0?null:i;setPause(true)}
   if(k==='swap'){swapSlot3(+b.dataset.i);setPause(true)}
   if(k==='switch'){switchGun();setPause(true)}
   if(k==='release'){const i=+b.dataset.i;if(R.releaseArm!==i){R.releaseArm=i;setPause(true);return}R.releaseArm=null;if(releaseCreature(i))setPause(false);else setPause(true)}

@@ -303,7 +303,8 @@ function paintMural(g,w,h,m,stage){
     if(k>=3){g.fillStyle='rgba(10,6,30,.6)';g.beginPath();g.ellipse(w/2,h*.95,w*.4,h*.18,0,0,7);g.fill()}if(k>=4){g.fillStyle='#ffcf4a';g.beginPath();g.ellipse(w*.62,h*.93,6,2.5,0,0,7);g.fill()}}
 }
 
-function paintSprites(root){
+// find: an optional lookup for creatures not in the roster yet (a catch in a raid's party).
+function paintSprites(root,find){
   const dpr=window.devicePixelRatio||1;
   root.querySelectorAll('canvas.spr').forEach(cv=>{
     const w=+cv.getAttribute('width'),h=+cv.getAttribute('height');
@@ -316,7 +317,7 @@ function paintSprites(root){
     if(cv.dataset.mural){const m=LORE.MURALS.find(x=>x.id===cv.dataset.mural);if(m)paintMural(g,w,h,m,+cv.dataset.stage||0);return}
     let c=null;
     if(cv.dataset.sp){const sp=cv.dataset.sp,S0=SPECIES[sp];c={species:sp,type:S0.hybrid?S0.types[0]:S0.type,type2:S0.hybrid?S0.types[1]:null,stage:+cv.dataset.st||0}}
-    else if(cv.dataset.cid)c=byId(+cv.dataset.cid)||(cv.dataset.mem?null:null);
+    else if(cv.dataset.cid)c=byId(+cv.dataset.cid)||(find&&find(+cv.dataset.cid))||null;
     if(cv.dataset.mem){const m=S.memorial[+cv.dataset.mem];if(m)c={species:m.species,type:m.type,type2:m.type2,stage:m.stage,looks:m.looks}}
     if(cv.dataset.legend){const l=S.legends.find(x=>x.id===+cv.dataset.legend);if(l)c=l}
     if(cv.dataset.tree){const e=lineage(+cv.dataset.tree);if(e)c={species:e.species,type:e.type,type2:e.type2,stage:e.stage,looks:e.looks}}

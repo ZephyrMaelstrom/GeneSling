@@ -10,6 +10,8 @@ import * as rng from './rng.js';
 import * as events from './events.js';
 import * as actions from './actions.js';
 import * as device from './device.js';
+import * as history from './history.js';
+import * as creatureui from './creatureui.js';
 import * as util from './util.js';
 import * as content from './content.js';
 import * as genetics from './genetics.js';
@@ -49,7 +51,7 @@ import * as draw from './draw.js';
 
 if(flags.DEV){
   const gs={};
-  for(const mod of [rng,events,actions,device,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,endgame,endgameui,lore,loreui,balance,journey,journeyui,access,playtest,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
+  for(const mod of [rng,events,actions,device,history,creatureui,util,content,genetics,jobs,saves,state,geneui,workui,supply,flags,hideout,demo,share,prideui,bloom,veins,bloomui,endgame,endgameui,lore,loreui,balance,journey,journeyui,access,playtest,exchange,market,xclient,sandbox,sprites,audio,map,ui,raid,draw]){
     for(const k of Object.keys(mod)){
       // Getters, so values a module reassigns (S, R, ...) always read live.
       const get={get:()=>mod[k],configurable:true,enumerable:true};

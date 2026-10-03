@@ -23,6 +23,7 @@ import {catchupMul,gateBlockText} from './balance.js';
 import {assistAim,enemyBulletMul,resetScale} from './access.js';
 import {gateBlocked} from './playtest.js';
 import {OPTS} from './device.js';
+import {logEvent} from './history.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -1182,7 +1183,7 @@ function endRaid(outcome,via){
     const caught=[R.slot3&&R.slot3.c,...R.comps.map(m=>m&&m.c)].filter(c=>c&&c.captureRaid==='tutorial');
     let html;
     if(outcome==='extract'){
-      caught.forEach(c=>{c.captureRaid=S.stats.raids-1;c.proven=true;S.creatures.push(c);S.stats.captures++});
+      caught.forEach(c=>{c.captureRaid=S.stats.raids-1;c.proven=true;S.creatures.push(c);S.stats.captures++;logEvent(c,'caught','the tutorial floor')});
       const first=!S.tutorialDone;S.tutorialDone=true;if(first){S.coin+=100;S.cages.basic+=2}
       addLog('Tutorial complete.'+(caught.length?` ${caught[0].name} joined the hideout.`:''));if(first)tutorialDone();
       html=`<h2 class="res-title win">Tutorial complete</h2><p>You extracted safely.${caught.length?` <b>${esc(caught[0].name)}</b> the Cindlet is yours now, already proven.`:''}</p>${first?'<p class="status">Reward: 100 coin and 2 cages.</p>':''}
@@ -1259,7 +1260,8 @@ function endRaid(outcome,via){
   }
   validGuns();
   // Other systems settle their part of the raid (journal pages, the Deepening, contracts) and add notes.
-  const report=emit('raid:end',{outcome,via,mode:R.mode,scav,extracted:outcome==='extract',floor:R.map.floor,deepest,kills:R.kills,eliteKills:R.eliteKills||0,bag:R.bag,caught:caughtC,deepening:R.deepening,notes:L.notes});
+  const report=emit('raid:end',{outcome,via,mode:R.mode,scav,extracted:outcome==='extract',floor:R.map.floor,vein:R.map.plan&&R.map.plan.vein,deepest,boss:R.bossDown?R.bossDown.name:null,
+    party:[...party.map(m=>({c:m.c,downed:m.downed,kills:m.kills||0,hpFrac:m.hp/m.maxHp})),...(R.slot3?[{c:R.slot3.c,downed:false,kills:0,hpFrac:null}]:[])],kills:R.kills,eliteKills:R.eliteKills||0,bag:R.bag,caught:caughtC,deepening:R.deepening,notes:L.notes});
   // Catch-up: a Keeper well behind the expected rank for their calendar day earns double.
   const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1)*catchupMul());
   L.keeper=addKeeperXp(kx);

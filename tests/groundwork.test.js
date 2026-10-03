@@ -68,8 +68,9 @@ test('a raid end goes through the bus: notes from other systems, then raid:done;
   assert.equal(r.got[1][1], r.day0, 'raid:done carries the day the raid ended on');
   assert.equal(r.note, true, 'a subscriber’s note shows on the results screen');
   assert.deepEqual(r.days, [r.day0 + 1, r.day0 + 3], 'day:passed after the raid and after Wait, not after a simulated day');
-  // Lore, the Deepening and contracts settle on raid:end; telemetry and the demo on raid:done; the pace and the market on day:passed.
-  assert.deepEqual(r.listeners, [3, 1, 2]);
+  // Each creature's history, lore, the Deepening and contracts settle on raid:end; telemetry and the demo on raid:done;
+  // the pace and the market on day:passed.
+  assert.deepEqual(r.listeners, [4, 1, 2]);
 });
 
 test('every action on every screen has a handler, and a name can only be registered once', async () => {
@@ -116,10 +117,10 @@ test('a v14 save loads as v15: its options move to a device that has none, and n
     if (!localStorage.getItem('genesling-save')) localStorage.setItem('genesling-save', JSON.stringify(d));
   }, old)});
   const a = await p2.evaluate(() => ({v: S.v, opts: 'opts' in S, hand: OPTS.hand, vol: OPTS.vol, music: OPTS.music}));
-  assert.deepEqual(a, {v: 15, opts: false, hand: 'left', vol: 0.3, music: 0});
+  assert.deepEqual(a, {v: 16, opts: false, hand: 'left', vol: 0.3, music: 0});
   // A device with its own options keeps them.
   const b = await p2.evaluate(old => { OPTS.hand = 'right'; saveOpts(); const d = migrate({...old, opts: {...old.opts, hand: 'left'}}); return {v: d.v, opts: 'opts' in d, hand: OPTS.hand}; }, old);
-  assert.deepEqual(b, {v: 15, opts: false, hand: 'right'});
+  assert.deepEqual(b, {v: 16, opts: false, hand: 'right'});
   assert.deepEqual(e2, []);
   await context.close();
   assert.deepEqual(errors, []);

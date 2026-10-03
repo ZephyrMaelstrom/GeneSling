@@ -34,7 +34,7 @@ function memberRow(c,k){
   const rep=stationReport(k),main=rep?Object.entries(J.STATIONS[k].out)[0]:null,f=foremanOf(k)===c;
   const prod=rep?`+${f1(rep.per(c)*main[1])} ${matName(main[0]).toLowerCase()}/day · `:'';
   const why=SECTIONS[k].type?(typeMatch(c,k)>=1?`${TYPES[SECTIONS[k].type].name} match`:typeMatch(c,k)>.7?'hybrid match':'off type, works at half rate'):'';
-  return`<div class="member">${spr(c,40)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}${f?' <span class="chip warn" title="Highest Focus: its work traits apply to the whole station">Foreman</span>':''}</div>
+  return`<div class="member"><button class="sprlink" data-act="creature" data-id="${c.id}" data-list="station:${k}" aria-label="Open ${esc(c.name)}’s page">${spr(c,40)}</button><div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}${f?' <span class="chip warn" title="Highest Focus: its work traits apply to the whole station">Foreman</span>':''}</div>
     <small>${prod}+${Math.round(secContribution(c,k))} pts · Yield ${f1(c.genes.yld)}${why?' · '+why:''}</small>${fatBar(c)}</div>
     <button class="btn small" data-act="unassign" data-id="${c.id}" aria-label="Remove ${esc(c.name)}">×</button></div>`;
 }

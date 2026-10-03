@@ -121,6 +121,6 @@ test('the playtest pace notes when each act opened', async () => {
 
 test('a v13 save loads as v14 with a start date', async () => {
   const r = await run(() => { const d = migrate({...JSON.parse(JSON.stringify(S)), v: 13, startedAt: undefined}); return {v: d.v, started: typeof d.startedAt}; });
-  assert.deepEqual(r, {v: 15, started: 'number'});
+  assert.deepEqual(r, {v: 16, started: 'number'});
   assert.deepEqual(errors, []);
 });

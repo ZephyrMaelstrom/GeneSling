@@ -13,6 +13,7 @@
 import {PRIDE as P,SECTION_IDS,BOSSES,EXCHANGE_DATA} from './content.js';
 import {S,addLog,addKeeperXp,bondStar,formName,recordLineage,unplace,whereIs} from './state.js';
 import {canPay,costText,expAway,itemByUid,itemName,makerText,pay,scrapItem} from './jobs.js';
+import {logEvent} from './history.js';
 
 const G=P.GRID;
 
@@ -147,7 +148,7 @@ function lifePlan(ph){
 }
 
 /* ---------- titles ---------- */
-function giveTitle(c,id){c.titles=c.titles||[];if(c.titles.includes(id))return false;c.titles.push(id);return true}
+function giveTitle(c,id){c.titles=c.titles||[];if(c.titles.includes(id))return false;c.titles.push(id);if(P.TITLES[id])logEvent(c,'title',P.TITLES[id].name);return true}
 const titlesOf=c=>(c.titles||[]).filter(k=>P.TITLES[k]).map(k=>({id:k,...P.TITLES[k]}));
 // After an extraction (raid counts already updated). party: [{c, downed}]. Returns notes.
 function extractTitles(party,bossDown){

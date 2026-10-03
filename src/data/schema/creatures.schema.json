@@ -100,6 +100,71 @@
    "items": {
     "type": "string"
    }
+  },
+  "HISTORY": {
+   "type": "object",
+   "properties": {
+    "max": {
+     "type": "number"
+    },
+    "nearDeath": {
+     "type": "number"
+    },
+    "text": {
+     "type": "object",
+     "properties": {
+      "before": {
+       "type": "string"
+      },
+      "start": {
+       "type": "string"
+      },
+      "caught": {
+       "type": "string"
+      },
+      "hatched": {
+       "type": "string"
+      },
+      "evolved": {
+       "type": "string"
+      },
+      "boss": {
+       "type": "string"
+      },
+      "child": {
+       "type": "string"
+      },
+      "title": {
+       "type": "string"
+      },
+      "neardeath": {
+       "type": "string"
+      },
+      "expedition": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "before",
+      "start",
+      "caught",
+      "hatched",
+      "evolved",
+      "boss",
+      "child",
+      "title",
+      "neardeath",
+      "expedition"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "max",
+    "nearDeath",
+    "text"
+   ],
+   "additionalProperties": false
   }
  },
  "required": [
@@ -110,7 +175,8 @@
   "GENES",
   "GENE_HINT",
   "TRAITS",
-  "NEG_TRAITS"
+  "NEG_TRAITS",
+  "HISTORY"
  ],
  "additionalProperties": false
 }

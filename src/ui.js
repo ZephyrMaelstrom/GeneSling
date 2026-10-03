@@ -1,9 +1,9 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {BALANCE,LORE,BLOOM,ABILITIES,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,speciesOf} from './content.js';
+import {BALANCE,LORE,BLOOM,ABILITIES,ATTACKS,BASE_SPECIES,BOND_TH,BOSSES,BOSS_IDS,COMBOS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,speciesOf} from './content.js';
 import {save} from './save.js';
-import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,passDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
-import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,passDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sellValue,sexSym,slotBonus,stats,supportText,ui,unplace,whereIs} from './state.js';
+import {paintSprites,spr,sprSp,stars,typeChips} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
 import {R,startRaid} from './raid.js';
@@ -13,23 +13,24 @@ import {formLore,pagesFound,secretHybridKnown} from './lore.js';
 import {journeyPanel} from './journeyui.js';
 import {applyPalette,resetScale} from './access.js';
 import {journalView,labLorePanel,muralView,storyView} from './loreui.js';
-import {bredBy,buildPanel,hallPanel,mapTools,sigilPanel,titleChips} from './prideui.js';
+import {buildPanel,hallPanel,mapTools,sigilPanel} from './prideui.js';
 import {demoGoalsHtml,statsPanel} from './demo.js';
 import {mapH} from './map.js';
 import {contractBoard,labBloom,mapPicker,veinCodex} from './bloomui.js';
-import {archivePanel,bloomBelow,breedingTools,labEndgamePanel,ribbonChips} from './endgameui.js';
+import {archivePanel,bloomBelow,breedingTools,labEndgamePanel} from './endgameui.js';
 
 
 import {GRADE_LOCI,TRAIT_LOCI,expressTrait} from './genetics.js';
-import {geneSight,genomeBlock,lineageChips,previewHtml,simPanel,traitName} from './geneui.js';
-import {serumLocus,amt,expAway,fatigueMul,give,itemByUid,itemName,mouths,newItem,overCap,rosterCap,rosterCount,usable} from './jobs.js';
-import {candidateOption,expeditionPanel,fatBar,gearPanel,memberRow,memorialView,roleChip,rosterBar,stationPanel,supplyPanel,workshopView} from './workui.js';
+import {geneSight,previewHtml,simPanel,traitName} from './geneui.js';
+import {amt,expAway,give,itemByUid,itemName,mouths,newItem,overCap,rosterCap,rosterCount,usable} from './jobs.js';
+import {candidateOption,expeditionPanel,gearPanel,memberRow,memorialView,roleChip,rosterBar,stationPanel,supplyPanel,workshopView} from './workui.js';
 import {startMarket} from './exchange/market.js';
 import {viewExchange,economyPanel} from './exchangeui.js';
 import {bindCharts} from './chart.js';
 import {onMarket} from './exchange/market.js';
 import {onAct,onChange,onInput,act,changed,inputted} from './actions.js';
 import {OPTS,saveOpts} from './device.js';
+import {creatureCard,creaturePage,pageCreature,rosterList} from './creatureui.js';
 // The demo has no Test Lab.
 const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['exchange','Exchange'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']].filter(([k])=>!(DEMO&&k==='lab'));
 function renderAll(){renderHeader();renderTabs();renderMain()}
@@ -42,7 +43,9 @@ function renderTabs(){
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${ui.tab===k}" data-act="tab" data-k="${k}">${l}${dot(k)?'<i class="dot" aria-label="new"></i>':''}</button>`).join('');
 }
 function renderMain(){
-  const m=$('#main');
+  const m=$('#main'),c=pageCreature();
+  // A creature's page, opened from any list, takes the main view until Back.
+  if(c){m.innerHTML=creaturePage(c);paintSprites(m);return}
   m.innerHTML=({raid:viewRaid,hideout:viewHideout,roster:viewRoster,breeding:viewBreeding,research:viewResearch,armory:viewArmory,exchange:viewExchange,codex:viewCodex,lab:viewLab,settings:viewSettings}[ui.tab])();
   paintSprites(m);
   if(ui.tab==='hideout')startHideoutMap();
@@ -92,7 +95,7 @@ function viewRaid(){
       <button class="btn small" data-act="choose" data-slot="${i}">Choose</button></div>`;
     const st=stats(c),A=ABILITIES[st.abilId];
     return`<div class="slot ${sup?'support':''}"><div class="slot-label">${labels[i]}</div>
-      <div class="slot-body">${spr(c,56)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
+      <div class="slot-body"><button class="sprlink" data-act="creature" data-id="${c.id}" data-list="party" aria-label="Open ${esc(c.name)}’s page">${spr(c,56)}</button><div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
       <div class="status">${sexSym(c.sex)} ${esc(formName(c))} · ${ATTACKS[st.atkId].name}</div>
       <div class="row" style="gap:4px">${typeChips(c)}${roleChip(c)}${stars(st.star)}${c.origin==='wild'&&!c.proven?'<span class="chip warn">Unproven</span>':''}</div></div></div>
       ${hpBar(c)}
@@ -198,52 +201,14 @@ function sectionDetail(k){
     ${extra}`;
 }
 
-function creCard(c){
-  const st=stats(c),sp=SPECIES[c.species],T=c.type,L=lineOf(c),nf=nextForm(c),A=ABILITIES[st.abilId],K=ATTACKS[st.atkId];
-  const sellArmed=ui.sellId===c.id;
-  const chain=L.map((f,i)=>`<span class="evo ${i===(c.stage||0)?'on':i<(c.stage||0)?'done':''}">${f.name}${i?` <small>Lv ${f.lv}</small>`:''}</span>`).join('<i>›</i>');
-  let evo='';
-  if(nf){const ok=canEvolve(c),k=evolveCost(c),afford=S.coin>=k.coin&&S.ore>=k.ore&&S.shards>=k.shard;
-    const why=!c.proven?'Must be proven first':c.level<nf.lv?`Needs Lv ${nf.lv}`:nf.need&&c.genes[nf.need[0]]<nf.need[1]?`Needs ${GENES[nf.need[0]]} ${nf.need[1]}+`:'';
-    evo=`<div class="row"><button class="btn small ${ok&&afford?'primary':''}" data-act="evolve" data-id="${c.id}" ${ok&&afford?'':'disabled'}>${ok?`Evolve into ${nf.name} · ${k.coin}c ${k.ore} ore${k.shard?' '+k.shard+' shard':''}`:`${nf.name}: ${why}`}</button></div>`}
-  const bs=st.star,bp=BOND_PASSIVE[T],nextB=BOND_TH[bs];
-  return`<article class="cre">${spr(c,72)}<div class="cre-main">
-    <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
-    <div class="status">${esc(formName(c))} · ${formLore(c.species,c.stage||0)||sp.blurb}</div>${bredBy(c)}
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${ribbonChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
-    ${hpBar(c)}
-    <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
-    <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
-    <div class="evochain">${chain}</div>${evo}
-    <div class="row" style="gap:6px">${stars(bs)}<small class="status">${nextB!=null?`${c.bondXp}/${nextB} bond`:'Max bond'}${bs>=3?` · ${bp.name}: ${bp.desc}`:` · ★3 unlocks ${bp.name}`}</small></div>
-    ${genomeBlock(c)}
-    <div class="bar" title="XP"><i style="width:${c.xp/xpNeed(c)*100}%;background:var(--sky)"></i></div>
-    <p class="status"><b class="lbl">Fatigue</b> ${Math.round(c.fat||0)}%${c.fat>0?` · working at ${Math.round(fatigueMul(c)*100)}%`:''}</p>${fatBar(c)}
-    <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
-    <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
-    <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button>
-    <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button>
-    ${amt('bloomscar')>0&&c.genome.shine[0]!==2&&c.genome.shine[1]!==2?`<button class="btn small" data-act="bloomscar" data-id="${c.id}">Bloomscar serum (${amt('bloomscar')})</button>`:''}
-    ${amt('serum')>0&&serumLocus(c)?`<button class="btn small" data-act="serum" data-id="${c.id}" title="Raises the weaker copy of its lowest gene by 1">Gene serum (${amt('serum')})</button>`:''}</div>
-  </div></article>`;
-}
 function viewRoster(){
   const F=[['all','All'],['evolve','Can evolve'],['wild','Wild'],['bred','Bred'],['unproven','Unproven'],['f','Female'],['m','Male'],['hybrid','Hybrids'],['idle','Idle']];
-  let list=S.creatures.slice();const f=ui.filter;
-  if(f==='evolve')list=list.filter(canEvolve);
-  if(f==='wild')list=list.filter(c=>c.origin==='wild');
-  if(f==='bred')list=list.filter(c=>c.origin==='bred');
-  if(f==='unproven')list=list.filter(c=>!c.proven);
-  if(f==='f')list=list.filter(c=>c.sex==='F');
-  if(f==='m')list=list.filter(c=>c.sex==='M');
-  if(f==='hybrid')list=list.filter(c=>c.type2);
-  if(f==='idle')list=list.filter(c=>whereIs(c).kind==='idle');
-  list.sort((a,b)=>b.level-a.level||typeTier(b)-typeTier(a));
+  const list=rosterList();
   return`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Roster · ${S.creatures.length} creatures</h2>
     <div class="filters">${F.map(([k,l])=>`<button class="tab" aria-selected="${ui.filter===k}" data-act="filter" data-k="${k}">${l}</button>`).join('')}</div></div>
     ${rosterBar()}
-    <p class="hint">Every species has its own evolution line. Each evolution changes its attack and ability and raises its stats. Bond grows from raids, feeding and training; stars unlock bonuses up to Last Stand at ★5.</p></section>
-    <div class="grid">${list.map(creCard).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
+    <p class="hint">Tap a creature to open its page: stats and what makes them, genes, work, its story, and everything you can do with it.</p></section>
+    <div class="cgrid">${list.map(c=>creatureCard(c,{list:'roster'})).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
 }
 
 function viewBreeding(){
@@ -260,6 +225,7 @@ function viewBreeding(){
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
       <label class="field">Mother ♀<select id="breedMom" data-act="mom">${opt(moms,ui.mom)}</select></label>
       <label class="field">Father ♂<select id="breedDad" data-act="dad">${opt(dads,ui.dad)}</select></label>
+      ${a||b?`<div class="cgrid two">${[a,b].filter(Boolean).map(p=>creatureCard(p,{ctx:p===a?'Mother: sets the species':'Father: weighs most in stats'})).join('')}</div>`:''}
     </div>${pred}
     <div class="row"><button class="btn primary" data-act="breed" ${can?'':'disabled'}>Lay an egg</button><span class="status">Incubator ${S.eggs.length}/${eggCap()}</span></div>
   </section>
@@ -418,11 +384,11 @@ function queueModal(html){if($('#modal').hidden&&!R)openModal(html);else modalQu
 function openChooser(slot){
   const cur=S.loadout.slots[slot];
   const list=S.creatures.filter(c=>c.id!==cur&&!expAway(c)).sort((a,b)=>b.level-a.level);
-  const items=list.map(c=>{const w=whereIs(c);const note=w.kind==='section'?`Leaves the ${SECTIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';const st=stats(c);
-    return`<button class="choice" data-act="pickslot" data-slot="${slot}" data-id="${c.id}">${spr(c,44)}<span style="min-width:0;flex:1"><span class="nm">${esc(c.name)} · ${sexSym(c.sex)} ${esc(formName(c))} Lv ${c.level} ${'★'.repeat(st.star)}</span><small>${c.hp}/${st.hp} HP · ${slot===2?'Passive: '+supportText(c):ABILITIES[st.abilId].name+' · '+ATTACKS[st.atkId].name}${c.proven?'':' · Unproven'}</small>${note?`<small style="color:var(--gold)">${note}</small>`:''}</span></button>`}).join('');
+  const items=list.map(c=>{const w=whereIs(c),st=stats(c);const note=w.kind==='section'?`Leaves the ${SECTIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';
+    return creatureCard(c,{act:'pickslot',data:{slot},ctx:`${slot===2?'Passive: '+esc(supportText(c)):ABILITIES[st.abilId].name+' · '+ATTACKS[st.atkId].name}${note?` · <b>${note}</b>`:''}`})}).join('');
   openModal(`<h2>${slot===2?'Slot 3: support or free':'Combat slot '+(slot+1)}</h2>
     ${slot===2?'<p class="hint">A support creature gives its passive but stays out of the fight until you swap it into slot 1 or 2. Leave the slot free if you plan to cage something.</p>':''}
-    <div class="choose-list">${slot===2?'<button class="choice" data-act="clearslot" data-slot="2"><span class="nm">Leave free for a capture</span></button>':''}${items||'<p class="empty">No other creatures.</p>'}</div>
+    <div class="choose-list cgrid">${slot===2?'<button class="choice" data-act="clearslot" data-slot="2"><span class="nm">Leave free for a capture</span></button>':''}${items||'<p class="empty">No other creatures.</p>'}</div>
     <div class="row"><button class="btn" data-act="close">Cancel</button></div>`);
 }
 function openNpc(id){
@@ -446,7 +412,7 @@ function openIntro(first){
 onMarket(()=>{if(!S)return;renderHeader();if(ui.tab==='exchange'&&!document.activeElement?.matches?.('input'))renderMain()});
 bindCharts(document);
 // The hideout, raid prep, roster, research, Codex, settings and Test Lab actions. Other screens register their own.
-onAct('tab',d=>{ui.tab=d.k;ui.sellId=null;ui.resetArm=false;ui.scrapArm=null;renderAll();window.scrollTo(0,0)});
+onAct('tab',d=>{ui.tab=d.k;ui.creature=null;ui.sellId=null;ui.resetArm=false;ui.scrapArm=null;renderAll();window.scrollTo(0,0)});
 onAct('filter',d=>{ui.filter=d.k;renderMain()});
 onAct('section',d=>{ui.section=d.k;HMAP.sel=d.k;if($('#secPanel'))renderSecPanel();else renderMain()});
 onAct('codex',d=>{ui.codex=d.k;renderMain()});
@@ -519,4 +485,4 @@ onChange('opthud',el=>{OPTS.hudAlpha=+el.value;saveOpts()});
 onInput('optr',el=>{OPTS[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();saveOpts()});
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act)inputted(el)});
 
-export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro};
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro};

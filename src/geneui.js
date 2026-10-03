@@ -75,8 +75,9 @@ function treeNode(id,counts){
   if(!e)return'<div class="tnode unknown"><span>Not recorded</span></div>';
   const live=!!byId(id),form=LINES[e.species]?(LINES[e.species][Math.min(e.stage||0,LINES[e.species].length-1)]||{}).name:SPECIES[e.species].name;
   const twice=counts[id]>1;
-  return`<div class="tnode${twice?' twice':''}" title="${twice?'Appears more than once in this tree':''}"><canvas class="spr" width="34" height="34" data-tree="${id}" aria-hidden="true"></canvas>
-    <div><b>${esc(e.name)}</b> <small>${sexSym(e.sex)}</small><br><small>${esc(form)} · ${e.origin==='wild'||!(e.gen)?'Wild':'Gen '+e.gen}${live?'':' · gone'}${twice?' · ↺':''}</small></div></div>`;
+  const tag=live?'button':'div',open=live?` data-act="creature" data-id="${id}"`:'';
+  return`<${tag} class="tnode${twice?' twice':''}${live?' live':''}"${open} title="${twice?'Appears more than once in this tree':live?'Open its page':''}"><canvas class="spr" width="34" height="34" data-tree="${id}" aria-hidden="true"></canvas>
+    <div><b>${esc(e.name)}</b> <small>${sexSym(e.sex)}</small><br><small>${esc(form)} · ${e.origin==='wild'||!(e.gen)?'Wild':'Gen '+e.gen}${live?'':' · gone'}${twice?' · ↺':''}</small></div></${tag}>`;
 }
 // Five generations: the creature, its parents, grandparents and so on, one column each.
 function treeHtml(c){

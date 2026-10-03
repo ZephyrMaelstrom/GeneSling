@@ -23,7 +23,7 @@ import {S,setS} from './state.js';
 import {adoptOpts} from './device.js';
 import {DEMO} from './flags.js';
 
-const SAVE_VERSION=15;
+const SAVE_VERSION=16;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
 const OWN=DEMO?NAMES.demo:NAMES.full;
@@ -86,6 +86,14 @@ const MIGRATIONS={
   // device's local storage, so a synced or restored save doesn't carry one phone's settings to another.
   // The first device to load the old save keeps its options, unless it already has its own.
   14:d=>{adoptOpts(d.opts);delete d.opts;return d},
+  // v16 (Creature pages): each creature keeps a short history (c.log) and counts its kills and extracts.
+  // Nothing was recorded before, so old creatures start with one line saying so; eggs start empty.
+  15:d=>{
+    const day=d.day||1;
+    (d.creatures||[]).forEach(c=>{c.log=c.log||[[day,'before','']];c.kills=c.kills||0;c.extracts=c.extracts||0});
+    (d.eggs||[]).forEach(e=>{const c=e.child;c.log=c.log||[];c.kills=c.kills||0;c.extracts=c.extracts||0});
+    return d;
+  },
 };
 
 function migrate(d){
