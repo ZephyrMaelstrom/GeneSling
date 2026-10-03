@@ -19,7 +19,7 @@ import {mixSeed,rand,withSeed} from './rng.js';
 import {pick,ri} from './util.js';
 import {cutFree,genomeFrom} from './genetics.js';
 import {amt,give,workUnit,rosterCap,buildPen} from './jobs.js';
-import {rollWildIn} from './bloom.js';
+import {rollWildIn,veinRich} from './bloom.js';
 import {story,chooseEnding,clearTier,nextTier,unboundOpen} from './endgame.js';
 import {gateOpen,catchupMul,veinBosses} from './balance.js';
 import {holdSaves} from './save.js';
@@ -161,7 +161,9 @@ function raid(b,day){
     reached=f;const loc=(f-1)%3,deep=f>=4?K.deep:1,kills=killsOn(f);
     kxp+=kills*2.5+(f===4?60:0)+(f===7&&!tier?ENDGAME.UNDERHEART.kxp:0);
     xp+=kills*(K.foe[loc]*.7+K.wild*.3)*deep;
-    const m=1+J.loot.perFloorMul*(f-1);coin+=ri(J.loot.coin[0],J.loot.coin[1])*m;ore+=J.loot.ore*m;food+=J.loot.food;
+    const m=1+J.loot.perFloorMul*(f-1),fv=f>=4&&f<=6&&!tier?plan.vein:null;coin+=ri(J.loot.coin[0],J.loot.coin[1])*m;
+    // What the vein is rich in, as in a real raid's pickups.
+    ore+=J.loot.ore*m*veinRich(fv,'ore');food+=J.loot.food*veinRich(fv,'food');if(rand()<veinRich(fv,'shards'))S.shards++;
     if(isBoss(f)||(tier&&f===9)){
       const vein=tier?'unbound':f<=3?'rootworks':f<=6?plan.vein:f<=9?'underheart':'heart';
       const id=f===9&&!tier?'ilsa':f===10?'heart':pick(BOSS_IDS.filter(x=>(BOSSES[x].vein||'rootworks')===vein))||null;

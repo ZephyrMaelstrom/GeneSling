@@ -14,7 +14,7 @@ import {express} from './genetics.js';
 import {caravanPay,catchable,caughtExtras,deathExtras,enterExtras,floorStart,moveMul,makeNoise,openVeinChoice,twistUpdate} from './veins.js';
 import {lordDamage,clearTier,onStoryBoss,ruleOn,tierLoot,deepeningSeed} from './endgame.js';
 import {enterUnderheart,lordShadows,openEndingChoice} from './veins.js';
-import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
+import {richAmount,veinRich,floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
 import {DEMO,tutorialDone} from './demo.js';
 import {lorePick,loreRoom,placeLore,restChest} from './lore.js';
@@ -216,7 +216,9 @@ const roleComp=(m,r)=>!!m&&!m.downed&&roleOf(m.c)===r;
 // Each slot holds BAG.stack of one material, or one print. Coin needs no room.
 const BAG_MATS=['ore','food','hide','dust','sap'];
 function bagUsed(){return BAG_MATS.reduce((a,m)=>a+Math.ceil((R.bag[m]||0)/JOBS.BAG.stack),0)+R.prints.length}
+// A pickup goes into the bag, scaled by what this floor's vein is rich in (Ember Abyss ore ×1.6).
 function bagAdd(mat,n,x,y){
+  n=richAmount(R.map&&R.map.plan&&R.map.plan.vein,mat,n);
   const st=JOBS.BAG.stack,have=R.bag[mat]||0,room=(st-have%st)%st+Math.max(0,R.bagCap-bagUsed())*st,add=Math.min(n,room);
   R.bag[mat]=have+add;
   if(add<n&&x!=null){float(x,y-28,'Bag full','#ff6688',true);if(!R.bagWarned){R.bagWarned=true;msg('Your bag is full. Extract to bank it, or bring a Hauler or a satchel next time.')}}
@@ -1102,9 +1104,11 @@ function takeLoot(it){
 function dropPrint(x,y){const ids=GUN_IDS.filter(k=>GUNS[k].tier>=JOBS.PRINTS.minTier);R.items.push({kind:'loot',id:'print',gun:pick(ids),x,y})}
 function openChest(r){
   r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*(R.fmods?R.fmods.coin:1)*(ruleOn(R.tier,'barren')?.5:1),rich=r.chest.rich;
-  if(f>=7&&rand()<(R.tier?BLOOM.VEINS.unbound.rich.relic:ENDGAME.UNDERHEART.relicChest)){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  if(f>=7&&rand()<veinRich(R.tier?'unbound':'underheart','relic')){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
   // In Act II the veins' old camps hold a few relics too, so the Archive's work can start before the Underheart.
   else if(f>=4&&f<=6&&!R.tier&&rand()<LORE.ARCHIVE.relicChestVeins){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  // The Hollow Choir's chests sometimes hold a memory shard.
+  const vein=R.map.plan&&R.map.plan.vein;if(rand()<veinRich(vein,'shards')){S.shards++;float(r.chest.x,r.chest.y-64,'+1 memory shard','#ff8fe0',true)}
   restChest(r);
   if(r.cache){const E=BLOOM.EVENTS.list.cache,c=Math.round(ri(E.coin[0],E.coin[1])*gm);R.bag.coin+=c;for(let k=0;k<E.prints;k++)dropPrint(r.chest.x+(k?40:-40),r.chest.y+40);msg(`An estate cache! ${c} coin and old blueprints.`)}
   const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3),xm=rand()<.5?'hide':'dust',xn=ri(1,3)+(rich?2:0);R.bag.coin+=coin;

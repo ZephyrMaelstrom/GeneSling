@@ -14,16 +14,12 @@
     },
     "relicBoss": {
      "type": "number"
-    },
-    "relicChest": {
-     "type": "number"
     }
    },
    "required": [
     "timeAdd",
     "kxp",
-    "relicBoss",
-    "relicChest"
+    "relicBoss"
    ],
    "additionalProperties": false
   },

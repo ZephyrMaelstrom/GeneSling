@@ -162,6 +162,13 @@ function bloomify(d){
   if(d.loadout)d.loadout.map=d.loadout.map??null;
   return d;
 }
-export {VEIN_IDS,DEEP,LAYOUT_IDS,EVENT_IDS,veinIdx,veinOfFloor,raidEvent,floorLayout,floorPlan,raidPlans,signature,seedKeys,bloomState,newBloom,pickRaidSeed,rememberSeed,
+/* ---------- what each vein is rich in ---------- */
+// VEINS[v].rich: a material's multiplier on what you pick up there (Ember Abyss ore ×1.6), or for shards
+// and relics, the chance a chest holds one. 1 (no bonus) when the vein names nothing.
+const veinRich=(vein,k)=>{const r=vein&&B.VEINS[vein]&&B.VEINS[vein].rich;return r&&r[k]!=null?r[k]:k==='shards'||k==='relic'?0:1};
+// n of a material scaled by the vein's richness, rounded up or down at random so 1 × 1.5 is 1 or 2, evenly.
+const richAmount=(vein,mat,n)=>{const x=n*veinRich(vein,mat),w=Math.floor(x);return w+(rand()<x-w?1:0)};
+
+export {veinRich,richAmount,VEIN_IDS,DEEP,LAYOUT_IDS,EVENT_IDS,veinIdx,veinOfFloor,raidEvent,floorLayout,floorPlan,raidPlans,signature,seedKeys,bloomState,newBloom,pickRaidSeed,rememberSeed,
   veinBlock,pickBoss,wildTypeWeight,rollWildIn,herdSpecies,contractOffers,takeContract,dropContract,rewardText,settleContract,mapBlock,craftMap,mapName,loadoutMap,useMap,
   varietyRun,bloomify};
