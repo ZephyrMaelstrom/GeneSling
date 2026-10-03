@@ -126,7 +126,7 @@ test('the Splicer, the Mutation Lab and the Apex Chamber', async () => {
     // Apex Chamber: two Apex carriers, a guaranteed pass on Vigor.
     const mom = makeCreature('pebblet', 'bred', 10, {sex: 'F', proven: true}), dad = makeCreature('pebblet', 'bred', 10, {sex: 'M', proven: true});
     mom.genome.vig = [11, 2]; dad.genome.vig = [3, 11]; mom.genome.pow = [11, 4]; dad.genome.pow = [11, 4]; express(mom); express(dad); S.creatures.push(mom, dad);
-    if (!secTier('nursery')) { const w = makeCreature('bastion', 'bred', 30); S.creatures.push(w); S.sections.nursery.ids.push(w.id); }
+    if (!stationLevel('nursery')) { const w = makeCreature('bastion', 'bred', 30); S.creatures.push(w); S.sections.nursery.ids.push(w.id); }
     S.pens = 30; S.eggs = []; ui.mom = String(mom.id); ui.dad = String(dad.id); ui.apexLocus = 'vig'; const shards = amt('apexshard');
     story().heart = true; S.coin += 100; S.food += 10; const laid = breed(); ui.apexLocus = '';
     out.chamber = laid && JSON.stringify(laid[0].genome.vig) === '[11,11]' && amt('apexshard') === shards - 1;
@@ -204,7 +204,7 @@ test('a v11 save loads into v12', async () => {
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, story: S.story, unbound: S.unbound.cleared, ribbons: S.creatures.every(c => Array.isArray(c.ribbons)), season: S.season.n}));
-  assert.deepEqual(s, {v: 16, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
+  assert.deepEqual(s, {v: 17, story: {ilsa: false, heart: false, ending: null, endings: {}}, unbound: 0, ribbons: true, season: 1});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

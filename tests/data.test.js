@@ -126,6 +126,27 @@ test('every id a table points at exists', () => {
   for (const k of Object.keys(lo.ARCS)) has('lore ARCS', {...st.NPCS, ...lo.RESIDENTS}, k);
   for (const [k, n] of Object.entries(st.NPCS)) has(`NPCS.${k}.home`, hd.SECTIONS, n.home);
   for (const [k, r] of Object.entries(lo.RESIDENTS)) has(`RESIDENTS.${k}.home`, PLACEABLE, r.home);
+  // Perks and flaws, and the station buildings.
+  const pk = D.perks, PK = pk.PERKS, FX = new Set(['out', 'tire', 'crewOut', 'crewTire', 'soloOut', 'settle', 'refuse', 'skip', 'lowBond', 'lowComfort', 'noFriend', 'clashLine', 'clashPers', 'clashType', 'noChem', 'allOut',
+    'heal', 'bondAll', 'make', 'comfort', 'eggSlots', 'hatchDays', 'mutation', 'hybrid', 'hatchBond', 'scrapOre', 'craftTier', 'reveal', 'keep', 'keepCoin', 'keepOre', 'playerHp', 'weaponDmg', 'buff', 'autoRevive',
+    'poisonRounds', 'poisonImmune', 'compHp', 'wildMul', 'bossDmg', 'kxp', 'dmg', 'hp', 'taken', 'move', 'food', 'xp', 'expItems']);
+  const kind = (id, k, where) => { has(where, PK, id); if (PK[id] && PK[id].kind !== k) bad.push(`${where}: "${id}" should be a ${k}`); };
+  for (const sp of BASE) has('perks LINES (every base species)', pk.LINES, sp);
+  for (const [line, [p, f, m]] of Object.entries(pk.LINES)) { has('perks LINES', sp.SPECIES, line); kind(p, 'perk', `LINES.${line}`); kind(f, 'flaw', `LINES.${line}`); kind(m, 'perk', `LINES.${line} mastery`); }
+  for (const h of HYB) has('perks HYBRIDS (every hybrid)', pk.HYBRIDS, h);
+  for (const [h, [a, b, f]] of Object.entries(pk.HYBRIDS)) { has('perks HYBRIDS', new Set(HYB), h); has(`HYBRIDS.${h}`, pk.LINES, a); has(`HYBRIDS.${h}`, pk.LINES, b); kind(f, 'flaw', `HYBRIDS.${h}`); }
+  for (const p of Object.keys(cr.PERS)) { has('perks PERSONALITY', pk.PERSONALITY, p); }
+  for (const [p, [a, f]] of Object.entries(pk.PERSONALITY)) { kind(a, 'perk', `PERSONALITY.${p}`); kind(f, 'flaw', `PERSONALITY.${p}`); }
+  for (const [id, p] of Object.entries(PK)) {
+    if (p.at === 'station') [].concat(p.st).forEach(k => k !== 'any' && has(`PERKS.${id}.st`, hd.SECTIONS, k));
+    for (const k of Object.keys(p.fx)) has(`PERKS.${id}.fx`, FX, k);
+    if (p.fx.clashPers) p.fx.clashPers.forEach(x => has(`PERKS.${id}.clashPers`, cr.PERS, x));
+    if (p.fx.clashType) has(`PERKS.${id}.clashType`, sp.TYPES, p.fx.clashType);
+    if (p.fx.make) Object.keys(p.fx.make).forEach(m => has(`PERKS.${id}.make`, GOODS, m));
+  }
+  for (const k of Object.keys(hd.SECTIONS)) { has('BUILDINGS.levels (every station)', pk.BUILDINGS.levels, k); if (pk.BUILDINGS.cost.length <= pk.BUILDINGS.levels[k].length) bad.push(`BUILDINGS.cost has no price for ${k}'s top level`); }
+  for (const c of pk.BUILDINGS.cost.slice(2)) Object.keys(c).filter(m => m !== 'rank').forEach(m => has('BUILDINGS.cost', GOODS, m));
+  for (const m of Object.values(dg.MODES)) if (m.need[1] > pk.BUILDINGS.levels[m.need[0]].length) bad.push(`MODES ${m.name} needs a level the ${m.need[0]} doesn't have`);
   assert.ok(VEINS.length >= 9 && TYPES.length >= 9);
   assert.deepEqual(bad, []);
 });

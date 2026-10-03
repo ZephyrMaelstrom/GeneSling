@@ -117,10 +117,10 @@ test('a v14 save loads as v15: its options move to a device that has none, and n
     if (!localStorage.getItem('genesling-save')) localStorage.setItem('genesling-save', JSON.stringify(d));
   }, old)});
   const a = await p2.evaluate(() => ({v: S.v, opts: 'opts' in S, hand: OPTS.hand, vol: OPTS.vol, music: OPTS.music}));
-  assert.deepEqual(a, {v: 16, opts: false, hand: 'left', vol: 0.3, music: 0});
+  assert.deepEqual(a, {v: 17, opts: false, hand: 'left', vol: 0.3, music: 0});
   // A device with its own options keeps them.
   const b = await p2.evaluate(old => { OPTS.hand = 'right'; saveOpts(); const d = migrate({...old, opts: {...old.opts, hand: 'left'}}); return {v: d.v, opts: 'opts' in d, hand: OPTS.hand}; }, old);
-  assert.deepEqual(b, {v: 16, opts: false, hand: 'right'});
+  assert.deepEqual(b, {v: 17, opts: false, hand: 'right'});
   assert.deepEqual(e2, []);
   await context.close();
   assert.deepEqual(errors, []);

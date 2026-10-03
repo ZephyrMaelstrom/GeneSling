@@ -19,7 +19,7 @@
       "act": 2,
       "name": "the veins",
       "rank": 10,
-      "stations": {"n": 3, "tier": 2}
+      "stations": {"n": 3, "level": 2, "workers": 2}
     },
     "underheart": {"floor": 6, "act": 3, "name": "the Underheart", "rank": 25, "veinBosses": 2, "cutFree": 1},
     "heart": {"floor": 9, "act": 4, "name": "the Heart", "rank": 40, "cutFreeParty": 3}
@@ -67,6 +67,8 @@
     "fillOffType": 3,
     "marketMarkup": 1.1,
     "penReserve": 3,
+    "buildOrder": ["garden", "nursery", "forge", "training", "spring", "vault", "warroom", "roost", "apothecary"],
+    "buildReserve": 1.5,
     "acts": {"act4": "heart gate open after Ilsa"}
   },
   "BOSS_XP": {"repeat": 0.4},

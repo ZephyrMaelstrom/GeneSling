@@ -2,7 +2,7 @@
 import {rand} from './rng.js';
 import {emit} from './events.js';
 import {clamp,pick} from './util.js';
-import {PERS,BALANCE,ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
+import {PERS,BALANCE,ENDGAME,PRIDE,ARMORY_TH,BASE_SPECIES,BOND_TH,BOSS_IDS,EXCHANGE_DATA,FOE_IDS,GENES,GENETICS,GUNS,JOURNAL,KEEPER_PERKS,LINES,MODES,NPCS,NPC_IDS,PERS_IDS,RESEARCH,RES_COST,SECTIONS,SECTION_IDS,PERKS_DATA,SPECIES,TRAITS,TYPES,hybridFor,makeName,rollTraits,typesOf} from './content.js';
 import {SAVE_VERSION,save} from './save.js';
 import {sfx} from './audio.js';
 import {renderAll} from './ui.js';
@@ -12,8 +12,10 @@ import {DEMO} from './flags.js';
 import {bloomify} from './bloom.js';
 import {applyChamber,chamberBlock,endgameDay,endgamify,mutlabBonus} from './endgame.js';
 import {STORY_STATS,lorify} from './lore.js';
-import {pay,give,expAway,fatigueMul,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
+import {pay,give,expAway,itemName,mouths,newItem,passLegacy,rosterCap,rosterCount,runStations,tickExpeditions,tickFatigue} from './jobs.js';
 import {logEvent,logHatch} from './history.js';
+import {hideoutFx,homeFx} from './perks.js';
+import {newBuildings,stationLevel} from './buildings.js';
 let S=null;
 const setS=v=>{S=v};
 let ui={tab:'raid',section:'forge',filter:'all',sellId:null,resetArm:false,mom:'',dad:'',scrapArm:null,codex:'creatures',dexType:'ember',
@@ -44,7 +46,7 @@ function makeCreature(species,origin,level,o={}){
     proven:!wild||!!o.proven,stage:o.stage||0,pers:o.pers||pick(PERS_IDS),
     genome:makeGenome(wild,o),
     level:level||1,xp:0,bondXp:o.bondXp!=null?o.bondXp:(wild?0:30),gen:o.gen||0,raids:0,
-    captureRaid:o.captureRaid!=null?o.captureRaid:-1,mom:o.mom??null,dad:o.dad??null,pure:o.pure||1,bred:0,kills:0,extracts:0,log:[]};
+    captureRaid:o.captureRaid!=null?o.captureRaid:-1,mom:o.mom??null,dad:o.dad??null,pure:o.pure||1,bred:0,kills:0,extracts:0,log:[],days:{}};
   express(c);c.hp=stats(c).hp;return c;
 }
 const bondStar=c=>BOND_TH.filter(t=>(c.bondXp||0)>=t).length;
@@ -83,7 +85,7 @@ function statParts(c){
 }
 const xpNeed=c=>25*c.level;
 function gainXp(c,amt){
-  c.xp+=Math.round(amt*(c.pers==='playful'?1.2:1));let ups=0;
+  c.xp+=Math.round(amt*(c.pers==='playful'?1.2:1)*(1+homeFx(c).xp));let ups=0;
   while(c.xp>=xpNeed(c)&&c.level<40){c.xp-=xpNeed(c);c.level++;ups++}
   if(ups)c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.1*ups));
   return ups;
@@ -109,7 +111,7 @@ function grantBonusSlot(c){
 function newGame(){
   const secs={};SECTION_IDS.forEach(k=>secs[k]={cap:3,ids:[]});
   S={v:SAVE_VERSION,day:1,coin:200,food:24,ore:8,shards:0,cages:{basic:3,gilded:0},blueprints:{revolver:1,scatter:1,dagger:1,sword:1},
-    creatures:[],eggs:[],sections:secs,armory:0,keeper:{level:1,xp:0},progress:{bosses:{},deepest:0,memories:{}},modes:{},research:{combat:0,capture:0,breeding:0,economy:0,bond:0},
+    creatures:[],eggs:[],sections:secs,buildings:newBuildings(),armory:0,keeper:{level:1,xp:0},progress:{bosses:{},deepest:0,memories:{}},modes:{},research:{combat:0,capture:0,breeding:0,economy:0,bond:0},
     dex:{forms:{},foes:{},claimed:0},npc:{},journalRead:0,tutorialDone:false,introSeen:false,memorial:[],
     loadout:{guns:[null,null],slots:[null,null,null],satchel:null,tonics:0,map:null},
     stats:{raids:0,extracts:0,deaths:0,lost:0,captures:0,hybrids:0,bossKills:0,weaponsHome:0,scrapped:0,meleeKills:0,secrets:0,reactions:0,eggs:0,evolutions:0,hybridsHatched:0,combos:0},log:[],
@@ -178,31 +180,39 @@ function giveReward(r){
 /* ---------- NPCs ---------- */
 // Story counts (relics read, walls copied, pages found, Ilsa freed, an ending chosen, the deepest generation) are always absolute.
 function npcStat(q){if(STORY_STATS[q.stat])return STORY_STATS[q.stat]();return q.abs?(q.stat==='deepest'?S.progress.deepest||0:S.stats[q.stat]||0):S.stats[q.stat]||0}
-function npcArrives(a){return !!(a.always||(a.keeper!=null&&S.keeper.level>=a.keeper)||(a.deepest!=null&&(S.progress.deepest||0)>=a.deepest)||(a.section&&secTier(a.section)>=a.tier))}
+function npcArrives(a){return !!(a.always||(a.keeper!=null&&S.keeper.level>=a.keeper)||(a.deepest!=null&&(S.progress.deepest||0)>=a.deepest)||(a.section&&stationLevel(a.section)>=a.tier))}
 function syncNpcs(){const arrived=[];for(const id of NPC_IDS){if(S.npc[id])continue;if(npcArrives(NPCS[id].arrive)){const q=NPCS[id].quests[0];S.npc[id]={q:0,base:npcStat(q),met:false};arrived.push(id)}}return arrived}
 function npcQuest(id){const st=S.npc[id];if(!st)return null;const q=NPCS[id].quests[st.q];if(!q)return null;const v=q.abs?npcStat(q):npcStat(q)-st.base;return{q,v:Math.min(v,q.n),done:v>=q.n}}
 function npcAttention(id){const st=S.npc[id];if(!st)return false;if(!st.met)return true;const p=npcQuest(id);return!!(p&&p.done)}
 function npcTurnIn(id){const p=npcQuest(id);if(!p||!p.done)return null;const st=S.npc[id];const got=giveReward(p.q.reward);st.q++;const nq=NPCS[id].quests[st.q];if(nq)st.base=npcStat(nq);addLog(`${NPCS[id].name}: quest complete. Received ${got}.`);return got}
 
 /* ---------- sections ---------- */
+const BUILD=PERKS_DATA.BUILDINGS;
+// Before the day's work: note who was just posted somewhere new (for Slow Start, Stubborn, Creature of Habit).
+function notePostings(){for(const c of S.creatures){const w=whereIs(c);if(w.kind==='section'&&(!c.posted||c.posted.k!==w.key))c.posted={k:w.key,n:0};else if(w.kind!=='section')c.posted=null}}
+// Each day: days worked at each station (for the earned "-hand" perks), days off, and Burnt Out clearing.
+function dayCounts(){
+  const E=PERKS_DATA.EARNED;
+  for(const c of S.creatures){
+    const w=whereIs(c);
+    if(w.kind==='section'){c.days=c.days||{};c.days[w.key]=(c.days[w.key]||0)+1;c.offDays=0;if(c.posted&&c.posted.k===w.key)c.posted.n++;if(c.days[w.key]===E.hand.days)logEvent(c,'title',PERKS_DATA.PERKS['hand_'+w.key].name)}
+    else{c.offDays=(c.offDays||0)+1;if(c.burnt&&c.offDays>=E.burntout.clearOff){c.burnt=false;logEvent(c,'recovered','')}}
+  }
+}
 const sectionUnlocked=k=>!SECTIONS[k].unlock||S.keeper.level>=SECTIONS[k].unlock;
 const slotBonus=()=>(S.keeper.level>=7?1:0)+(S.keeper.level>=12?1:0);
 const secCap=k=>Math.min(10,S.sections[k].cap+slotBonus());
-function secContribution(c,k){
-  const sec=SECTIONS[k];let aff=1;
-  if(sec.type){aff=c.type===sec.type?2:c.type2===sec.type?1.6:.6}
-  return(5+c.level*1.6+c.genes[sec.gene]*1.5)*aff*(c.traits.includes('worker')?1.5:1)*(1+.1*(c.stage||0))*fatigueMul(c);
-}
-const secScore=k=>S.sections[k].ids.map(byId).filter(Boolean).reduce((a,c)=>a+secContribution(c,k),0);
-const secTier=k=>{if(!S||!sectionUnlocked(k))return 0;const s=secScore(k);return SEC_TH.filter(t=>s>=t).length};
 const expandCost=k=>({coin:40*S.sections[k].cap,ore:4*S.sections[k].cap});
 const sectionUnlockedArmory=()=>S.keeper.level>=3;
 const armoryTier=()=>sectionUnlockedArmory()?ARMORY_TH.filter(t=>S.armory>=t).length:0;
-function weaponDmgMul(){const a=armoryTier();return(a>=5?1.2:a>=3?1.1:a>=1?1.05:1)*(secTier('forge')>=5?1.1:1)*(secTier('warroom')>=3?1.1:1)*(res('combat',1)?1.08:1)*(1+perk('dmg'))}
+// Posted creatures add weapon damage too (Drill Sergeant at the War Room, Forgemaster at the Forge).
+function weaponDmgMul(){const a=armoryTier();return(a>=5?1.2:a>=3?1.1:a>=1?1.05:1)*(1+hideoutFx().weaponDmg)*(res('combat',1)?1.08:1)*(1+perk('dmg'))}
 const cageCap=()=>3+(S.keeper.level>=5?1:0)+(S.keeper.level>=9?1:0)+(armoryTier()>=2?1:0)+(res('capture',0)?1:0);
-const eggCap=()=>[0,1,2,2,2,3][secTier('nursery')]+(res('breeding',3)&&secTier('nursery')?1:0);
-const modeUnlocked=m=>{const[k,t]=MODES[m].need;return secTier(k)>=t};
-const canCraft=id=>{const g=GUNS[id];return g.tier>=1&&!!S.blueprints[id]&&secTier('forge')>=[0,1,2,4,5][g.tier]};
+const eggCap=()=>{const t=stationLevel('nursery');return t?BUILD.eggCap[t]+hideoutFx().eggSlots+(res('breeding',3)?1:0):0};
+const modeUnlocked=m=>{const[k,t]=MODES[m].need;return stationLevel(k)>=t};
+// The Forge's level sets the highest weapon tier it can make; a Crucible at work there adds one.
+const forgeTier=()=>{const t=stationLevel('forge');return t?Math.min(4,BUILD.craftTier[t]+hideoutFx().craftTier):0};
+const canCraft=id=>{const g=GUNS[id];return g.tier>=1&&!!S.blueprints[id]&&g.tier<=forgeTier()};
 const priceMul=()=>res('economy',1)?.8:1;
 
 /* ---------- keeper rank ---------- */
@@ -231,7 +241,7 @@ function expeditionEgg(team){
   const ch=makeCreature(sp,'bred',1,{genome:rollGenome(rand,'wild',5)});recordLineage(ch);
   S.eggs.push({id:ch.id,days:2,child:ch,cols:[SPECIES[sp].col,'#9fe8ff'],parents:'an expedition nest',hybrid:false});
 }
-function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(isApex(c.genome))S.renownLog.apex=(S.renownLog.apex||0)+1;if(perk('bond'))c.bondXp=(c.bondXp||0)+perk('bond');if(grantBonusSlot(c))express(c);S.creatures.push(c);logHatch(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
+function hatchEgg(e){addKeeperXp(EXCHANGE_DATA.KEEPER_XP.hatch);const c=e.child;if(isApex(c.genome))S.renownLog.apex=(S.renownLog.apex||0)+1;if(perk('bond'))c.bondXp=(c.bondXp||0)+perk('bond');if(grantBonusSlot(c))express(c);if(hideoutFx().hatchBond)c.bondXp=(c.bondXp||0)+hideoutFx().hatchBond;S.creatures.push(c);logHatch(c);dexForm(e.child.species,e.child.stage||0,'owned');if(e.child.type2)bump('hybridsHatched')}
 function processDay(){
   S.day++;const notes=[];pruneTree();
   const trainees=S.sections.training.ids.length;
@@ -242,17 +252,21 @@ function processDay(){
   S.food+=perk('food');
   // Venom legends brew a little serum every day.
   if(perk('serum')){const k='legend:serum',v=(S.prod[k]||0)+perk('serum'),n=Math.floor(v+1e-9);S.prod[k]=v-n;if(n)give('serum',n)}
-  runStations(notes);
+  notePostings();runStations(notes);
   tickExpeditions(notes,expeditionEgg);
   tickFatigue();
-  const sp=secTier('spring');
-  S.creatures.forEach(c=>{const m=stats(c).hp;c.hp=sp>=2?m:Math.min(m,Math.round(c.hp+m*(sp>=1?.5:.35)))});
-  if(sp>=3)S.creatures.forEach(c=>addBond(c,5));
-  const tt=secTier('training'),txp=[20,30,45,60,75,100][tt];let lvls=0;
+  // The Spring heals by its level (35% with nobody posted), more with Healer's Touch; Dawn Song adds bond to everyone.
+  const fx=hideoutFx(),heal=Math.min(1,BUILD.springHeal[stationLevel('spring')]*(1+fx.heal));
+  S.creatures.forEach(c=>{const m=stats(c).hp;c.hp=heal>=1?m:Math.min(m,Math.round(c.hp+m*heal))});
+  if(fx.bondAll)S.creatures.forEach(c=>addBond(c,fx.bondAll));
+  // What posted creatures make on their own (Ploughman's food, Bloom Cure's serum), fractions carried over.
+  for(const [m,n] of Object.entries(fx.make)){const k='perk:'+m,v=(S.prod[k]||0)+n,w=Math.floor(v+1e-9);S.prod[k]=v-w;if(w)give(m,w)}
+  dayCounts();
+  const tt=stationLevel('training'),txp=BUILD.trainingXp[tt];let lvls=0;
   S.sections.training.ids.map(byId).filter(Boolean).forEach(c=>{lvls+=gainXp(c,txp);addBond(c,4)});
   if(trainees)notes.push(`Trainees earned ${txp} XP each${lvls?` (${lvls} level-up${lvls>1?'s':''})`:''}.`);
   for(const k in S.sections){if(k==='training')continue;S.sections[k].ids.map(byId).filter(Boolean).forEach(c=>gainXp(c,6))}
-  if(secTier('nursery')){
+  if(stationLevel('nursery')){
     const hatched=[];
     S.eggs.forEach(e=>{e.days--;if(e.days<=0){hatchEgg(e);hatched.push(e.child)}});
     S.eggs=S.eggs.filter(e=>e.days>0);
@@ -267,7 +281,7 @@ function passDay(){processDay();emit('day:passed')}
 
 /* ---------- breeding rules ---------- */
 // Extra mutation chance per gene from research and the Nursery.
-const mutBonus=()=>(res('breeding',0)?GENETICS.MUTATION.research:0)+(secTier('nursery')>=4?GENETICS.MUTATION.nursery:0)+mutlabBonus();
+const mutBonus=()=>(res('breeding',0)?GENETICS.MUTATION.research:0)+(stationLevel('nursery')?hideoutFx().mutation:0)+mutlabBonus();
 const breedsLeft=c=>c.traits.includes('shortlived')?Math.max(0,GENETICS.SHORT_LIVED_BREEDS-(c.bred||0)):Infinity;
 // Why a pair can't breed, or '' if they can.
 function breedBlock(mom,dad){
@@ -309,7 +323,7 @@ function hatchNotes(c){
 /* ---------- breeding ---------- */
 function hybridChance(mom,dad){
   if(SPECIES[mom.species].hybrid||SPECIES[dad.species].hybrid)return{id:null,p:0};
-  const id=hybridFor(mom.type,dad.type),t=secTier('nursery');return{id,p:id?(t>=5?.2:t>=4?.15:.1)+(res('breeding',2)?.05:0):0};
+  const id=hybridFor(mom.type,dad.type),t=stationLevel('nursery');return{id,p:id?BUILD.hybridOdds[t]+(t?hideoutFx().hybrid:0)+(res('breeding',2)?.05:0):0};
 }
 // Lays one clutch (one egg, two with Twin Eggs). Returns the eggs laid, or null.
 function breed(){
@@ -320,7 +334,7 @@ function breed(){
 // The breeding itself, with no sound, saving or redraw (the Journey Simulator calls it directly).
 function layEgg(mom,dad){
   if(breedBlock(mom,dad))return null;
-  const t=secTier('nursery');
+  const t=stationLevel('nursery');
   if(!t||S.coin<20||S.food<3||S.eggs.length>=eggCap())return null;
   S.coin-=20;S.food-=3;
   recordLineage(mom);recordLineage(dad);
@@ -337,7 +351,7 @@ function layEgg(mom,dad){
     // The Apex Chamber: a guaranteed pass of both parents' better allele on one gene, for the first egg.
     if(i===0&&ui.apexLocus&&!chamberBlock(mom,dad)){pay(ENDGAME.TOOLS.apex.cost);applyChamber(child,mom,dad,ui.apexLocus);child.birth.chamber=ui.apexLocus}
     recordLineage(child);
-    const days=Math.max(1,(t>=3?1:2)-(res('breeding',1)?1:0));
+    const days=Math.max(1,BUILD.hatchDays[t]-hideoutFx().hatchDays-(res('breeding',1)?1:0));
     S.eggs.push({id:child.id,days,child,cols:[SPECIES[mom.species].col,SPECIES[dad.species].col],parents:mom.name+' and '+dad.name,hybrid:isHybrid});
     bump('eggs');if(isHybrid)S.stats.hybrids++;laid.push(child);
   }
@@ -347,4 +361,4 @@ function layEgg(mom,dad){
   return laid;
 }
 
-export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,statParts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,secContribution,secScore,secTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,passDay,hybridChance,breed,layEgg};
+export {S,setS,ui,makeGenome,grantBonusSlot,mutBonus,breedsLeft,breedBlock,recordLineage,lineage,inbred,pruneTree,hatchNotes,LOCUS_NAME,lineOf,formOf,nextForm,formName,wildStageFor,makeCreature,bondStar,addBond,stats,xpNeed,gainXp,canEvolve,evolveCost,evolve,statParts,newGame,addLog,bump,byId,whereIs,unplace,killCreature,typeTier,sellValue,sexSym,abilType,supportText,res,researchCost,buyResearch,dexForm,dexFoe,dexScore,DEX_MILES,DEX_TOTAL,giveReward,npcStat,npcArrives,syncNpcs,npcQuest,npcAttention,npcTurnIn,sectionUnlocked,slotBonus,secCap,forgeTier,expandCost,sectionUnlockedArmory,armoryTier,weaponDmgMul,cageCap,eggCap,modeUnlocked,canCraft,priceMul,keeperNeed,addKeeperXp,hatchEgg,processDay,passDay,hybridChance,breed,layEgg};

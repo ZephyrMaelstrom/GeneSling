@@ -46,14 +46,14 @@ test('the act gates hold the portals until rank, stations and creatures are read
     R.p.x = br.cx + 80; R.p.y = br.cy; R.stairT = 1.19; await sleep(200);
     const blocked = !R.paused && /won't open yet/.test(R.msg), paceGate = S.telemetry.pace.gates.veins.blocked != null;
     endQuiet();
-    S.keeper.level = 10; for (const k of ['forge', 'garden', 'spring']) { S.sections[k].ids = []; for (let i = 0; i < 4; i++) { const c = makeCreature(BASE_SPECIES.find(sp => SPECIES[sp].type === SECTIONS[k].type), 'bred', 20); S.creatures.push(c); S.sections[k].ids.push(c.id); } }
+    S.keeper.level = 10; for (const k of ['forge', 'garden', 'spring']) { S.sections[k].ids = []; S.buildings[k] = 2; for (let i = 0; i < 4; i++) { const c = makeCreature(BASE_SPECIES.find(sp => SPECIES[sp].type === SECTIONS[k].type), 'bred', 20); S.creatures.push(c); S.sections[k].ids.push(c.id); } }
     const v1 = gateOpen('veins');
     const uh = gateNeeds('underheart').map(x => x.ok), heart = gateBlockText('heart');
     labEndgame(); const after = ['veins', 'underheart', 'heart'].map(k => gateOpen(k));
     return {v0, needs, blocked, paceGate, v1, uh, heart, after};
   });
   assert.equal(r.v0, false);
-  assert.ok(r.needs.some(t => /Keeper rank 10/.test(t)) && r.needs.some(t => /3 stations at tier 2/.test(t)));
+  assert.ok(r.needs.some(t => /Keeper rank 10/.test(t)) && r.needs.some(t => /3 stations at level 2 with 2 workers/.test(t)));
   assert.equal(r.blocked, true, 'Floor 3’s portal explains what is missing instead of opening');
   assert.equal(r.paceGate, true, 'the wait is recorded for the playtest');
   assert.equal(r.v1, true);
@@ -121,6 +121,6 @@ test('the playtest pace notes when each act opened', async () => {
 
 test('a v13 save loads as v14 with a start date', async () => {
   const r = await run(() => { const d = migrate({...JSON.parse(JSON.stringify(S)), v: 13, startedAt: undefined}); return {v: d.v, started: typeof d.startedAt}; });
-  assert.deepEqual(r, {v: 16, started: 'number'});
+  assert.deepEqual(r, {v: 17, started: 'number'});
   assert.deepEqual(errors, []);
 });

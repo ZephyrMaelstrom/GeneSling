@@ -51,11 +51,12 @@ test('Keeper rank stops at 10 and the portal below the Rootworks stays shut', as
 test('meeting Act I’s goals shows the end of the demo once', async () => {
   const r = await page.evaluate(() => {
     closeModal();
-    for (const k in S.sections) S.sections[k].ids = [];   // starter workers' rolled genes can already reach tier 2
+    for (const k in S.sections) S.sections[k].ids = [];
     const before = demoComplete();
     for (const k of ['forge', 'garden', 'spring']) {
       const sp = BASE_SPECIES.find(s => SPECIES[s].type === SECTIONS[k].type);
       for (let i = 0; i < 2; i++) { const c = makeCreature(sp, 'bred', 30); S.creatures.push(c); S.sections[k].ids.push(c.id); }
+      S.buildings[k] = 2;   // Act I's goal: three stations built to level 2, with two workers each
     }
     S.pens = 10;
     const goals = demoGoals().map(g => g.v >= g.n), detail = demoGoals();

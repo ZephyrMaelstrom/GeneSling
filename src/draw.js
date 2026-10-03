@@ -2,7 +2,7 @@
 import {$,TOUCH,clamp,dist,esc,fxRnd} from './util.js';
 import {LORE,ABILITIES,BUFFS,CURSES,ELEM,GUNS,ROOM_MODS,SPECIES,TYPES,comboFor} from './content.js';
 import {loadSave,migrate,save} from './save.js';
-import {S,formName,newGame,secTier,setS,sexSym,stats,supportText} from './state.js';
+import {S,formName,newGame,setS,sexSym,stats,supportText} from './state.js';
 import {itemName} from './jobs.js';
 import {OL,drawCreature,paintSprites} from './sprites.js';
 import {auVol,sfx} from './audio.js';
@@ -108,7 +108,7 @@ function draw(){
     // Sealed for good (a gauntlet's way back, a sinkhole): rubble, not the red bars of a fight.
     if(r.sealed){r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#4a3e30';g.fillRect(x,y,TS,TS);g.fillStyle='#6e5c45';g.fillRect(x+3,y+4,12,10);g.fillRect(x+16,y+14,13,12);g.fillStyle='#2e261d';g.fillRect(x+6,y+20,8,7)});return}
     r.doors.forEach(i=>{const x=(i%M.W)*TS,y=Math.floor(i/M.W)*TS;g.fillStyle='#5a1d33';g.fillRect(x,y,TS,TS);g.fillStyle='#ff6688';for(let k=4;k<TS;k+=9)g.fillRect(x+k,y,3,TS);g.fillRect(x,y,TS,3)})});
-  if(R.heardCrack||S.settings.reveal||secTier('roost')>=3||R.scout){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
+  if(R.heardCrack||S.settings.reveal||(R.pfx&&R.pfx.reveal.doors)||R.scout){for(const[i]of M.cracks){const x=(i%M.W+.5)*TS,y=(Math.floor(i/M.W)+.5)*TS;g.globalAlpha=.35+.3*Math.sin(t*5+i);g.fillStyle='#ffcf4a';g.beginPath();g.arc(x+Math.sin(t*3+i)*6,y+Math.cos(t*2+i)*6,2.5,0,7);g.fill();g.globalAlpha=1}}
   g.font='600 12px "Pixelify Sans", monospace';g.textAlign='center';
   M.rooms.forEach(r=>{
     if(r.hidden)return;   // a secret room shows nothing (not even its chest) until its wall is broken
@@ -264,7 +264,7 @@ function drawMini(){
     if(r.mod&&r.visited){g.fillStyle=ROOM_MODS[r.mod].col;g.fillRect(x+box-10,y+box-10,10,10)}
     if(r.locked){g.strokeStyle='#ff6688';g.lineWidth=3;g.strokeRect(x,y,box,box)}
     g.globalAlpha=1;g.fillStyle=OL;if(lab[r.kind])g.fillText(lab[r.kind],x+box/2,y+box/2+1);
-    if((secTier('roost')>=2||R.scout)&&r.plan&&!r.cleared&&r.plan.wilds.some(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3)){g.fillStyle='#fff';g.fillText('*',x+box-6,y+8)}
+    if(((R.pfx&&R.pfx.reveal.rare)||R.scout)&&r.plan&&!r.cleared&&r.plan.wilds.some(s=>SPECIES[s].w===1||TYPES[SPECIES[s].type].tier>=3)){g.fillStyle='#fff';g.fillText('*',x+box-6,y+8)}
     if(r===R.cur){g.strokeStyle='#fff';g.lineWidth=3;g.strokeRect(x-3,y-3,box+6,box+6)}
   });
   g.textBaseline='alphabetic';

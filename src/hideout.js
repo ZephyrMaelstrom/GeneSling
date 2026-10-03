@@ -14,6 +14,7 @@ import {PRIDE as P,SECTION_IDS,BOSSES,EXCHANGE_DATA} from './content.js';
 import {S,addLog,addKeeperXp,bondStar,formName,recordLineage,unplace,whereIs} from './state.js';
 import {canPay,costText,expAway,itemByUid,itemName,makerText,pay,scrapItem} from './jobs.js';
 import {logEvent} from './history.js';
+import {hideoutFx,setHideoutHooks} from './perks.js';
 
 const G=P.GRID;
 
@@ -114,7 +115,8 @@ function comfortPoints(){
   return pts;
 }
 // Comfort as a fraction, 0 to 0.2: fatigue rises that much slower and bond grows that much faster.
-const comfort=()=>S&&S.layout?Math.min(P.COMFORT.cap,comfortPoints()*P.COMFORT.perPoint):0;
+// Creatures add Comfort too (Sunlamp at the Garden, Aurora, a Playful creature off duty).
+const comfort=()=>S&&S.layout?Math.min(P.COMFORT.cap,(comfortPoints()+hideoutFx().comfort)*P.COMFORT.perPoint):0;
 
 /* ---------- creature life ---------- */
 // The hideout's own clock, for show only: a full day every LIFE.dayLength seconds of looking at it.
@@ -129,6 +131,8 @@ function recordShared(ids){
 const sharedRaids=(a,b)=>S.friends[pairKey(a.id,b.id)]||0;
 const areFriends=(a,b)=>sharedRaids(a,b)>=P.LIFE.friendRaids&&bondStar(a)>=P.LIFE.friendBond&&bondStar(b)>=P.LIFE.friendBond;
 const friendsOf=c=>S.creatures.filter(o=>o!==c&&areFriends(c,o));
+// The perk engine asks about Comfort (Distractible) and friends (Needs a Friend) through these.
+setHideoutHooks(()=>S&&S.layout?Math.min(P.COMFORT.cap,comfortPoints()*P.COMFORT.perPoint):0,areFriends);
 // Who is home and off duty (idle, or in the loadout), and what each is doing at this time of day:
 // {state:'sleep', den} in a den (den null when every den is full), {state:'follow', friend}, or {state:'play'}.
 function lifePlan(ph){

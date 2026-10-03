@@ -88,5 +88,5 @@
     "shortlived"
   ],
   "HISTORY": {"max": 24, "nearDeath": 0.15, "text": {"before": "Came with you from before the records began.",
- "start": "Was waiting for you at Ilsa’s hideout.", "caught": "Caught on {x}.", "hatched": "Hatched, the child of {x}.", "evolved": "Evolved into {x}.", "boss": "Was there when {x} fell, and came home.", "child": "{x} hatched: one of its children.", "title": "Earned the title {x}.", "neardeath": "Came home from {x} with almost nothing left.", "expedition": "Came back from the {x}."}}
+ "start": "Was waiting for you at Ilsa’s hideout.", "caught": "Caught on {x}.", "hatched": "Hatched, the child of {x}.", "evolved": "Evolved into {x}.", "boss": "Was there when {x} fell, and came home.", "child": "{x} hatched: one of its children.", "title": "Earned the title {x}.", "neardeath": "Came home from {x} with almost nothing left.", "expedition": "Came back from the {x}.", "burnt": "Burnt out from overwork.", "recovered": "Rested off its burnout."}}
 }

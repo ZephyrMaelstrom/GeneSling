@@ -5,7 +5,7 @@
    Build mode (HMAP.build) overlays the grid: tap a thing to pick it up, tap a tile to set it down. */
 import {$,fxRnd,fxPick} from './util.js';
 import {NPCS,NPC_IDS,RES_IDS,SECTIONS,BOSSES,PRIDE as P,GUNS} from './content.js';
-import {S,byId,npcAttention,secTier,sectionUnlocked,syncNpcs,ui} from './state.js';
+import {S,byId,npcAttention,sectionUnlocked,syncNpcs,ui} from './state.js';
 import {OL,drawCreature,drawPerson,drawSigil} from './sprites.js';
 import {drawBossBody} from './draw.js';
 import {sfx} from './audio.js';
@@ -15,6 +15,7 @@ import {R} from './raid.js';
 import {dayPhase,fits,foot,isNight,isStation,itemAt,layer,lifePlan,minRow,moveItem,placeNew,rowCount} from './hideout.js';
 import {save} from './save.js';
 import {openTrophy,openLegend,renderBuildPanel} from './prideui.js';
+import {stationLevel} from './buildings.js';
 
 const G=P.GRID,T=G.tile;
 const HMAP={W:G.cols*T,H:G.top+G.baseRows*T,raf:0,bg:null,bgKey:'',wander:{},hover:null,hoverTile:null,t:0,build:false,pick:null,plan:null,planT:-9};
@@ -51,7 +52,7 @@ function hmapBg(){
 }
 
 /* ---------- stations ---------- */
-function hmapTier(k){return k==='archive'?Math.min(5,1+Math.floor(RES_IDS.reduce((a,b)=>a+S.research[b],0)/6)):secTier(k)}
+function hmapTier(k){return k==='archive'?Math.min(5,1+Math.floor(RES_IDS.reduce((a,b)=>a+S.research[b],0)/6)):stationLevel(k)}
 function drawBuilding(g,k,b,t){
   const sec=SECTIONS[k],tier=hmapTier(k),locked=k!=='archive'&&!sectionUnlocked(k),col=sec?sec.col:'#c9b48a';
   const w=b.w,x=b.x,y=b.y,hov=HMAP.hover===k;

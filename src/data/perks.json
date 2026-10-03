@@ -1,0 +1,1738 @@
+{
+ "SCALE": {
+  "perStage": 0.1,
+  "bond3": 1.25,
+  "bond5": 1.5,
+  "hybrid": 0.8,
+  "keepCoinCap": 0.6,
+  "rootOnce": true
+ },
+ "BUILDINGS": {
+  "cost": [
+   null,
+   {},
+   {
+    "coin": 150,
+    "ore": 15,
+    "rank": 3
+   },
+   {
+    "coin": 400,
+    "ingot": 12,
+    "glass": 6,
+    "rank": 12
+   },
+   {
+    "coin": 900,
+    "ingot": 20,
+    "glass": 10,
+    "cloth": 8,
+    "rank": 20
+   },
+   {
+    "coin": 1600,
+    "ingot": 30,
+    "glass": 16,
+    "cloth": 12,
+    "rank": 30
+   }
+  ],
+  "levels": {
+   "forge": [
+    "Craft tier 1 weapons",
+    "Craft tier 2 weapons",
+    "Gilded cages",
+    "Craft tier 3 weapons",
+    "Craft tier 4 weapons"
+   ],
+   "garden": [
+    "Beds grow 10% more",
+    "Beds grow 20% more",
+    "Beds grow 35% more",
+    "Beds grow 50% more",
+    "Beds grow 70% more"
+   ],
+   "spring": [
+    "Creatures heal 50% a day (35% with nobody posted)",
+    "Creatures heal fully each day",
+    "Bathhouse: creatures shed 10 more fatigue on a day off"
+   ],
+   "roost": [
+    "Expeditions and vein maps",
+    "+30% wild creature encounters in raids"
+   ],
+   "vault": [
+    "Keep your slot 3 creature if you die",
+    "Keep 15% of raid coin if you die"
+   ],
+   "nursery": [
+    "One egg at a time, hatching in 2 days",
+    "Two eggs at once",
+    "Eggs hatch in 1 day",
+    "Hybrid odds 15%",
+    "Three eggs at once, hybrid odds 20%"
+   ],
+   "training": [
+    "Trainees gain 30 XP a day",
+    "45 XP a day and the Gene Lab",
+    "60 XP a day",
+    "75 XP a day and the Trait Tutor",
+    "100 XP a day"
+   ],
+   "warroom": [
+    "The Hunter’s Moon mode",
+    "The Iron Will mode",
+    "The Swarm mode"
+   ],
+   "apothecary": [
+    "Brews gene serums",
+    "Wild Venom creatures outside the Sump",
+    "Brews 25% more"
+   ]
+  },
+  "springHeal": [
+   0.35,
+   0.5,
+   1,
+   1
+  ],
+  "springRest": [
+   0,
+   0,
+   0,
+   10
+  ],
+  "vaultCoin": [
+   0,
+   0,
+   0.15
+  ],
+  "trainingXp": [
+   20,
+   30,
+   45,
+   60,
+   75,
+   100
+  ],
+  "eggCap": [
+   0,
+   1,
+   2,
+   2,
+   2,
+   3
+  ],
+  "hatchDays": [
+   2,
+   2,
+   2,
+   1,
+   1,
+   1
+  ],
+  "hybridOdds": [
+   0.1,
+   0.1,
+   0.1,
+   0.1,
+   0.15,
+   0.2
+  ],
+  "craftTier": [
+   0,
+   1,
+   2,
+   2,
+   3,
+   4
+  ],
+  "gildedLevel": 3,
+  "wildLevel": 2,
+  "venomWildLevel": 2,
+  "workers": {
+   "needed": 1
+  }
+ },
+ "LINES": {
+  "cindlet": [
+   "kindler",
+   "restless",
+   "forgemaster"
+  ],
+  "pyrrox": [
+   "scrapper",
+   "showoff",
+   "brightsmelt"
+  ],
+  "magmaul": [
+   "heatsink",
+   "slowstart",
+   "crucible"
+  ],
+  "puffcap": [
+   "greenthumb",
+   "homebody",
+   "harvestking"
+  ],
+  "shroomite": [
+   "ploughman",
+   "glutton",
+   "compost"
+  ],
+  "mycelisk": [
+   "rootnet",
+   "shy",
+   "deeproots"
+  ],
+  "dewdrip": [
+   "healtouch",
+   "frailshell",
+   "tidalward"
+  ],
+  "coralisk": [
+   "reefkeeper",
+   "territorial",
+   "coralbulwark"
+  ],
+  "tidewyrm": [
+   "deepcalm",
+   "heavysleeper",
+   "lifeguard"
+  ],
+  "chirrup": [
+   "mapper",
+   "chatterbox",
+   "pathfinder"
+  ],
+  "vesperbat": [
+   "nightscout",
+   "lightshy",
+   "duskcaller"
+  ],
+  "umbrowl": [
+   "hollowears",
+   "brooding",
+   "forecast"
+  ],
+  "zephling": [
+   "tailwind",
+   "flighty",
+   "galeshield"
+  ],
+  "kestrix": [
+   "drillsgt",
+   "hottemper",
+   "bossbreaker"
+  ],
+  "stormwing": [
+   "stormcaller",
+   "bigappetite",
+   "eyestorm"
+  ],
+  "shardling": [
+   "coinkeeper",
+   "brittleshell",
+   "diamondvault"
+  ],
+  "prismoth": [
+   "lightbender",
+   "distractible",
+   "aurora"
+  ],
+  "geodon": [
+   "strongbox",
+   "slowlearner",
+   "citadel"
+  ],
+  "pebblet": [
+   "nestwarmer",
+   "clumsypaws",
+   "warmclutch"
+  ],
+  "bastion": [
+   "broodkeeper",
+   "stubborn",
+   "twinnests"
+  ],
+  "monolord": [
+   "ancestral",
+   "aloof",
+   "pantheon"
+  ],
+  "toxlet": [
+   "brewer",
+   "toxic",
+   "masterbrewer"
+  ],
+  "fangmire": [
+   "poisoner",
+   "coldblooded",
+   "basiliskgaze"
+  ],
+  "hydravine": [
+   "antidote",
+   "threemouths",
+   "bloomcure"
+  ],
+  "glimmet": [
+   "archivist",
+   "nightowl",
+   "lantern"
+  ],
+  "halowing": [
+   "dawnsong",
+   "fragile",
+   "seraphsong"
+  ],
+  "solaryx": [
+   "sunlamp",
+   "proud",
+   "midsummer"
+  ]
+ },
+ "HYBRIDS": {
+  "blazewing": [
+   "cindlet",
+   "zephling",
+   "volatile"
+  ],
+  "bogbloom": [
+   "coralisk",
+   "puffcap",
+   "soggy"
+  ],
+  "resonyx": [
+   "prismoth",
+   "chirrup",
+   "echoing"
+  ],
+  "forgeheart": [
+   "bastion",
+   "cindlet",
+   "heavyframe"
+  ],
+  "squallfin": [
+   "stormwing",
+   "dewdrip",
+   "squalls"
+  ],
+  "duskcap": [
+   "puffcap",
+   "umbrowl",
+   "nocturne"
+  ],
+  "gemguard": [
+   "shardling",
+   "pebblet",
+   "gemhunger"
+  ],
+  "steamfin": [
+   "pyrrox",
+   "coralisk",
+   "scalding"
+  ],
+  "kilnspark": [
+   "magmaul",
+   "prismoth",
+   "brittleglaze"
+  ],
+  "mossguard": [
+   "shroomite",
+   "monolord",
+   "rootbound"
+  ],
+  "deepsinger": [
+   "tidewyrm",
+   "vesperbat",
+   "lonesong"
+  ],
+  "glasswing": [
+   "kestrix",
+   "geodon",
+   "thinwings"
+  ],
+  "wailwind": [
+   "zephling",
+   "umbrowl",
+   "howler"
+  ],
+  "blightcap": [
+   "toxlet",
+   "mycelisk",
+   "rotting"
+  ],
+  "mirefang": [
+   "fangmire",
+   "dewdrip",
+   "brackish"
+  ],
+  "dawnsong": [
+   "halowing",
+   "chirrup",
+   "starstruck"
+  ],
+  "prismheart": [
+   "solaryx",
+   "shardling",
+   "glare"
+  ],
+  "eclipsar": [
+   "hydravine",
+   "glimmet",
+   "duskbound"
+  ]
+ },
+ "PERSONALITY": {
+  "brave": [
+   "p_brave",
+   "f_brave"
+  ],
+  "timid": [
+   "p_timid",
+   "f_timid"
+  ],
+  "greedy": [
+   "p_greedy",
+   "f_greedy"
+  ],
+  "curious": [
+   "p_curious",
+   "f_curious"
+  ],
+  "loyal": [
+   "p_loyal",
+   "f_loyal"
+  ],
+  "fierce": [
+   "p_fierce",
+   "f_fierce"
+  ],
+  "calm": [
+   "p_calm",
+   "f_calm"
+  ],
+  "playful": [
+   "p_playful",
+   "f_playful"
+  ]
+ },
+ "EARNED": {
+  "hand": {
+   "days": 30
+  },
+  "veteran": {
+   "extracts": 25
+  },
+  "survivor": {
+   "nearDeaths": 3
+  },
+  "bossbane": {
+   "title": "wyrmslayer"
+  },
+  "burntout": {
+   "maxed": 3,
+   "within": 10,
+   "clearOff": 5
+  },
+  "homesick": {
+   "days": 30
+  }
+ },
+ "PERKS": {
+  "kindler": {
+   "name": "Kindler",
+   "kind": "perk",
+   "desc": "+15% Forge output",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "out": 0.15
+   }
+  },
+  "restless": {
+   "name": "Restless",
+   "kind": "flaw",
+   "desc": "Tires 25% faster at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.25
+   }
+  },
+  "scrapper": {
+   "name": "Scrapper",
+   "kind": "perk",
+   "desc": "+50% ore from scrapping weapons, while at the Forge",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "scrapOre": 0.5
+   }
+  },
+  "showoff": {
+   "name": "Showoff",
+   "kind": "flaw",
+   "desc": "−10% output when it is the only worker",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "soloOut": -0.1
+   }
+  },
+  "heatsink": {
+   "name": "Heat Sink",
+   "kind": "perk",
+   "desc": "Crewmates at its station tire 30% slower",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewTire": -0.3
+   }
+  },
+  "slowstart": {
+   "name": "Slow Start",
+   "kind": "flaw",
+   "desc": "Half output on its first day at a new station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "settle": {
+     "days": 1,
+     "out": -0.5
+    }
+   }
+  },
+  "greenthumb": {
+   "name": "Green Thumb",
+   "kind": "perk",
+   "desc": "+20% Garden output",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "homebody": {
+   "name": "Homebody",
+   "kind": "flaw",
+   "desc": "−10% damage in raids",
+   "at": "party",
+   "fx": {
+    "dmg": -0.1
+   }
+  },
+  "ploughman": {
+   "name": "Ploughman",
+   "kind": "perk",
+   "desc": "+1 food a day while at the Garden",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "make": {
+     "food": 1
+    }
+   }
+  },
+  "glutton": {
+   "name": "Glutton",
+   "kind": "flaw",
+   "desc": "Eats 2 food a day",
+   "at": "home",
+   "fx": {
+    "food": 1
+   }
+  },
+  "rootnet": {
+   "name": "Root Network",
+   "kind": "perk",
+   "desc": "+3% output at every station (one counts)",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "allOut": 0.03
+   }
+  },
+  "shy": {
+   "name": "Shy",
+   "kind": "flaw",
+   "desc": "Won’t work at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "refuse": true
+   }
+  },
+  "healtouch": {
+   "name": "Healer’s Touch",
+   "kind": "perk",
+   "desc": "The Spring heals 25% more",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "heal": 0.25
+   }
+  },
+  "frailshell": {
+   "name": "Frail Shell",
+   "kind": "flaw",
+   "desc": "−10% max HP in raids",
+   "at": "party",
+   "fx": {
+    "hp": -0.1
+   }
+  },
+  "reefkeeper": {
+   "name": "Reef Keeper",
+   "kind": "perk",
+   "desc": "+20% tonics at the Spring",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "territorial": {
+   "name": "Territorial",
+   "kind": "flaw",
+   "desc": "Clashes with another of its line at its station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "clashLine": true
+   }
+  },
+  "deepcalm": {
+   "name": "Deep Calm",
+   "kind": "perk",
+   "desc": "Crewmates at the Spring tire 20% slower",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "crewTire": -0.2
+   }
+  },
+  "heavysleeper": {
+   "name": "Heavy Sleeper",
+   "kind": "flaw",
+   "desc": "Tires 30% faster at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.3
+   }
+  },
+  "mapper": {
+   "name": "Mapper",
+   "kind": "perk",
+   "desc": "Reveals the full floor map in raids, while at the Roost",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "reveal": "map"
+   }
+  },
+  "chatterbox": {
+   "name": "Chatterbox",
+   "kind": "flaw",
+   "desc": "Crewmates −5% output",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewOut": -0.05
+   }
+  },
+  "nightscout": {
+   "name": "Night Scout",
+   "kind": "perk",
+   "desc": "Marks rooms with rare creatures in raids, while at the Roost",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "reveal": "rare"
+   }
+  },
+  "lightshy": {
+   "name": "Light-shy",
+   "kind": "flaw",
+   "desc": "Won’t work at the Vault",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "refuse": true
+   }
+  },
+  "hollowears": {
+   "name": "Hollow Ears",
+   "kind": "perk",
+   "desc": "Hidden doors to secret rooms sparkle in raids, while at the Roost",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "reveal": "doors"
+   }
+  },
+  "brooding": {
+   "name": "Brooding",
+   "kind": "flaw",
+   "desc": "70% output while its bond is under ★2",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "lowBond": {
+     "below": 2,
+     "out": -0.3
+    }
+   }
+  },
+  "tailwind": {
+   "name": "Tailwind Drill",
+   "kind": "perk",
+   "desc": "+10 max HP for you in raids, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "playerHp": 10
+   }
+  },
+  "flighty": {
+   "name": "Flighty",
+   "kind": "flaw",
+   "desc": "10% chance a day to skip work",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "skip": 0.1
+   }
+  },
+  "drillsgt": {
+   "name": "Drill Sergeant",
+   "kind": "perk",
+   "desc": "+10% weapon damage in raids, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "weaponDmg": 0.1
+   }
+  },
+  "hottemper": {
+   "name": "Hot Temper",
+   "kind": "flaw",
+   "desc": "Clashes with Calm crewmates",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "clashPers": [
+     "calm"
+    ]
+   }
+  },
+  "stormcaller": {
+   "name": "Storm Caller",
+   "kind": "perk",
+   "desc": "Start each raid with a random buff, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "buff": 1
+   }
+  },
+  "bigappetite": {
+   "name": "Big Appetite",
+   "kind": "flaw",
+   "desc": "Eats 2 food a day",
+   "at": "home",
+   "fx": {
+    "food": 1
+   }
+  },
+  "coinkeeper": {
+   "name": "Coin Keeper",
+   "kind": "perk",
+   "desc": "Keep 15% of raid coin if you die, while at the Vault (stacks to 60%)",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "keepCoin": 0.15
+   }
+  },
+  "brittleshell": {
+   "name": "Brittle Shell",
+   "kind": "flaw",
+   "desc": "Takes 10% more damage in raids",
+   "at": "party",
+   "fx": {
+    "taken": 0.1
+   }
+  },
+  "lightbender": {
+   "name": "Light Bender",
+   "kind": "perk",
+   "desc": "+20% glass at the Vault",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "distractible": {
+   "name": "Distractible",
+   "kind": "flaw",
+   "desc": "−10% output while Comfort is under 5%",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "lowComfort": {
+     "below": 0.05,
+     "out": -0.1
+    }
+   }
+  },
+  "strongbox": {
+   "name": "Strongbox",
+   "kind": "perk",
+   "desc": "Keep the weapons in your hands if you die, while at the Vault",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "keep": "weapons"
+   }
+  },
+  "slowlearner": {
+   "name": "Slow Learner",
+   "kind": "flaw",
+   "desc": "Earns 25% less XP",
+   "at": "home",
+   "fx": {
+    "xp": -0.25
+   }
+  },
+  "nestwarmer": {
+   "name": "Nest Warmer",
+   "kind": "perk",
+   "desc": "Eggs hatch a day sooner, while at the Nursery",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "hatchDays": 1
+   }
+  },
+  "clumsypaws": {
+   "name": "Clumsy Paws",
+   "kind": "flaw",
+   "desc": "−10% move speed in raids",
+   "at": "party",
+   "fx": {
+    "move": -0.1
+   }
+  },
+  "broodkeeper": {
+   "name": "Brood Keeper",
+   "kind": "perk",
+   "desc": "+1 egg slot, while at the Nursery",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "eggSlots": 1
+   }
+  },
+  "stubborn": {
+   "name": "Stubborn",
+   "kind": "flaw",
+   "desc": "Half output for 3 days after a move",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "settle": {
+     "days": 3,
+     "out": -0.5
+    }
+   }
+  },
+  "ancestral": {
+   "name": "Ancestral Memory",
+   "kind": "perk",
+   "desc": "+0.5% mutation chance per gene on eggs, while at the Nursery",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "mutation": 0.005
+   }
+  },
+  "aloof": {
+   "name": "Aloof",
+   "kind": "flaw",
+   "desc": "Its type counts for no crew chemistry",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "noChem": true
+   }
+  },
+  "brewer": {
+   "name": "Brewer",
+   "kind": "perk",
+   "desc": "+25% gene serums",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "out": 0.25
+   }
+  },
+  "toxic": {
+   "name": "Toxic",
+   "kind": "flaw",
+   "desc": "Crewmates tire 10% faster",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewTire": 0.1
+   }
+  },
+  "poisoner": {
+   "name": "Poisoner",
+   "kind": "perk",
+   "desc": "Your bullets sometimes poison, while at the Apothecary",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "poisonRounds": true
+   }
+  },
+  "coldblooded": {
+   "name": "Cold-blooded",
+   "kind": "flaw",
+   "desc": "−15% output at the Spring and Garden",
+   "at": "station",
+   "st": [
+    "spring",
+    "garden"
+   ],
+   "fx": {
+    "out": -0.15
+   }
+  },
+  "antidote": {
+   "name": "Antidote",
+   "kind": "perk",
+   "desc": "No harm from the Sump’s poison pools, while at the Apothecary",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "poisonImmune": true
+   }
+  },
+  "threemouths": {
+   "name": "Three Mouths",
+   "kind": "flaw",
+   "desc": "Eats 3 food a day",
+   "at": "home",
+   "fx": {
+    "food": 2
+   }
+  },
+  "archivist": {
+   "name": "Archivist",
+   "kind": "perk",
+   "desc": "Reads an Old Keeper relic a day as the Archive’s archivist",
+   "at": "home",
+   "fx": {}
+  },
+  "nightowl": {
+   "name": "Night Owl",
+   "kind": "flaw",
+   "desc": "Tires 20% faster at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.2
+   }
+  },
+  "dawnsong": {
+   "name": "Dawn Song",
+   "kind": "perk",
+   "desc": "Every creature gains 2 bond a day, while it works",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "bondAll": 2
+   }
+  },
+  "fragile": {
+   "name": "Fragile",
+   "kind": "flaw",
+   "desc": "−10% max HP in raids",
+   "at": "party",
+   "fx": {
+    "hp": -0.1
+   }
+  },
+  "sunlamp": {
+   "name": "Sunlamp",
+   "kind": "perk",
+   "desc": "+15% Garden output and +3 Comfort",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.15,
+    "comfort": 3
+   }
+  },
+  "proud": {
+   "name": "Proud",
+   "kind": "flaw",
+   "desc": "Won’t work beside an Echo creature",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "clashType": "echo"
+   }
+  },
+  "forgemaster": {
+   "name": "Forgemaster",
+   "kind": "perk",
+   "desc": "+10% weapon damage in raids, while at the Forge",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "weaponDmg": 0.1
+   }
+  },
+  "brightsmelt": {
+   "name": "Bright Smelt",
+   "kind": "perk",
+   "desc": "+20% Forge output",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "crucible": {
+   "name": "Crucible",
+   "kind": "perk",
+   "desc": "The Forge crafts one weapon tier higher than its level",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "craftTier": 1
+   }
+  },
+  "harvestking": {
+   "name": "Harvest King",
+   "kind": "perk",
+   "desc": "+20% Garden output",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "compost": {
+   "name": "Compost",
+   "kind": "perk",
+   "desc": "+2 food a day while at the Garden",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "make": {
+     "food": 2
+    }
+   }
+  },
+  "deeproots": {
+   "name": "Deep Roots",
+   "kind": "perk",
+   "desc": "+10% Garden output",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "tidalward": {
+   "name": "Tidal Ward",
+   "kind": "perk",
+   "desc": "Companions get +10% max HP in raids, while at the Spring",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "compHp": 0.1
+   }
+  },
+  "coralbulwark": {
+   "name": "Coral Bulwark",
+   "kind": "perk",
+   "desc": "The Spring heals 25% more",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "heal": 0.25
+   }
+  },
+  "lifeguard": {
+   "name": "Lifeguard",
+   "kind": "perk",
+   "desc": "One free auto-revive a raid, while at the Spring",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "autoRevive": 1
+   }
+  },
+  "pathfinder": {
+   "name": "Pathfinder",
+   "kind": "perk",
+   "desc": "Expeditions it joins bring home 1 more of everything",
+   "at": "home",
+   "fx": {
+    "expItems": 1
+   }
+  },
+  "duskcaller": {
+   "name": "Duskcaller",
+   "kind": "perk",
+   "desc": "+30% wild creature encounters in raids, while at the Roost",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "wildMul": 0.3
+   }
+  },
+  "forecast": {
+   "name": "Boss Forecast",
+   "kind": "perk",
+   "desc": "Tells you which boss waits below, while at the Roost",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "reveal": "boss"
+   }
+  },
+  "galeshield": {
+   "name": "Gale Shield",
+   "kind": "perk",
+   "desc": "+10 more max HP for you in raids, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "playerHp": 10
+   }
+  },
+  "bossbreaker": {
+   "name": "Bossbreaker",
+   "kind": "perk",
+   "desc": "+10% damage to bosses, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "bossDmg": 0.1
+   }
+  },
+  "eyestorm": {
+   "name": "Eye of the Storm",
+   "kind": "perk",
+   "desc": "One more starting buff, while at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "buff": 1
+   }
+  },
+  "diamondvault": {
+   "name": "Diamond Vault",
+   "kind": "perk",
+   "desc": "Also keep all ore if you die, while at the Vault",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "keepOre": true
+   }
+  },
+  "aurora": {
+   "name": "Aurora",
+   "kind": "perk",
+   "desc": "+3 Comfort while it works",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "comfort": 3
+   }
+  },
+  "citadel": {
+   "name": "Citadel",
+   "kind": "perk",
+   "desc": "Your slot 1 companion survives your death, while at the Vault",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "keep": "companion"
+   }
+  },
+  "warmclutch": {
+   "name": "Warm Clutch",
+   "kind": "perk",
+   "desc": "Hatchlings start with +15 bond, while at the Nursery",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "hatchBond": 15
+   }
+  },
+  "twinnests": {
+   "name": "Twin Nests",
+   "kind": "perk",
+   "desc": "+5% hybrid odds, while at the Nursery",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "hybrid": 0.05
+   }
+  },
+  "pantheon": {
+   "name": "Pantheon",
+   "kind": "perk",
+   "desc": "Another +0.5% mutation chance per gene on eggs",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "mutation": 0.005
+   }
+  },
+  "masterbrewer": {
+   "name": "Master Brewer",
+   "kind": "perk",
+   "desc": "+25% gene serums",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "out": 0.25
+   }
+  },
+  "basiliskgaze": {
+   "name": "Basilisk Gaze",
+   "kind": "perk",
+   "desc": "+5% weapon damage in raids, while at the Apothecary",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "weaponDmg": 0.05
+   }
+  },
+  "bloomcure": {
+   "name": "Bloom Cure",
+   "kind": "perk",
+   "desc": "A third of a gene serum a day, while at the Apothecary",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "make": {
+     "serum": 0.34
+    }
+   }
+  },
+  "lantern": {
+   "name": "Lantern",
+   "kind": "perk",
+   "desc": "+5% Keeper XP from raids, while it works",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "kxp": 0.05
+   }
+  },
+  "seraphsong": {
+   "name": "Seraph Song",
+   "kind": "perk",
+   "desc": "Every creature gains 2 more bond a day, while it works",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "bondAll": 2
+   }
+  },
+  "midsummer": {
+   "name": "Midsummer",
+   "kind": "perk",
+   "desc": "+20% Garden output",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.2
+   }
+  },
+  "volatile": {
+   "name": "Volatile",
+   "kind": "flaw",
+   "desc": "Crewmates tire 10% faster",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewTire": 0.1
+   }
+  },
+  "soggy": {
+   "name": "Soggy",
+   "kind": "flaw",
+   "desc": "Tires 15% faster at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.15
+   }
+  },
+  "echoing": {
+   "name": "Echoing",
+   "kind": "flaw",
+   "desc": "Crewmates −5% output",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewOut": -0.05
+   }
+  },
+  "heavyframe": {
+   "name": "Heavy Frame",
+   "kind": "flaw",
+   "desc": "−10% move speed in raids",
+   "at": "party",
+   "fx": {
+    "move": -0.1
+   }
+  },
+  "squalls": {
+   "name": "Squalls",
+   "kind": "flaw",
+   "desc": "10% chance a day to skip work",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "skip": 0.1
+   }
+  },
+  "nocturne": {
+   "name": "Nocturne",
+   "kind": "flaw",
+   "desc": "Tires 20% faster at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.2
+   }
+  },
+  "gemhunger": {
+   "name": "Gem Hunger",
+   "kind": "flaw",
+   "desc": "Eats 2 food a day",
+   "at": "home",
+   "fx": {
+    "food": 1
+   }
+  },
+  "scalding": {
+   "name": "Scalding",
+   "kind": "flaw",
+   "desc": "Takes 10% more damage in raids",
+   "at": "party",
+   "fx": {
+    "taken": 0.1
+   }
+  },
+  "brittleglaze": {
+   "name": "Brittle Glaze",
+   "kind": "flaw",
+   "desc": "−10% output while Comfort is under 5%",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "lowComfort": {
+     "below": 0.05,
+     "out": -0.1
+    }
+   }
+  },
+  "rootbound": {
+   "name": "Rootbound",
+   "kind": "flaw",
+   "desc": "Half output for 2 days after a move",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "settle": {
+     "days": 2,
+     "out": -0.5
+    }
+   }
+  },
+  "lonesong": {
+   "name": "Lonesong",
+   "kind": "flaw",
+   "desc": "−10% damage in raids",
+   "at": "party",
+   "fx": {
+    "dmg": -0.1
+   }
+  },
+  "thinwings": {
+   "name": "Thin Wings",
+   "kind": "flaw",
+   "desc": "−10% max HP in raids",
+   "at": "party",
+   "fx": {
+    "hp": -0.1
+   }
+  },
+  "howler": {
+   "name": "Howler",
+   "kind": "flaw",
+   "desc": "Crewmates −5% output",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewOut": -0.05
+   }
+  },
+  "rotting": {
+   "name": "Rotting",
+   "kind": "flaw",
+   "desc": "Eats 2 food a day",
+   "at": "home",
+   "fx": {
+    "food": 1
+   }
+  },
+  "brackish": {
+   "name": "Brackish",
+   "kind": "flaw",
+   "desc": "−15% output at the Spring and Garden",
+   "at": "station",
+   "st": [
+    "spring",
+    "garden"
+   ],
+   "fx": {
+    "out": -0.15
+   }
+  },
+  "starstruck": {
+   "name": "Starstruck",
+   "kind": "flaw",
+   "desc": "70% output while its bond is under ★2",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "lowBond": {
+     "below": 2,
+     "out": -0.3
+    }
+   }
+  },
+  "glare": {
+   "name": "Glare",
+   "kind": "flaw",
+   "desc": "Won’t work beside an Echo creature",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "clashType": "echo"
+   }
+  },
+  "duskbound": {
+   "name": "Duskbound",
+   "kind": "flaw",
+   "desc": "10% chance a day to skip work",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "skip": 0.1
+   }
+  },
+  "p_brave": {
+   "name": "Brave",
+   "kind": "perk",
+   "desc": "+10% attack in raids (its personality)",
+   "at": "party",
+   "fx": {}
+  },
+  "p_timid": {
+   "name": "Timid",
+   "kind": "perk",
+   "desc": "Takes 15% less damage in raids, and tires 15% slower at any station",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": -0.15
+   }
+  },
+  "p_greedy": {
+   "name": "Greedy",
+   "kind": "perk",
+   "desc": "Enemies it defeats drop 50% more coin",
+   "at": "party",
+   "fx": {}
+  },
+  "p_curious": {
+   "name": "Curious",
+   "kind": "perk",
+   "desc": "Sniffs out secret rooms; expeditions it joins bring home 1 more of everything",
+   "at": "home",
+   "fx": {
+    "expItems": 1
+   }
+  },
+  "p_loyal": {
+   "name": "Loyal",
+   "kind": "perk",
+   "desc": "Always obeys; gains bond 50% faster",
+   "at": "home",
+   "fx": {}
+  },
+  "p_fierce": {
+   "name": "Fierce",
+   "kind": "perk",
+   "desc": "+10% critical hit chance in raids",
+   "at": "party",
+   "fx": {}
+  },
+  "p_calm": {
+   "name": "Calm",
+   "kind": "perk",
+   "desc": "Ability recharges 15% faster; crewmates tire 10% slower",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "crewTire": -0.1
+   }
+  },
+  "p_playful": {
+   "name": "Playful",
+   "kind": "perk",
+   "desc": "Moves 15% faster and earns 20% more XP; +2 Comfort",
+   "at": "home",
+   "fx": {
+    "comfort": 2
+   }
+  },
+  "f_brave": {
+   "name": "Reckless",
+   "kind": "flaw",
+   "desc": "Takes 10% more damage in raids",
+   "at": "party",
+   "fx": {
+    "taken": 0.1
+   }
+  },
+  "f_timid": {
+   "name": "Jumpy",
+   "kind": "flaw",
+   "desc": "−15% output at the War Room",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "out": -0.15
+   }
+  },
+  "f_greedy": {
+   "name": "Snacker",
+   "kind": "flaw",
+   "desc": "Eats 1 extra food on days it works",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "food": 1
+   }
+  },
+  "f_curious": {
+   "name": "Wanderer",
+   "kind": "flaw",
+   "desc": "10% chance a day to wander off work",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "skip": 0.1
+   }
+  },
+  "f_loyal": {
+   "name": "Creature of Habit",
+   "kind": "flaw",
+   "desc": "−20% output for 2 days after a move",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "settle": {
+     "days": 2,
+     "out": -0.2
+    }
+   }
+  },
+  "f_fierce": {
+   "name": "Hothead",
+   "kind": "flaw",
+   "desc": "Clashes with Calm and Timid crewmates",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "clashPers": [
+     "calm",
+     "timid"
+    ]
+   }
+  },
+  "f_calm": {
+   "name": "Mellow",
+   "kind": "flaw",
+   "desc": "−10% damage in raids",
+   "at": "party",
+   "fx": {
+    "dmg": -0.1
+   }
+  },
+  "f_playful": {
+   "name": "Needs a Friend",
+   "kind": "flaw",
+   "desc": "−10% output at stations with no friend in the crew",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "noFriend": -0.1
+   }
+  },
+  "hand_forge": {
+   "name": "Forge-hand",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "forge",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_garden": {
+   "name": "Gardener",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "garden",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_spring": {
+   "name": "Spring-keeper",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "spring",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_roost": {
+   "name": "Lookout",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "roost",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_vault": {
+   "name": "Vault-warden",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "vault",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_nursery": {
+   "name": "Nest-minder",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "nursery",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_training": {
+   "name": "Drill Hall Regular",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "training",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_warroom": {
+   "name": "War Room Hand",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "warroom",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "hand_apothecary": {
+   "name": "Brewer’s Hand",
+   "kind": "perk",
+   "desc": "+10% output where it has worked 30 days",
+   "at": "station",
+   "st": "apothecary",
+   "fx": {
+    "out": 0.1
+   }
+  },
+  "veteran": {
+   "name": "Veteran",
+   "kind": "perk",
+   "desc": "+5% damage in raids",
+   "at": "party",
+   "fx": {
+    "dmg": 0.05
+   }
+  },
+  "survivor": {
+   "name": "Survivor",
+   "kind": "perk",
+   "desc": "+10% max HP in raids",
+   "at": "party",
+   "fx": {
+    "hp": 0.1
+   }
+  },
+  "bossbane": {
+   "name": "Wyrmslayer",
+   "kind": "perk",
+   "desc": "+10% damage to bosses",
+   "at": "party",
+   "fx": {
+    "bossDmg": 0.1
+   }
+  },
+  "burntout": {
+   "name": "Burnt Out",
+   "kind": "flaw",
+   "desc": "Tires 25% faster; clears after 5 days off",
+   "at": "station",
+   "st": "any",
+   "fx": {
+    "tire": 0.25
+   }
+  },
+  "homesick": {
+   "name": "Homesick",
+   "kind": "flaw",
+   "desc": "−5% damage and max HP in raids; clears after a raid",
+   "at": "party",
+   "fx": {
+    "dmg": -0.05,
+    "hp": -0.05
+   }
+  }
+ }
+}

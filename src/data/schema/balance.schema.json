@@ -179,13 +179,17 @@
        "n": {
         "type": "number"
        },
-       "tier": {
+       "level": {
+        "type": "number"
+       },
+       "workers": {
         "type": "number"
        }
       },
       "required": [
        "n",
-       "tier"
+       "level",
+       "workers"
       ],
       "additionalProperties": false
      },
@@ -503,6 +507,15 @@
     "penReserve": {
      "type": "number"
     },
+    "buildOrder": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "buildReserve": {
+     "type": "number"
+    },
     "acts": {
      "type": "object",
      "properties": {
@@ -536,6 +549,8 @@
     "fillOffType",
     "marketMarkup",
     "penReserve",
+    "buildOrder",
+    "buildReserve",
     "acts"
    ],
    "additionalProperties": false

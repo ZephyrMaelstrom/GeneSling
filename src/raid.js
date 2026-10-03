@@ -1,9 +1,9 @@
 /* ================= Raid engine ================= */
 import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
-import {ENDGAME,BLOOM,ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
+import {ENDGAME,BLOOM,ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf,PERKS_DATA} from './content.js';
 import {save} from './save.js';
-import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,passDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
+import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,passDay,res,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
 import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
@@ -24,6 +24,8 @@ import {assistAim,enemyBulletMul,resetScale} from './access.js';
 import {gateBlocked} from './playtest.js';
 import {OPTS} from './device.js';
 import {logEvent} from './history.js';
+import {hideoutFx,hideoutFxEmpty,partyFx} from './perks.js';
+import {stationLevel} from './buildings.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -69,7 +71,7 @@ function genMap(floor,arena,bossId,plan){
     if(rand()<.35)put('shrine');
     const pool=foePool(floor,vein),newIntro=loc+set*3;
     const swarm=S.modes.swarm&&modeUnlocked('swarm')?2:0;
-    const wildMul=(S.modes.hunter&&modeUnlocked('hunter')?2:1)*(secTier('roost')>=4?1.3:1)*(res('capture',4)?1.25:1);
+    const wildMul=(S.modes.hunter&&modeUnlocked('hunter')?2:1)*(stationLevel('roost')>=PERKS_DATA.BUILDINGS.wildLevel?1.3:1)*(1+hideoutFx().wildMul)*(res('capture',4)?1.25:1);
     for(const r of rooms){
       if(['start','shop','shrine','boss'].includes(r.kind))continue;
       const base={fight:[3,4],chest:[1,2],stairs:[3,4],gate:[2,3],rift:[3,4],cliff:[2,3],lair:[3,4]}[r.kind];
@@ -226,8 +228,10 @@ function bagAdd(mat,n,x,y){
   return add;
 }
 function makeComp(c){
-  const st=stats(c),mh=Math.round(st.hp*(secTier('spring')>=4?1.1:1)*(res('bond',1)?1.1:1)*(roleOf(c)==='bulwark'?1+JOBS.ROLES.bulwark.hp:1));
-  return{c,st,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk,spd:st.spd,obey:st.obey,
+  // Its own raid perks and flaws (Homebody, Frail Shell, Veteran ...) and Tidal Ward at the Spring.
+  const pf=partyFx(c),hfx=hideoutFx();
+  const st=stats(c),mh=Math.round(st.hp*(1+hfx.compHp+pf.hp)*(res('bond',1)?1.1:1)*(roleOf(c)==='bulwark'?1+JOBS.ROLES.bulwark.hp:1));
+  return{c,st,pf,x:R.p.x+rnd(-30,30),y:R.p.y+rnd(-30,30),r:Math.round(12*hitboxMul(c)),hp:Math.max(1,Math.min(c.hp*(mh/st.hp),mh)),maxHp:mh,atk:st.atk*(1+pf.dmg),spd:st.spd*(1+pf.move),obey:st.obey,
     cd:rnd(.3,1),abil:0,downed:false,rev:0,sulk:0,obeyCheck:rnd(3,6),face:1,flash:0,dash:0,xpGain:0,kills:0,stuck:0,seed:rand()*9,lastStand:st.star>=5};
 }
 // Each floor is generated on its own stream seeded from the raid seed, the floor number and the vein,
@@ -248,12 +252,14 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
   if(real&&opts.deepening==null)rememberSeed(seed);
   const deepVein=f0>=4?(vein||'ember'):null;
   const{M}=tut?{M:genTutorialMap()}:genFloor(seed,f0,mode==='arena',deepVein,tier);
+  // What the creatures posted at home do for this raid (Mapper, Coin Keeper, Storm Caller ...), fixed when it starts.
+  const pfx=mode==='arena'||tut?hideoutFxEmpty():hideoutFx();
   R={mode,seed,id:mode==='arena'||tut?mode:S.stats.raids+1,map:M,mapCv:renderMapCanvas(M),t:0,time:mode==='arena'||tut?0:600+(f0>=4?360:0)+(f0>=7?ENDGAME.UNDERHEART.timeAdd:0)-(ruleOn(tier,'shortnight')?120:0),
     p:{x:M.start.cx,y:M.start.cy+40,r:11,hp:100,maxHp:100,roll:0,rollCd:0,rvx:0,rvy:0,vx:0,vy:0,inv:0,hurt:0,slow:0,fireCd:0},
     comps:[null,null],slot3:null,enemies:[],bullets:[],fields:[],floats:[],fx:[],items:[],trail:[],swings:[],timers:[],bolts:[],
     bag:{coin:0,ore:0,food:0,hide:0,dust:0,sap:0},prints:[],tonics:0,satchel:null,bagCap:JOBS.BAG.slots,cages:{basic:0,gilded:0},guns:['pistol',null],gunItem:[null,null],active:0,spin:0,burst:[],
     buffs:{},curses:new Set(),leechAcc:0,aim:0,firing:false,mouse:null,shield:0,prism:0,taunt:0,tauntEnt:null,fortress:0,rally:null,
-    combo:{cd:10,max:20*(res('bond',2)?.75:1)},kxp:0,kills:0,caught:0,autoRev:secTier('spring')>=5?1:0,
+    combo:{cd:10,max:20*(res('bond',2)?.75:1)},kxp:0,kills:0,caught:0,autoRev:pfx.autoRevive,pfx,
     msg:'',msgT:0,prompt:'',ext:0,stairT:0,cur:M.start,paused:false,over:false,last:0,saved:{},shops:{},taken:[],
     vein:deepVein,tier,deepening:opts.deepening??null,relics:0,vmap:null,fmods:{dmg:1,hp:1,coin:1,kxp:1,wild:1},hazards:[],beat:0,eliteKills:0,
     floorsSeen:new Set([f0]),heardCrack:false,god:tut,tut:tut?{step:0,moved:0,rolled:false,abil:false,lx:M.start.cx,ly:M.start.cy+40}:null};
@@ -281,7 +287,7 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
     if(!tut)msg(mode==='arena'?'Arena: spawn foes from the panel. Leave from the pause menu.':`${floorStart()} Find the ${isBossFloor(f0)?'boss, rift or cliff':'stairs or the gate'}.`);
   }
   refreshSupport();R.p.hp=R.p.maxHp;
-  if(mode==='raid'&&(secTier('warroom')>=5||res('combat',4)))applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true);
+  if(mode==='raid'){const n=R.pfx.buff+(res('combat',4)?1:0);for(let i=0;i<n;i++)applyBuff(pick(BUFF_IDS.filter(k=>k!=='time')),true)}
   if(tut)tutEnter(0);
   placeLore(R.map);
   save();
@@ -310,9 +316,9 @@ const CU=k=>R.curses.has(k);
 function refreshSupport(){
   const c=R.slot3&&R.slot3.c.captureRaid!==R.id?R.slot3.c:null;
   R.sup=new Set(c?typesOf(c):[]);
-  const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.max(30,Math.round((100+25*B('hp')+(secTier('warroom')>=1?10:0)+(res('combat',0)?15:0)-(CU('glass')?30:0)+perk('hp'))*(R.sup.has('warden')?1.15:1)));R.p.hp=Math.max(1,Math.min(R.p.maxHp,Math.round(R.p.maxHp*ratio)));
+  const ratio=R.p.hp/R.p.maxHp;R.p.maxHp=Math.max(30,Math.round((100+25*B('hp')+(R.pfx?R.pfx.playerHp:0)+(res('combat',0)?15:0)-(CU('glass')?30:0)+perk('hp'))*(R.sup.has('warden')?1.15:1)));R.p.hp=Math.max(1,Math.min(R.p.maxHp,Math.round(R.p.maxHp*ratio)));
   R.scout=roleInParty('scout');
-  R.reveal=S.settings.reveal||secTier('roost')>=1||R.sup.has('echo')||R.sup.has('lumen')||R.scout;
+  R.reveal=S.settings.reveal||!!(R.pfx&&R.pfx.reveal.map)||R.sup.has('echo')||R.sup.has('lumen')||R.scout;
 }
 function applyBuff(k,silent){
   R.buffs[k]=(R.buffs[k]||0)+1;
@@ -443,10 +449,12 @@ function react(e,r,dmg,src){
 
 /* ---------- combat helpers ---------- */
 // Poison rounds: a Venom in slot 3 (or the Apothecary at tier 3) gives the player's shots a chance to poison.
-const poisonRounds=()=>!!R&&(R.sup.has('venom')||secTier('apothecary')>=3);
+const poisonRounds=()=>!!R&&(R.sup.has('venom')||!!(R.pfx&&R.pfx.poisonRounds));
 function hurtEnemy(e,dmg,quiet,src,elem){
   if(e.hp<=0)return;
   if(!elem&&src==='p'&&poisonRounds()&&rand()<.3)elem='poison';
+  // Bossbreaker at the War Room, and a companion's own Wyrmslayer.
+  if(e.kind==='boss')dmg*=1+(R.pfx?R.pfx.bossDmg:0)+(src&&src.pf?src.pf.bossDmg:0);
   if(e.kind==='boss'&&e.def.lord)dmg=lordDamage(e,dmg,src,elem);e.hp-=dmg;e.flash=.08;if(src)e.lastHit=src;
   if((src==='p'||src==='melee')&&B('leech')){R.leechAcc+=dmg*B('leech');while(R.leechAcc>=25){R.leechAcc-=25;healPlayer(1)}}
   if(src&&src.c&&src.st.vamp)src.hp=Math.min(src.maxHp,src.hp+dmg*src.st.vamp);
@@ -467,7 +475,7 @@ function hurtPlayer(d,slow){
 }
 function hurtComp(m,d){
   if(m.downed)return;
-  d*=m.st.taken*Math.pow(.8,B('ptough'))*(ruleOn(R.tier,'fragile')?1.2:1);if(R.taunt>0&&R.tauntEnt===m)d*=.5;if(R.fortress>0)d*=.5;
+  d*=m.st.taken*(1+(m.pf?m.pf.taken:0))*Math.pow(.8,B('ptough'))*(ruleOn(R.tier,'fragile')?1.2:1);if(R.taunt>0&&R.tauntEnt===m)d*=.5;if(R.fortress>0)d*=.5;
   m.hp-=d;m.flash=.08;
   if(m.hp<=0){
     if(m.lastStand){m.lastStand=false;m.hp=1;float(m.x,m.y-26,'Last Stand!','#ffcf4a',true);msg(`${m.c.name} refuses to fall!`);doAbility(m,m.st.abilId);return}
@@ -1160,7 +1168,7 @@ function descend(f){
   if(f===4){R.time+=360;R.kxp+=60}
   if(f===7&&!R.tier){R.time+=ENDGAME.UNDERHEART.timeAdd;R.kxp+=ENDGAME.UNDERHEART.kxp}
   R.hazards=[];R.drownWarned=false;
-  const roost5=secTier('roost')>=5&&boss?` ${BOSSES[boss].name} waits below.`:'';
+  const roost5=R.pfx&&R.pfx.reveal.boss&&boss?` ${BOSSES[boss].name} waits below.`:'';
   msg(`${floorStart()}${f===4?' Everything here hits much harder. +6 minutes on the clock.':isBossFloor(f)?` A boss guards the end of this floor.${roost5}`:''}`);
 }
 
@@ -1194,7 +1202,9 @@ function endRaid(outcome,via){
   const L={home:[],lost:[],caught:[],proven:[],levels:[],loot:[],notes:[],keeper:[],bond:[],titles:[]};
   R.comps.forEach(m=>{if(m)m.c.hp=m.downed?0:Math.round(m.hp/m.maxHp*stats(m.c).hp)});
   const party=R.comps.filter(Boolean);
-  const scav=R.mode==='scav',vt=scav?0:secTier('vault'),at=scav?0:armoryTier();
+  // What survives a death: the Vault (staffed) keeps slot 3 and some coin; Strongbox, Citadel, Coin Keeper and
+  // Diamond Vault creatures at work there keep weapons, a companion, more coin and all ore.
+  const scav=R.mode==='scav',vl=scav?0:stationLevel('vault'),kp=scav?hideoutFxEmpty():R.pfx,at=scav?0:armoryTier();
   const isNew=c=>!S.creatures.includes(c),caughtC=[];
   // Guns in hand at the end: [id, owned item or null for a find].
   const held=[0,1].filter(i=>R.guns[i]&&R.guns[i]!=='pistol').map(i=>[R.guns[i],R.gunItem[i]]);
@@ -1239,20 +1249,20 @@ function endRaid(outcome,via){
     S.stats.deaths++;
     L.notes.push(outcome==='collapse'?'The dungeon collapsed around you.':'You were knocked out.');
     party.forEach((m,i)=>{
-      if(i===0&&vt>=4&&!isNew(m.c)){L.home.push(`${m.c.name} (Vault guardian)`);gainXp(m.c,m.xpGain);return}
+      if(i===0&&kp.keep.companion&&!isNew(m.c)){L.home.push(`${m.c.name} (Vault guardian)`);gainXp(m.c,m.xpGain);return}
       if(isNew(m.c))L.lost.push(`${m.c.name} (new catch)`);else{L.lost.push(m.c.name);killCreature(m.c,fell)}});
     if(R.slot3){
       const c=R.slot3.c;
-      if(vt>=1){if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name} (saved by the Vault)`)}else L.home.push(`${c.name} (saved by the Vault)`)}
+      if(vl>=1){if(isNew(c)){S.creatures.push(c);S.stats.captures++;L.caught.push(`${c.name} (saved by the Vault)`)}else L.home.push(`${c.name} (saved by the Vault)`)}
       else{if(isNew(c))L.lost.push(`${c.name} (new catch)`);else{L.lost.push(c.name);killCreature(c,fell)}}
     }
-    const keepG=vt>=2?held:(at>=4&&R.guns[0]&&R.guns[0]!=='pistol'?[[R.guns[0],R.gunItem[0]]]:[]);
+    const keepG=kp.keep.weapons?held:(at>=4&&R.guns[0]&&R.guns[0]!=='pistol'?[[R.guns[0],R.gunItem[0]]]:[]);
     keepG.forEach(h=>{const it=bringHome(h);L.home.push(`${itemName(it)} (saved)`)});
     held.filter(h=>!keepG.includes(h)).forEach(([id,it])=>{L.lost.push(it?itemName(it):GUNS[id].name);if(it)loseItem(it)});
     R.taken.forEach(it=>{if(!held.some(([,x])=>x===it)){L.lost.push(itemName(it));loseItem(it)}});
     if(satchel){L.lost.push(itemName(satchel));loseItem(satchel)}
-    const keepCoin=Math.round(R.bag.coin*(vt>=5?.6:vt>=3?.3:0)),keepOre=vt>=5?R.bag.ore:0;
-    const keepMats=vt>=5;if(keepMats){give('hide',R.bag.hide);give('dust',R.bag.dust);give('sap',R.bag.sap||0)}
+    const keepCoin=Math.round(R.bag.coin*Math.min(PERKS_DATA.SCALE.keepCoinCap,(PERKS_DATA.BUILDINGS.vaultCoin[vl]||0)+kp.keepCoin)),keepOre=kp.keepOre?R.bag.ore:0;
+    const keepMats=!!kp.keepOre;if(keepMats){give('hide',R.bag.hide);give('dust',R.bag.dust);give('sap',R.bag.sap||0)}
     if(keepCoin||keepOre){S.coin+=keepCoin;S.ore+=keepOre;L.home.push(`Vault saved ${keepCoin} coin${keepOre?', '+keepOre+' ore, '+R.bag.hide+' hide and '+R.bag.dust+' crystal dust':''}`)}
     const lostLoot=[R.bag.coin-keepCoin&&(R.bag.coin-keepCoin)+' coin',R.bag.ore-keepOre&&(R.bag.ore-keepOre)+' ore',R.bag.food&&R.bag.food+' food',!keepMats&&R.bag.hide&&R.bag.hide+' hide',!keepMats&&R.bag.dust&&R.bag.dust+' crystal dust',...R.prints.map(id=>'print: '+GUNS[id].name),R.tonics&&R.tonics+' tonics'].filter(Boolean);
     if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
@@ -1263,7 +1273,7 @@ function endRaid(outcome,via){
   const report=emit('raid:end',{outcome,via,mode:R.mode,scav,extracted:outcome==='extract',floor:R.map.floor,vein:R.map.plan&&R.map.plan.vein,deepest,boss:R.bossDown?R.bossDown.name:null,
     party:[...party.map(m=>({c:m.c,downed:m.downed,kills:m.kills||0,hpFrac:m.hp/m.maxHp})),...(R.slot3?[{c:R.slot3.c,downed:false,kills:0,hpFrac:null}]:[])],kills:R.kills,eliteKills:R.eliteKills||0,bag:R.bag,caught:caughtC,deepening:R.deepening,notes:L.notes});
   // Catch-up: a Keeper well behind the expected rank for their calendar day earns double.
-  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1)*catchupMul());
+  const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp')+(R.pfx?R.pfx.kxp:0))*(R.fmods?R.fmods.kxp:1)*catchupMul());
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));

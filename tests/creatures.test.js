@@ -209,6 +209,6 @@ test('a v15 save loads as v16: every creature gets a history line and counters',
     const m = migrate(d);
     return {v: m.v, all: m.creatures.every(c => c.log.length === 1 && c.log[0][1] === 'before' && c.kills === 0 && c.extracts === 0), text: eventText(m.creatures[0].log[0])};
   });
-  assert.deepEqual(r, {v: 16, all: true, text: 'Came with you from before the records began.'});
+  assert.deepEqual(r, {v: 17, all: true, text: 'Came with you from before the records began.'});
   assert.deepEqual(errors, []);
 });

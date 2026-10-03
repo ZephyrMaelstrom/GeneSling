@@ -13,7 +13,7 @@
    hour and a half a day, and a casual player at about half an hour. A "day" here is a calendar day;
    the hideout day still moves on once per raid, as in the game. */
 import {BALANCE,BASE_SPECIES,EXCHANGE_DATA,BLOOM,BOSSES,BOSS_IDS,ENDGAME,GENETICS,JOBS,SECTION_IDS,SECTIONS} from './content.js';
-import {S,setS,newGame,makeCreature,gainXp,canEvolve,evolve,evolveCost,addKeeperXp,processDay,layEgg,breedBlock,unplace,secCap,secTier,
+import {S,setS,newGame,makeCreature,gainXp,canEvolve,evolve,evolveCost,addKeeperXp,processDay,layEgg,breedBlock,unplace,secCap,forgeTier,
   eggCap,keeperNeed,buyResearch,researchCost,sellValue,addBond,weaponDmgMul,wildStageFor,expandCost,killCreature,stats} from './state.js';
 import {mixSeed,rand,withSeed} from './rng.js';
 import {pick,ri} from './util.js';
@@ -23,6 +23,8 @@ import {rollWildIn,veinRich} from './bloom.js';
 import {story,chooseEnding,clearTier,nextTier,unboundOpen} from './endgame.js';
 import {gateOpen,catchupMul,veinBosses} from './balance.js';
 import {holdSaves} from './save.js';
+import {upgradeCost,upgradeBuilding,stationLevel} from './buildings.js';
+import {hideoutFx} from './perks.js';
 
 const J=BALANCE.JOURNEY,P=J.power,DEEP=BLOOM.VEIN_ORDER;
 const sig=x=>1/(1+Math.exp(-x));
@@ -79,8 +81,9 @@ function staff(){
     if(!S.sections[k])continue;
     // Matching types first; a station short of tier 2 fills its open slots with anyone (off-type workers count less, but count).
     const fits=c=>!SECTIONS[k].type||c.type===SECTIONS[k].type||c.type2===SECTIONS[k].type;
-    const pickd=avail().filter(fits).sort((a,b)=>workUnit(b,k)-workUnit(a,k)).slice(0,secCap(k));
-    if(SECTIONS[k].type&&secTier(k)<2)pickd.push(...avail().filter(c=>!fits(c)&&!pickd.includes(c)).sort((a,b)=>workUnit(b,k)-workUnit(a,k)).slice(0,Math.max(0,J.fillOffType-pickd.length)));
+    // Workers are ranked by what they'd make here with their perks and flaws; one that refuses the station is left out.
+    const value=c=>workUnit(c,k,[c]),pickd=avail().filter(fits).filter(c=>value(c)>0).sort((a,b)=>value(b)-value(a)).slice(0,secCap(k));
+    if(SECTIONS[k].type&&pickd.length<J.fillOffType)pickd.push(...avail().filter(c=>!fits(c)&&!pickd.includes(c)&&value(c)>0).sort((a,b)=>value(b)-value(a)).slice(0,Math.max(0,J.fillOffType-pickd.length)));
     pickd.forEach(c=>S.sections[k].ids.push(c.id));
   }
 }
@@ -122,8 +125,19 @@ function spend(b){
     const c=S.creatures.filter(x=>!keep.has(x.id)).sort((x,y)=>lineScore(x)-lineScore(y))[0];
     if(!c)break;unplace(c);S.creatures=S.creatures.filter(x=>x!==c);S.coin+=sellValue(c);b.sold++;
   }
+  // Build up the stations in the bot's order, buying missing materials at the Exchange's reference prices
+  // once coin is plentiful, as with pens.
+  const C=EXCHANGE_DATA.COMMODITIES;
+  for(const k of J.buildOrder){
+    const c=upgradeCost(k);if(!c||S.keeper.level<c.rank||!S.sections[k].ids.length)continue;
+    const short=Object.entries(c.mats).filter(([m])=>m!=='coin').map(([m,n])=>[m,Math.max(0,n-amt(m))]);
+    const price=(c.mats.coin||0)+short.reduce((a,[m,n])=>a+n*C[m].ref*J.marketMarkup,0);
+    if(S.coin<price*J.buildReserve)continue;
+    for(const [m,n] of short)if(n){S.coin-=Math.ceil(n*C[m].ref*J.marketMarkup);give(m,n)}
+    upgradeBuilding(k);
+  }
   // The crafter makes its own weapons as the Forge allows; everyone else relies on finds.
-  if(b.style.craft){const t=[0,1,2,4,5].filter(x=>secTier('forge')>=x).length-1;if(t>b.gear&&S.coin>=60*t){S.coin-=60*t;b.gear=t}}
+  if(b.style.craft){const t=forgeTier();if(t>b.gear&&S.coin>=60*t){S.coin-=60*t;b.gear=t}}
 }
 
 /* ---------- a raid ---------- */
@@ -177,7 +191,7 @@ function raid(b,day){
   b.raids++;S.stats.raids++;
   if(died){
     b.deaths++;S.stats.deaths++;
-    pt.forEach((c,i)=>{if(!c)return;if(i===0&&secTier('vault')>=4)return;if(i===2&&secTier('vault')>=1)return;killCreature(c,`Fell on Floor ${reached}`)});
+    pt.forEach((c,i)=>{if(!c)return;if(i===0&&hideoutFx().keep.companion)return;if(i===2&&stationLevel('vault')>=1)return;killCreature(c,`Fell on Floor ${reached}`)});
   }else{
     S.stats.extracts++;S.coin+=Math.round(coin);S.ore+=Math.round(ore);S.food+=food;
     pt.forEach((c,i)=>{if(!c)return;gainXp(c,i<2?25+xp:10+xp/4);c.raids++;addBond(c,20);if(!c.proven)c.proven=true});
@@ -186,7 +200,7 @@ function raid(b,day){
       const f=reached,W=BALANCE.WILD_LEVELS[Math.min(f,10)],vein=f>=4&&f<=6?plan.vein:null;
       const cands=Array.from({length:J.catchCandidates},()=>{const sp=rollWildIn(f,vein,false,1),lv=ri(W[0],W[1]);return makeCreature(sp,'wild',lv,{floor:f,stage:wildStageFor(sp,lv,f)})});
       // Types the hideout is short of (a station below tier 2 for want of workers) are worth more.
-      const need=t=>SECTION_IDS.some(k=>SECTIONS[k].type===t&&secTier(k)<2)?J.catchNeed:0;
+      const need=t=>SECTION_IDS.some(k=>SECTIONS[k].type===t&&S.sections[k].ids.length<2)?J.catchNeed:0;
       const val=c=>breedScore(c)+crPower(c)/4+need(c.type);
       const best=cands.sort((x,y)=>val(y)-val(x))[0];
       best.proven=true;S.creatures.push(best);S.stats.captures++;

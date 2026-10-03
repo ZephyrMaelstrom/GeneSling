@@ -32,9 +32,9 @@ on('raid:end',r=>{
   if(!r.extracted)return;
   for(const m of r.party||[]){
     const c=m.c;if(m.downed||!S.creatures.includes(c))continue;
-    c.extracts=(c.extracts||0)+1;c.kills=(c.kills||0)+(m.kills||0);
+    c.extracts=(c.extracts||0)+1;c.kills=(c.kills||0)+(m.kills||0);c.lastRaid=S.day;
     if(r.boss)logEvent(c,'boss',r.boss);
-    if(m.hpFrac!=null&&m.hpFrac<H.nearDeath)logEvent(c,'neardeath',where);
+    if(m.hpFrac!=null&&m.hpFrac<H.nearDeath){logEvent(c,'neardeath',where);c.nearDeaths=(c.nearDeaths||0)+1}
   }
 },{order:5});
 // A newly hatched creature, and its parents hear of it.

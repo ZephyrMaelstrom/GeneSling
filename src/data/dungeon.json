@@ -16,8 +16,8 @@
     "frenzy": {"name":"Frenzy","desc":"Enemies attack faster. Companions earn 50% more XP.","col":"#ff5c7a"}
   },
   "MODES": {
-    "hunter": {"name":"Hunter’s Moon","need":["warroom",2],"desc":"Twice as many wild creatures. Enemies have 20% more HP. +20% Keeper XP."},
-    "iron": {"name":"Iron Will","need":["warroom",4],"desc":"Enemies hit 40% harder. +60% coin and +50% Keeper XP."},
-    "swarm": {"name":"Swarm","need":["warroom",5],"desc":"Two more enemies per room. +30% coin and more buff orbs."}
+    "hunter": {"name":"Hunter’s Moon","need":["warroom",1],"desc":"Twice as many wild creatures. Enemies have 20% more HP. +20% Keeper XP."},
+    "iron": {"name":"Iron Will","need":["warroom",2],"desc":"Enemies hit 40% harder. +60% coin and +50% Keeper XP."},
+    "swarm": {"name":"Swarm","need":["warroom",3],"desc":"Two more enemies per room. +30% coin and more buff orbs."}
   }
 }
