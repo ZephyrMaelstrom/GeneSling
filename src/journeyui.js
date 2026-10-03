@@ -7,6 +7,8 @@ import {ui} from './state.js';
 import {sparkline} from './chart.js';
 import {runJourneys,journeyReport} from './journey.js';
 import {paceReport} from './playtest.js';
+import {onAct} from './actions.js';
+import {renderAll} from './ui.js';
 
 const J=BALANCE.JOURNEY;
 function runJourneyLab(){
@@ -32,4 +34,6 @@ function journeyPanel(){
   return`${head}<div style="overflow-x:auto"><table class="jtable"><thead><tr><th>Player · seed</th><th>Act II</th><th>Act III</th><th>Act IV</th><th>Heart</th><th>Rank d30/60/90</th><th>Tier d90</th><th>Tier 20</th><th>Deaths</th><th>Rank</th></tr></thead><tbody>${rows}</tbody></table></div>
     <h3>Exit test ${R.rep.pass?'<span class="chip good">passes</span>':'<span class="chip bad">fails</span>'}</h3><ul class="tierlist">${checks}</ul>${pacePanel()}`;
 }
+/* ---------- actions ---------- */
+onAct('lab-journey',d=>{runJourneyLab();renderAll()});
 export {runJourneyLab,journeyPanel};

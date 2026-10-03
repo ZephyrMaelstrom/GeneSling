@@ -2,10 +2,15 @@
    The contract board and vein map picker on the Raid tab, vein map recipes in the Workshop,
    the veins in the Codex, and the Test Lab's vein jumps and variety check. */
 import {esc} from './util.js';
-import {BLOOM as B,TYPES} from './content.js';
-import {secTier} from './state.js';
+import {BLOOM as B,TYPES,BLOOM} from './content.js';
+import {secTier,S,ui} from './state.js';
 import {costText,amt} from './jobs.js';
-import {bloomState,contractOffers,loadoutMap,mapBlock,mapName,rewardText} from './bloom.js';
+import {bloomState,contractOffers,loadoutMap,mapBlock,mapName,rewardText,craftMap,dropContract,takeContract,varietyRun} from './bloom.js';
+import {onAct,onChange} from './actions.js';
+import {renderAll,renderMain} from './ui.js';
+import {save} from './save.js';
+import {sfx} from './audio.js';
+import {startRaid} from './raid.js';
 
 function contractBoard(){
   const c=bloomState().contracts,act=c.active,offers=contractOffers();
@@ -46,4 +51,12 @@ function labBloom(ui){
     ${r?`<p class="status">${r.repeats?`<b style="color:var(--rose)">${r.repeats} repeated</b>`:'<b style="color:var(--mint)">No repeats</b>'} in ${r.sigs.length} raids.</p><ul class="plain" style="font-size:.8rem">${r.sigs.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}`;
 }
 
+/* ---------- actions ---------- */
+onAct('contract',d=>{if(takeContract(+d.i)){save();renderMain()}});
+onAct('contractdrop',d=>{dropContract();save();renderMain()});
+onAct('makemap',d=>{if(craftMap(d.k,ui.mapVein||BLOOM.VEIN_ORDER[0])){sfx('pickup');save();renderAll()}});
+onAct('lab-vein',d=>{startRaid('raid',4,null,d.k)});
+onAct('lab-variety',d=>{ui.variety=varietyRun(20,Date.now()%100000);renderMain()});
+onChange('mapsel',el=>{S.loadout.map=el.value?+el.value:null;save()});
+onChange('mapvein',el=>{ui.mapVein=el.value;renderMain()});
 export {contractBoard,mapPicker,mapRecipes,veinCodex,labBloom};

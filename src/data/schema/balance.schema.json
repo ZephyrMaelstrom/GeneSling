@@ -1,0 +1,600 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/balance.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "ACCESS": {
+   "type": "object",
+   "properties": {
+    "aimAssist": {
+     "type": "object",
+     "properties": {
+      "cone": {
+       "type": "number"
+      },
+      "range": {
+       "type": "number"
+      },
+      "pull": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "cone",
+      "range",
+      "pull"
+     ],
+     "additionalProperties": false
+    },
+    "slowBullets": {
+     "type": "number"
+    },
+    "quality": {
+     "type": "object",
+     "properties": {
+      "high": {
+       "type": "number"
+      },
+      "low": {
+       "type": "number"
+      },
+      "auto": {
+       "type": "object",
+       "properties": {
+        "start": {
+         "type": "number"
+        },
+        "min": {
+         "type": "number"
+        },
+        "max": {
+         "type": "number"
+        },
+        "step": {
+         "type": "number"
+        },
+        "slowMs": {
+         "type": "number"
+        },
+        "fastMs": {
+         "type": "number"
+        },
+        "window": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "start",
+        "min",
+        "max",
+        "step",
+        "slowMs",
+        "fastMs",
+        "window"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "required": [
+      "high",
+      "low",
+      "auto"
+     ],
+     "additionalProperties": false
+    },
+    "palettes": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "good": {
+        "type": "string"
+       },
+       "bad": {
+        "type": "string"
+       },
+       "friend": {
+        "type": "string"
+       },
+       "enemy": {
+        "type": "string"
+       },
+       "types": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "string"
+        }
+       }
+      },
+      "required": [
+       "name",
+       "good",
+       "bad",
+       "friend",
+       "enemy",
+       "types"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "aimAssist",
+    "slowBullets",
+    "quality",
+    "palettes"
+   ],
+   "additionalProperties": false
+  },
+  "PLAYTEST": {
+   "type": "object",
+   "properties": {
+    "act2Day": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "maxGateWait": {
+     "type": "number"
+    },
+    "testers": {
+     "type": "number"
+    },
+    "weeks": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "act2Day",
+    "maxGateWait",
+    "testers",
+    "weeks"
+   ],
+   "additionalProperties": false
+  },
+  "GATES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "floor": {
+      "type": "number"
+     },
+     "act": {
+      "type": "number"
+     },
+     "name": {
+      "type": "string"
+     },
+     "rank": {
+      "type": "number"
+     },
+     "stations": {
+      "type": "object",
+      "properties": {
+       "n": {
+        "type": "number"
+       },
+       "tier": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "n",
+       "tier"
+      ],
+      "additionalProperties": false
+     },
+     "veinBosses": {
+      "type": "number"
+     },
+     "cutFree": {
+      "type": "number"
+     },
+     "cutFreeParty": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "floor",
+     "act",
+     "name",
+     "rank"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "CATCHUP": {
+   "type": "object",
+   "properties": {
+    "mul": {
+     "type": "number"
+    },
+    "within": {
+     "type": "number"
+    },
+    "expected": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    }
+   },
+   "required": [
+    "mul",
+    "within",
+    "expected"
+   ],
+   "additionalProperties": false
+  },
+  "WILD_LEVELS": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "items": {
+     "type": "number"
+    }
+   }
+  },
+  "JOURNEY": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "number"
+    },
+    "seeds": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "targets": {
+     "type": "object",
+     "properties": {
+      "act2": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "act3": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "act4": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "act4Each": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "rank60": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "rank90": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "tier90": {
+       "type": "number"
+      },
+      "casualHeart": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "required": [
+      "act2",
+      "act3",
+      "act4",
+      "act4Each",
+      "rank60",
+      "rank90",
+      "tier90",
+      "casualHeart"
+     ],
+     "additionalProperties": false
+    },
+    "styles": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "raids": {
+        "type": "number"
+       },
+       "risk": {
+        "type": "number"
+       },
+       "skill": {
+        "type": "number"
+       },
+       "breed": {
+        "type": "number"
+       },
+       "craft": {
+        "type": "number"
+       },
+       "days": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "name",
+       "raids",
+       "risk",
+       "skill",
+       "breed",
+       "craft"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "power": {
+     "type": "object",
+     "properties": {
+      "gearTier": {
+       "type": "number"
+      },
+      "slope": {
+       "type": "number"
+      },
+      "boss": {
+       "type": "number"
+      },
+      "partyMin": {
+       "type": "number"
+      },
+      "player": {
+       "type": "number"
+      },
+      "growTo": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "gearTier",
+      "slope",
+      "boss",
+      "partyMin",
+      "player",
+      "growTo"
+     ],
+     "additionalProperties": false
+    },
+    "unbound": {
+     "type": "object",
+     "properties": {
+      "perTier": {
+       "type": "number"
+      },
+      "floors": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "required": [
+      "perTier",
+      "floors"
+     ],
+     "additionalProperties": false
+    },
+    "kills": {
+     "type": "object",
+     "properties": {
+      "base": {
+       "type": "number"
+      },
+      "perLocal": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "base",
+      "perLocal"
+     ],
+     "additionalProperties": false
+    },
+    "killXp": {
+     "type": "object",
+     "properties": {
+      "foe": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "wild": {
+       "type": "number"
+      },
+      "deep": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "foe",
+      "wild",
+      "deep"
+     ],
+     "additionalProperties": false
+    },
+    "boss": {
+     "type": "object",
+     "properties": {
+      "kxp": {
+       "type": "number"
+      },
+      "kxpDeep": {
+       "type": "number"
+      },
+      "xp": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "kxp",
+      "kxpDeep",
+      "xp"
+     ],
+     "additionalProperties": false
+    },
+    "loot": {
+     "type": "object",
+     "additionalProperties": {
+      "type": [
+       "array",
+       "number"
+      ],
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    "gunFind": {
+     "type": "number"
+    },
+    "catchCandidates": {
+     "type": "number"
+    },
+    "sellAbove": {
+     "type": "number"
+    },
+    "catchNeed": {
+     "type": "number"
+    },
+    "keepLine": {
+     "type": "number"
+    },
+    "keepWorkers": {
+     "type": "number"
+    },
+    "fillOffType": {
+     "type": "number"
+    },
+    "marketMarkup": {
+     "type": "number"
+    },
+    "penReserve": {
+     "type": "number"
+    },
+    "acts": {
+     "type": "object",
+     "properties": {
+      "act4": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "act4"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "days",
+    "seeds",
+    "targets",
+    "styles",
+    "power",
+    "unbound",
+    "kills",
+    "killXp",
+    "boss",
+    "loot",
+    "gunFind",
+    "catchCandidates",
+    "sellAbove",
+    "catchNeed",
+    "keepLine",
+    "keepWorkers",
+    "fillOffType",
+    "marketMarkup",
+    "penReserve",
+    "acts"
+   ],
+   "additionalProperties": false
+  },
+  "BOSS_XP": {
+   "type": "object",
+   "properties": {
+    "repeat": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "repeat"
+   ],
+   "additionalProperties": false
+  },
+  "KEEPER_CURVE": {
+   "type": "object",
+   "properties": {
+    "base": {
+     "type": "number"
+    },
+    "exp": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "base",
+    "exp"
+   ],
+   "additionalProperties": false
+  },
+  "UNBOUND_RANK": {
+   "type": "object",
+   "properties": {
+    "from": {
+     "type": "number"
+    },
+    "perTier": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "from",
+    "perTier"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "ACCESS",
+  "PLAYTEST",
+  "GATES",
+  "CATCHUP",
+  "WILD_LEVELS",
+  "JOURNEY",
+  "BOSS_XP",
+  "KEEPER_CURVE",
+  "UNBOUND_RANK"
+ ],
+ "additionalProperties": false
+}

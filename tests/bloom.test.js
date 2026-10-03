@@ -281,7 +281,7 @@ test('a v10 save loads into the current version with the Apothecary on the map',
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, sec: !!S.sections.apothecary, placed: S.layout.some(i => i.key === 'apothecary'), bloom: !!S.bloom && Array.isArray(S.bloom.maps), map: S.loadout.map}));
-  assert.deepEqual(s, {v: 14, sec: true, placed: true, bloom: true, map: null});
+  assert.deepEqual(s, {v: 16, sec: true, placed: true, bloom: true, map: null});
   assert.deepEqual(e2, []);
   await ctx.close();
 });
@@ -294,5 +294,27 @@ test('the new screens render without errors', async () => {
     ui.tab = 'lab'; renderAll(); act('lab-variety');
     startRaid('raid', 3); await sleep(100); openVeinChoice(); setPause(false); endQuiet();
   });
+  assert.deepEqual(errors, []);
+});
+
+test('each vein is rich in its own goods: pickups scale, the Choir’s chests hold shards', async () => {
+  const r = await run(() => {
+    // Picking up 10 of a material 200 times on a floor of each vein (a big bag, so nothing is refused).
+    const haul = (vein, mat) => { R.map.plan.vein = vein; R.bagCap = 999; let n = 0; for (let i = 0; i < 200; i++) { R.bag[mat] = 0; n += bagAdd(mat, 10); } return n / 200; };
+    startRaid('raid', 5, seedFor(5, 'ember', () => true), 'ember');
+    const out = {emberOre: haul('ember', 'ore'), rootOre: haul('rootworks', 'ore'), drownedFood: haul('drowned', 'food'), drownedHide: haul('drowned', 'hide'),
+      spiresDust: haul('spires', 'dust'), emberDust: haul('ember', 'dust'), one: [...Array(400)].map(() => { R.map.plan.vein = 'drowned'; R.bag.hide = 0; return bagAdd('hide', 1); })};
+    endQuiet();
+    return {...out, one: [Math.min(...out.one), Math.max(...out.one), out.one.reduce((a, b) => a + b, 0) / out.one.length],
+      rich: Object.fromEntries(Object.keys(BLOOM.VEINS).map(v => [v, veinRich(v, 'shards')])), relic: [veinRich('underheart', 'relic'), veinRich('unbound', 'relic'), veinRich('ember', 'relic')]};
+  });
+  assert.equal(r.emberOre, 16, 'Ember Abyss: ore ×1.6');
+  assert.equal(r.rootOre, 10);
+  assert.equal(r.drownedFood, 15); assert.equal(r.drownedHide, 15);
+  assert.equal(r.spiresDust, 20); assert.equal(r.emberDust, 10);
+  assert.deepEqual(r.one.slice(0, 2), [1, 2], 'one hide × 1.5 is one or two');
+  assert.ok(Math.abs(r.one[2] - 1.5) < 0.12, `about 1.5 on average (${r.one[2]})`);
+  assert.ok(r.rich.choir > 0 && r.rich.ember === 0, 'only the Choir’s chests hold shards');
+  assert.deepEqual(r.relic, [0.5, 0.15, 0]);
   assert.deepEqual(errors, []);
 });

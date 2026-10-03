@@ -1,0 +1,18 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/firebase.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "apiKey": {
+   "type": "string"
+  },
+  "projectId": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "apiKey",
+  "projectId"
+ ],
+ "additionalProperties": false
+}

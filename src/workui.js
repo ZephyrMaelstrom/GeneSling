@@ -5,12 +5,16 @@
    screen promises is what the day delivers. */
 import {esc} from './util.js';
 import {JOBS as J,SECTIONS,TYPES,TRAITS,GUNS,GUN_IDS,SCRAP_ORE,DONATE_PTS,ARMORY_TH,ARMORY_TIERS,PERS} from './content.js';
-import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sectionUnlockedArmory,whereIs} from './state.js';
+import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sectionUnlockedArmory,whereIs,addLog,bump,ui} from './state.js';
 import {spr} from './sprites.js';
 import {simulateSupply} from './supply.js';
 import {decorRecipes} from './prideui.js';
 import {mapRecipes} from './bloomui.js';
-import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale} from './jobs.js';
+import {amt,matName,costText,canPay,QN,itemByUid,itemName,makerText,usable,repairCost,stationReport,foremanOf,typeMatch,workUnit,qualityOdds,masteryLevel,recipeCost,weaponCost,rosterCap,rosterCount,overCap,penCost,roleInfo,expAway,expeditionBlock,teamScale,buildPen,craft,craftWeapon,repair,scrapItem,startExpedition,useSerum} from './jobs.js';
+import {onAct,onChange} from './actions.js';
+import {renderAll,renderMain,renderSecPanel,validGuns} from './ui.js';
+import {save} from './save.js';
+import {sfx} from './audio.js';
 
 const f1=v=>(Math.round(v*10)/10).toString();
 const outName=k=>Object.keys(J.STATIONS[k].out).map(m=>matName(m).toLowerCase()).join(', ');
@@ -30,7 +34,7 @@ function memberRow(c,k){
   const rep=stationReport(k),main=rep?Object.entries(J.STATIONS[k].out)[0]:null,f=foremanOf(k)===c;
   const prod=rep?`+${f1(rep.per(c)*main[1])} ${matName(main[0]).toLowerCase()}/day · `:'';
   const why=SECTIONS[k].type?(typeMatch(c,k)>=1?`${TYPES[SECTIONS[k].type].name} match`:typeMatch(c,k)>.7?'hybrid match':'off type, works at half rate'):'';
-  return`<div class="member">${spr(c,40)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}${f?' <span class="chip warn" title="Highest Focus: its work traits apply to the whole station">Foreman</span>':''}</div>
+  return`<div class="member"><button class="sprlink" data-act="creature" data-id="${c.id}" data-list="station:${k}" aria-label="Open ${esc(c.name)}’s page">${spr(c,40)}</button><div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}${f?' <span class="chip warn" title="Highest Focus: its work traits apply to the whole station">Foreman</span>':''}</div>
     <small>${prod}+${Math.round(secContribution(c,k))} pts · Yield ${f1(c.genes.yld)}${why?' · '+why:''}</small>${fatBar(c)}</div>
     <button class="btn small" data-act="unassign" data-id="${c.id}" aria-label="Remove ${esc(c.name)}">×</button></div>`;
 }
@@ -181,4 +185,18 @@ function supplyPanel(){
     <div class="row"><button class="btn primary" data-act="lab-supply">Run a week</button></div>${res}`;
 }
 
+/* ---------- actions ---------- */
+onAct('make',d=>{const got=craft(d.k);if(got){addLog(`Workshop: made ${got}.`);sfx('heavy');save();renderAll()}});
+onAct(['forge','forgeprint'],(d,a)=>{const id=a==='forge'?d.k:S.prints[+d.i];const it=craftWeapon(id,a==='forgeprint'?+d.i:null);if(it){addLog(`The Forge made a ${itemName(it)}. ${makerText(it)}.`);sfx('heavy');save();renderAll()}});
+onAct('repair',d=>{if(repair(+d.uid)){sfx('heavy');save();renderAll()}});
+onAct('scrapitem',(d,a)=>{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun')return;if(ui.scrapArm!==it.uid){ui.scrapArm=it.uid;renderMain();return}ui.scrapArm=null;
+      const ore=Math.round(SCRAP_ORE[GUNS[it.id].tier]*(secTier('forge')>=3?1.5:1));scrapItem(it);S.ore+=ore;S.blueprints[it.id]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${itemName(it)} for ${ore} ore.`);sfx('heavy');save();renderAll()});
+onAct('donateitem',(d,a)=>{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun'||!sectionUnlockedArmory())return;const before=armoryTier(),pts=DONATE_PTS[GUNS[it.id].tier];scrapItem(it);S.armory+=pts;S.blueprints[it.id]=1;validGuns();
+      addLog(`Donated a ${itemName(it)} to the Armory (+${pts} pts).${armoryTier()>before?' Armory tier '+armoryTier()+' reached: '+ARMORY_TIERS[armoryTier()-1]+'.':''}`);save();renderAll()});
+onAct('buildpen',d=>{if(buildPen()){sfx('level');save();renderAll()}});
+onAct('expgo',d=>{const ids=ui.exp.team.map(Number);if(startExpedition(ui.exp.dest,ids)){ui.exp={dest:'',team:['','','']};sfx('ui');save();renderAll()}});
+onAct('lab-supply',d=>{runSupply(1);renderMain()});
+onAct('serum',d=>{const c=byId(+d.id);if(c&&useSerum(c)){sfx('level');save();renderAll()}});
+onChange('expsel',el=>{ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()});
+onChange('expdest',el=>{ui.exp.dest=el.dataset.k;renderSecPanel()});
 export {runSupply,supplyPanel,memberRow,candidateOption,stationPanel,expeditionPanel,memorialView,workshopView,gearPanel,bagSize,roleChip,rosterBar,fatBar};

@@ -9,6 +9,7 @@ import {S} from './state.js';
 import {track} from './demo.js';
 import {currentAct} from './lore.js';
 import {calendarDay,gateNeeds} from './balance.js';
+import {on} from './events.js';
 
 const pace=()=>{const T=S.telemetry||(S.telemetry={asked:false,on:false});return T.pace||(T.pace={act:1,acts:{1:1},gates:{}})};
 // After every raid: note new acts and gates passed.
@@ -18,6 +19,7 @@ function paceTick(){
   P.act=Math.max(P.act,a);
   for(const [k,G] of Object.entries(BALANCE.GATES)){const g=P.gates[k];if(g&&g.blocked!=null&&g.passed==null&&(S.progress.deepest||0)>G.floor){g.passed=day;track('gate_passed',{gate:k,wait:day-g.blocked,calDay:day})}}
 }
+on('day:passed',paceTick,{order:10});
 // A portal refused the player.
 function gateBlocked(key){
   const P=pace(),day=calendarDay(),g=P.gates[key]||(P.gates[key]={});

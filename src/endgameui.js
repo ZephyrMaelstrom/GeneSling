@@ -5,10 +5,15 @@
 import {esc} from './util.js';
 import {LORE,ENDGAME as E,GENES} from './content.js';
 import {wallKnown} from './lore.js';
-import {S,byId,formName,ui} from './state.js';
-import {amt,costText} from './jobs.js';
-import {GRADE_LOCI,STAT_LOCI} from './genetics.js';
-import {archivist,chamberBlock,chamberOpen,eligible,knownLetters,ladder,mutlabBonus,mutlabCreatures,nextTier,renown,rulesFor,runeOf,runeWall,seasonOf,seasonTwist,showClasses,spliceBlock,story,unboundOpen,weekOf} from './endgame.js';
+import {S,byId,formName,ui,addLog,unplace} from './state.js';
+import {amt,costText,give} from './jobs.js';
+import {GRADE_LOCI,STAT_LOCI,express} from './genetics.js';
+import {archivist,chamberBlock,chamberOpen,eligible,knownLetters,ladder,mutlabBonus,mutlabCreatures,nextTier,renown,rulesFor,runeOf,runeWall,seasonOf,seasonTwist,showClasses,spliceBlock,story,unboundOpen,weekOf,enterShow,labEndgame,setMutlab,splice} from './endgame.js';
+import {onAct,onChange} from './actions.js';
+import {renderAll,renderMain} from './ui.js';
+import {save} from './save.js';
+import {sfx} from './audio.js';
+import {startRaid} from './raid.js';
 
 const opt=(list,sel,lab)=>`<option value="">${lab}</option>`+list.map(c=>`<option value="${c.id}" ${String(sel)===String(c.id)?'selected':''}>${esc(c.name)} · ${esc(formName(c))} Lv ${c.level}</option>`).join('');
 
@@ -78,4 +83,20 @@ const labEndgamePanel=()=>`<h3>Endgame</h3><p class="hint">An endgame party (thr
 
 const ribbonChips=c=>(c.ribbons||[]).slice(-3).map(r=>`<span class="chip title" title="Week ${r.week}: ${esc(r.cls)}">${['1st','2nd','3rd'][r.place-1]||''} · ${esc(r.cls)}</span>`).join('');
 
+/* ---------- actions ---------- */
+onAct('unbound',d=>{startRaid('raid',7,null,'unbound',{tier:+d.k})});
+onAct('deepening',d=>{startRaid('raid',1,null,null,{deepening:weekOf(S.day)})});
+onAct('splice',d=>{const dn=byId(+ui.spDonor);if(!dn)return;if(ui.spArm!==dn.id){ui.spArm=dn.id;renderMain();return}ui.spArm=null;if(splice(+ui.spDonor,+ui.spRecip,ui.spLocus||'pow')){ui.spDonor='';sfx('evolve');save();renderAll()}});
+onAct('bloomscar',d=>{const c=byId(+d.id);if(c&&amt('bloomscar')>0){give('bloomscar',-1);c.genome.shine[c.genome.shine[0]<=c.genome.shine[1]?0:1]=2;express(c);addLog(`A Bloomscar serum scarred ${c.name}'s shine gene.`);sfx('evolve');save();renderAll()}});
+onAct('lab-endgame',d=>{labEndgame();save();renderAll()});
+onAct('lab-unbound',d=>{story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;startRaid('raid',7,null,'unbound',{tier:+d.k})});
+onAct('lab-ending',d=>{story().ilsa=true;story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;save();renderAll()});
+onChange('tiersel',el=>{ui.tier=el.value;renderMain()});
+onChange('spdonor',el=>{ui.spDonor=el.value;ui.spArm=null;renderMain()});
+onChange('sprecip',el=>{ui.spRecip=el.value;renderMain()});
+onChange('splocus',el=>{ui.spLocus=el.value;renderMain()});
+onChange('mutlab',el=>{const ids=(S.mutlab||[]).slice();ids[+el.dataset.i]=el.value?+el.value:null;const c=byId(+el.value);if(c)unplace(c);setMutlab(ids.filter(Boolean));save();renderMain()});
+onChange('apexlocus',el=>{ui.apexLocus=el.value||'';renderMain()});
+onChange('showenter',el=>{enterShow(+el.dataset.i,el.value?+el.value:null);save()});
+onChange('archivist',el=>{S.archive.archivist=el.value?+el.value:null;save();renderMain()});
 export {bloomBelow,breedingTools,showsPanel,archivePanel,labEndgamePanel,ribbonChips};

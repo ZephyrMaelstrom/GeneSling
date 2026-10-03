@@ -91,15 +91,15 @@ test('each Unbound tier needs Keeper rank too', async () => {
 test('colorblind palettes, aim assist, slower bullets and the render scale', async () => {
   const r = await run(async () => {
     const ember = TYPES.ember.color;
-    S.opts.palette = 'deutan'; applyPalette();
+    OPTS.palette = 'deutan'; applyPalette();
     const recolored = TYPES.ember.color !== ember && document.documentElement.dataset.palette === 'deutan' && getComputedStyle(document.documentElement).getPropertyValue('--rose').trim() === BALANCE.ACCESS.palettes.deutan.bad;
     const bullet = bulletCol({team: 'e', col: '#ff5c7a'});
-    S.opts.palette = 'normal'; applyPalette(); const back = TYPES.ember.color === ember;
+    OPTS.palette = 'normal'; applyPalette(); const back = TYPES.ember.color === ember;
     S.settings.god = true; startRaid('raid', 1); await sleep(150);
-    const b1 = shoot('e', R.p.x, R.p.y, 0, 100, 1); S.opts.slowBullets = true; const b2 = shoot('e', R.p.x, R.p.y, 0, 100, 1); S.opts.slowBullets = false;
-    const e = {x: R.p.x + 200, y: R.p.y + 40, hp: 10}; S.opts.aimAssist = true; const bent = assistAim(0, R.p, [e]); S.opts.aimAssist = false; const straight = assistAim(0, R.p, [e]);
-    S.opts.quality = 'auto'; resetScale(); const s0 = renderScale(); for (let i = 0; i < 80; i++) frameTime(40); const s1 = renderScale();
-    S.opts.quality = 'low'; const low = renderScale(); S.opts.quality = 'auto';
+    const b1 = shoot('e', R.p.x, R.p.y, 0, 100, 1); OPTS.slowBullets = true; const b2 = shoot('e', R.p.x, R.p.y, 0, 100, 1); OPTS.slowBullets = false;
+    const e = {x: R.p.x + 200, y: R.p.y + 40, hp: 10}; OPTS.aimAssist = true; const bent = assistAim(0, R.p, [e]); OPTS.aimAssist = false; const straight = assistAim(0, R.p, [e]);
+    OPTS.quality = 'auto'; resetScale(); const s0 = renderScale(); for (let i = 0; i < 80; i++) frameTime(40); const s1 = renderScale();
+    OPTS.quality = 'low'; const low = renderScale(); OPTS.quality = 'auto';
     endQuiet();
     return {recolored, bullet, back, slow: Math.hypot(b2.vx, b2.vy) / Math.hypot(b1.vx, b1.vy), bent, straight, s0, s1, low, dpr: devicePixelRatio};
   });
@@ -121,6 +121,6 @@ test('the playtest pace notes when each act opened', async () => {
 
 test('a v13 save loads as v14 with a start date', async () => {
   const r = await run(() => { const d = migrate({...JSON.parse(JSON.stringify(S)), v: 13, startedAt: undefined}); return {v: d.v, started: typeof d.startedAt}; });
-  assert.deepEqual(r, {v: 14, started: 'number'});
+  assert.deepEqual(r, {v: 16, started: 'number'});
   assert.deepEqual(errors, []);
 });

@@ -3,26 +3,27 @@ import {fxRand,mixSeed,newSeed,rand,seedRng,withSeed} from './rng.js';
 import {$,TOUCH,angDiff,clamp,dist,esc,fxRi,pick,ri,rnd,shuffle,wpick} from './util.js';
 import {ENDGAME,BLOOM,ABILITIES,ATTACKS,BOND_PASSIVE,BOSSES,BOSS_IDS,BUFFS,BUFF_IDS,CURSES,CURSE_IDS,FOES,FOE_IDS,GENETICS,GUNS,GUN_IDS,JOBS,NPCS,NPC_IDS,ROOM_MODS,ROOM_MOD_IDS,SPECIES,TRAITS,TYPES,TYPE_IDS,WILD_FIRE,comboFor,comboKey,foePool,reactionFor,speciesOf,typesOf} from './content.js';
 import {save} from './save.js';
-import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,processDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
+import {S,unplace,addBond,addKeeperXp,addLog,armoryTier,bondStar,bump,byId,cageCap,canEvolve,dexFoe,dexForm,formName,gainXp,keeperNeed,killCreature,makeCreature,modeUnlocked,npcQuest,priceMul,passDay,res,secTier,sexSym,stats,ui,weaponDmgMul,wildStageFor} from './state.js';
 import {sfx} from './audio.js';
 import {startHideoutMap} from './map.js';
 import {closeModal,openModal,renderAll,validGuns} from './ui.js';
 import {goLandscape,lockPage,resize,showOverlay,startLoop,stopLoop} from './draw.js';
 import {amt,foundGun,give,gunDmgMul,itemByUid,itemName,matName,roleInfo,roleOf,satchelSlots,scrapItem,usable} from './jobs.js';
-import {marketDay} from './exchange/market.js';
+import {emit} from './events.js';
 import {express} from './genetics.js';
 import {caravanPay,catchable,caughtExtras,deathExtras,enterExtras,floorStart,moveMul,makeNoise,openVeinChoice,twistUpdate} from './veins.js';
-import {settleContract} from './bloom.js';
-import {deepeningScore,lordDamage,recordDeepening,clearTier,onStoryBoss,ruleOn,tierLoot,deepeningSeed} from './endgame.js';
+import {lordDamage,clearTier,onStoryBoss,ruleOn,tierLoot,deepeningSeed} from './endgame.js';
 import {enterUnderheart,lordShadows,openEndingChoice} from './veins.js';
-import {floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
+import {richAmount,veinRich,floorPlan,herdSpecies,pickBoss,pickRaidSeed,rememberSeed,rollWildIn,veinIdx,veinOfFloor} from './bloom.js';
 import {awardBossTrophy,extractTitles,perk,recordShared} from './hideout.js';
-import {DEMO,demoProgress,track,tutorialDone} from './demo.js';
-import {loreEnd,lorePick,loreRoom,placeLore,restChest} from './lore.js';
+import {DEMO,tutorialDone} from './demo.js';
+import {lorePick,loreRoom,placeLore,restChest} from './lore.js';
 import {BALANCE,LORE} from './content.js';
 import {catchupMul,gateBlockText} from './balance.js';
 import {assistAim,enemyBulletMul,resetScale} from './access.js';
-import {gateBlocked,paceTick} from './playtest.js';
+import {gateBlocked} from './playtest.js';
+import {OPTS} from './device.js';
+import {logEvent} from './history.js';
 const TS=32,RW=15,RH=11,CW=RW+6,CH=RH+6;
 let R=null;
 const keys=new Set();
@@ -216,7 +217,9 @@ const roleComp=(m,r)=>!!m&&!m.downed&&roleOf(m.c)===r;
 // Each slot holds BAG.stack of one material, or one print. Coin needs no room.
 const BAG_MATS=['ore','food','hide','dust','sap'];
 function bagUsed(){return BAG_MATS.reduce((a,m)=>a+Math.ceil((R.bag[m]||0)/JOBS.BAG.stack),0)+R.prints.length}
+// A pickup goes into the bag, scaled by what this floor's vein is rich in (Ember Abyss ore ×1.6).
 function bagAdd(mat,n,x,y){
+  n=richAmount(R.map&&R.map.plan&&R.map.plan.vein,mat,n);
   const st=JOBS.BAG.stack,have=R.bag[mat]||0,room=(st-have%st)%st+Math.max(0,R.bagCap-bagUsed())*st,add=Math.min(n,room);
   R.bag[mat]=have+add;
   if(add<n&&x!=null){float(x,y-28,'Bag full','#ff6688',true);if(!R.bagWarned){R.bagWarned=true;msg('Your bag is full. Extract to bank it, or bring a Hauler or a satchel next time.')}}
@@ -290,7 +293,7 @@ function startRaid(mode,startFloor,seed,vein,opts={}){
   resetScale();resize();startLoop();
 }
 function applyOpts(){
-  const o=S.opts,raid=$('#raid');
+  const o=OPTS,raid=$('#raid');
   raid.style.setProperty('--tb',{S:'46px',M:'54px',L:'64px'}[o.btnSize]||'54px');
   raid.style.setProperty('--hud-a',o.hudAlpha);
   raid.classList.toggle('lefty',o.hand==='left');
@@ -298,10 +301,10 @@ function applyOpts(){
   const r=stickR(),{m,b}=stickInset(r);
   raid.style.setProperty('--sr',r+'px');raid.style.setProperty('--sm',m+'px');raid.style.setProperty('--sb',b+'px');
 }
-const stickR=()=>({S:42,M:52,L:64}[S.opts.stickSize]||52);
+const stickR=()=>({S:42,M:52,L:64}[OPTS.stickSize]||52);
 // Stick centres: m from the side edge, b from the bottom (kept low so the buttons fit above in landscape).
 const stickInset=r=>({m:r+28,b:r+26});
-function stickBases(){const r=stickR(),{m,b}=stickInset(r);const L={x:m,y:R.vh-b},Rr={x:R.vw-m,y:R.vh-b};return S.opts.hand==='left'?{move:Rr,aim:L}:{move:L,aim:Rr}}
+function stickBases(){const r=stickR(),{m,b}=stickInset(r);const L={x:m,y:R.vh-b},Rr={x:R.vw-m,y:R.vh-b};return OPTS.hand==='left'?{move:Rr,aim:L}:{move:L,aim:Rr}}
 const B=k=>R.buffs[k]||0;
 const CU=k=>R.curses.has(k);
 function refreshSupport(){
@@ -320,7 +323,7 @@ function applyBuff(k,silent){
 }
 function applyCurse(k){if(R.curses.has(k))return;R.curses.add(k);if(k==='doom'&&R.time>0)R.time=Math.max(30,R.time-90);refreshSupport();float(R.p.x,R.p.y-30,CURSES[k].name,'#ff6688',true);msg(`${CURSES[k].name}: ${CURSES[k].desc}`);sfx('boss')}
 function msg(t){R.msg=t;R.msgT=3.2}
-function float(x,y,text,col,force){if(!force&&!S.opts.dmgNums&&/^\d+$/.test(String(text)))return;R.floats.push({x,y,text:String(text),col:col||'#f6eedb',t:1});if(R.floats.length>70)R.floats.shift()}
+function float(x,y,text,col,force){if(!force&&!OPTS.dmgNums&&/^\d+$/.test(String(text)))return;R.floats.push({x,y,text:String(text),col:col||'#f6eedb',t:1});if(R.floats.length>70)R.floats.shift()}
 function partyHas(type){return R.comps.some(m=>m&&!m.downed&&typesOf(m.c).includes(type))||(R.slot3&&typesOf(R.slot3.c).includes(type))}
 function partyTrait(tr){return R.comps.some(m=>m&&m.c.traits.includes(tr))||(R.slot3&&R.slot3.c.traits.includes(tr))}
 const bondComp=(type,star=3)=>R.comps.some(m=>m&&!m.downed&&m.c.type===type&&m.st.star>=star);
@@ -459,7 +462,7 @@ function hurtPlayer(d,slow){
   const BW=JOBS.ROLES.bulwark;if(R.comps.some(m=>roleComp(m,'bulwark')&&dist(m,p)<BW.range))d*=1-BW.shield;
   p.hp-=d;
   // Tonics are drunk automatically when HP runs low.
-  if(p.hp>0&&R.tonics>0&&p.hp<p.maxHp*JOBS.TONIC.at){R.tonics--;p.hp=Math.min(p.maxHp,p.hp+p.maxHp*JOBS.TONIC.heal);float(p.x,p.y-34,'Tonic!','#5de8b0',true)}p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;if(S.opts.shake)R.shake=.18;sfx('hurt');
+  if(p.hp>0&&R.tonics>0&&p.hp<p.maxHp*JOBS.TONIC.at){R.tonics--;p.hp=Math.min(p.maxHp,p.hp+p.maxHp*JOBS.TONIC.heal);float(p.x,p.y-34,'Tonic!','#5de8b0',true)}p.inv=.5;p.hurt=.15;if(slow)p.slow=slow;if(OPTS.shake)R.shake=.18;sfx('hurt');
   if(p.hp<=0)playerDown();
 }
 function hurtComp(m,d){
@@ -523,7 +526,7 @@ function doAbility(m,id){
     case'tidalSurge':{const a=tg?Math.atan2(tg.y-m.y,tg.x-m.x):R.aim;for(let k=0;k<16;k++)shoot('p',m.x,m.y,a+(k/15-.5)*1.3,300,atk*.9,{col:'#5cc8ff',r:7,pierce:3,src:m,elem:'soak',life:1.4});break}
     case'deluge':R.shield=3;healPlayer(30);R.comps.forEach(o=>{if(o&&!o.downed)o.hp=Math.min(o.maxHp,o.hp+o.maxHp*.3)});near(280).forEach(e=>hurtEnemy(e,atk*.5,false,m,'soak'));R.fx.push({x:m.x,y:m.y,r:280,t:.5,max:.5,col:'#3fa9ff'});break;
     case'echoPing':near(240).forEach(e=>{if(e.kind!=='boss'){e.stun=1.6;e.wind=0}hurtEnemy(e,atk*critMul(m.st),false,m,'static')});R.fx.push({x:m.x,y:m.y,r:240,t:.4,max:.4,col:'#9b7bff'});break;
-    case'sonicBoom':near(260).forEach(e=>{if(e.kind!=='boss'){e.stun=2.5;e.wind=0}hurtEnemy(e,atk*2.2,false,m,'static')});R.fx.push({x:m.x,y:m.y,r:260,t:.5,max:.5,col:'#c8a8ff'});if(S.opts.shake)R.shake=.2;break;
+    case'sonicBoom':near(260).forEach(e=>{if(e.kind!=='boss'){e.stun=2.5;e.wind=0}hurtEnemy(e,atk*2.2,false,m,'static')});R.fx.push({x:m.x,y:m.y,r:260,t:.5,max:.5,col:'#c8a8ff'});if(OPTS.shake)R.shake=.2;break;
     case'stormCall':{const ts=near(300);ts.forEach(e=>hurtEnemy(e,atk*.5,true,m,'static'));later(.6,()=>ts.forEach(e=>{if(e.hp>0){R.bolts.push({a:{x:e.x,y:e.y-140},b:{x:e.x,y:e.y},t:.25,col:'#fff6a8'});hurtEnemy(e,atk*1.8,false,m,'gust')}}));break}
     case'gustDash':{if(!tg){m.abil=1;float(m.x,m.y-26,'No target','#b4a9d8',true);return}const a=Math.atan2(tg.y-m.y,tg.x-m.x);m.dash=.32;m.dvx=Math.cos(a)*620;m.dvy=Math.sin(a)*620;m.dashHit=new Set();m.dashDmg=atk*2.5;m.dashEnd=null;m.knock=12;break}
     case'cyclone':{const t0=tg||m;R.fields.push({x:t0.x,y:t0.y,r:110,t:3,dps:atk,src:m,elem:'gust',pull:130,col:'#4fe0c8',spin:true});break}
@@ -532,7 +535,7 @@ function doAbility(m,id){
     case'shardStorm':for(let k=0;k<24;k++)shoot('p',m.x,m.y,k/24*Math.PI*2,360,atk*.8,{col:'#ff8fe0',r:5,pierce:2,src:m,elem:'brittle'});break;
     case'mirrorField':R.prism=5;near(260).forEach(e=>hurtEnemy(e,atk*.4,true,m,'brittle'));R.fx.push({x:p.x,y:p.y,r:260,t:.5,max:.5,col:'#ffffff'});break;
     case'taunt':R.taunt=4;R.tauntEnt=m;break;
-    case'quake':near(220).forEach(e=>{if(e.kind!=='boss')e.stun=1.5;hurtEnemy(e,atk*1.2,false,m,'stagger')});R.fx.push({x:m.x,y:m.y,r:220,t:.5,max:.5,col:'#e3b04b',fill:true});if(S.opts.shake)R.shake=.25;break;
+    case'quake':near(220).forEach(e=>{if(e.kind!=='boss')e.stun=1.5;hurtEnemy(e,atk*1.2,false,m,'stagger')});R.fx.push({x:m.x,y:m.y,r:220,t:.5,max:.5,col:'#e3b04b',fill:true});if(OPTS.shake)R.shake=.25;break;
     case'fortress':R.taunt=5;R.tauntEnt=m;R.fortress=5;break;
   }
   float(m.x,m.y-26,ABILITIES[id].name,col,true);
@@ -780,7 +783,7 @@ function update(dt){
   R.combo.cd=Math.max(0,R.combo.cd-dt);if(R.rally){R.rally.t-=dt;if(R.rally.t<=0)R.rally=null}
   if(R.msgT>0)R.msgT-=dt;
   for(let i=R.timers.length-1;i>=0;i--){R.timers[i].t-=dt;if(R.timers[i].t<=0){const f=R.timers[i].f;R.timers.splice(i,1);f()}}
-  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=assistAim(Math.atan2(dy,dx),p,R.enemies);R.firing=S.opts.autoFire||l>stickR()*.6}else R.firing=false}
+  if(touch.aim){const dx=touch.aim.x-touch.aim.ox,dy=touch.aim.y-touch.aim.oy,l=Math.hypot(dx,dy);if(l>12){R.aim=assistAim(Math.atan2(dy,dx),p,R.enemies);R.firing=OPTS.autoFire||l>stickR()*.6}else R.firing=false}
   else if(R.mouse){const s=R.scale;const wx=(R.mouse.x-R.vw/2)/s+R.camx,wy=(R.mouse.y-R.vh/2)/s+R.camy;R.aim=Math.atan2(wy-p.y,wx-p.x)}
   p.rollCd-=dt;p.inv=Math.max(0,p.inv-dt);p.hurt=Math.max(0,p.hurt-dt);p.slow=Math.max(0,p.slow-dt);p.fireCd-=dt;
   if(R.sup.has('tide'))healPlayer(dt);
@@ -1102,9 +1105,11 @@ function takeLoot(it){
 function dropPrint(x,y){const ids=GUN_IDS.filter(k=>GUNS[k].tier>=JOBS.PRINTS.minTier);R.items.push({kind:'loot',id:'print',gun:pick(ids),x,y})}
 function openChest(r){
   r.chest.open=true;sfx('coin');const f=R.map.floor,gm=(1+.3*B('greed'))*R.mods.coin*(CU('toll')?1.6:1)*(R.fmods?R.fmods.coin:1)*(ruleOn(R.tier,'barren')?.5:1),rich=r.chest.rich;
-  if(f>=7&&rand()<(R.tier?BLOOM.VEINS.unbound.rich.relic:ENDGAME.UNDERHEART.relicChest)){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  if(f>=7&&rand()<veinRich(R.tier?'unbound':'underheart','relic')){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
   // In Act II the veins' old camps hold a few relics too, so the Archive's work can start before the Underheart.
   else if(f>=4&&f<=6&&!R.tier&&rand()<LORE.ARCHIVE.relicChestVeins){R.relics++;float(r.chest.x,r.chest.y-50,'An Old Keeper relic!','#fff3a8',true)}
+  // The Hollow Choir's chests sometimes hold a memory shard.
+  const vein=R.map.plan&&R.map.plan.vein;if(rand()<veinRich(vein,'shards')){S.shards++;float(r.chest.x,r.chest.y-64,'+1 memory shard','#ff8fe0',true)}
   restChest(r);
   if(r.cache){const E=BLOOM.EVENTS.list.cache,c=Math.round(ri(E.coin[0],E.coin[1])*gm);R.bag.coin+=c;for(let k=0;k<E.prints;k++)dropPrint(r.chest.x+(k?40:-40),r.chest.y+40);msg(`An estate cache! ${c} coin and old blueprints.`)}
   const coin=Math.round(ri(15,35)*f*gm*(rich?2:1)),ore=Math.round((ri(1,2)+localFloor(f)-1+(rich?ri(4,8):0)+(f>=4?2:0))*(res('economy',2)?1.5:1)),food=ri(1,3),xm=rand()<.5?'hide':'dust',xn=ri(1,3)+(rich?2:0);R.bag.coin+=coin;
@@ -1178,7 +1183,7 @@ function endRaid(outcome,via){
     const caught=[R.slot3&&R.slot3.c,...R.comps.map(m=>m&&m.c)].filter(c=>c&&c.captureRaid==='tutorial');
     let html;
     if(outcome==='extract'){
-      caught.forEach(c=>{c.captureRaid=S.stats.raids-1;c.proven=true;S.creatures.push(c);S.stats.captures++});
+      caught.forEach(c=>{c.captureRaid=S.stats.raids-1;c.proven=true;S.creatures.push(c);S.stats.captures++;logEvent(c,'caught','the tutorial floor')});
       const first=!S.tutorialDone;S.tutorialDone=true;if(first){S.coin+=100;S.cages.basic+=2}
       addLog('Tutorial complete.'+(caught.length?` ${caught[0].name} joined the hideout.`:''));if(first)tutorialDone();
       html=`<h2 class="res-title win">Tutorial complete</h2><p>You extracted safely.${caught.length?` <b>${esc(caught[0].name)}</b> the Cindlet is yours now, already proven.`:''}</p>${first?'<p class="status">Reward: 100 coin and 2 cages.</p>':''}
@@ -1253,17 +1258,17 @@ function endRaid(outcome,via){
     if(lostLoot.length)L.lost.push('Backpack: '+lostLoot.join(', '));
     const cg=scav?0:R.cages.basic+R.cages.gilded;if(cg)L.lost.push(`${cg} cage${cg>1?'s':''}`);
   }
-  const ln=loreEnd(outcome==='extract');if(ln)L.notes.push(ln);
   validGuns();
-  if(R.deepening!=null){const d=recordDeepening(R.deepening,deepeningScore({deepest,kills:R.kills,coin:R.bag.coin,extracted:outcome==='extract',caught:caughtC.length}));L.notes.push(`Deepening, week ${R.deepening}: ${d.score} points, rank ${d.rank} of 100. Your best this week: ${d.best}.`)}
-  if(R.mode==='raid'||scav){const cr=settleContract({extracted:outcome==='extract',bagCoin:R.bag.coin,bagOre:R.bag.ore,kills:R.kills,eliteKills:R.eliteKills||0,deepest,caught:caughtC});if(cr)L.notes.push(cr.text)}
+  // Other systems settle their part of the raid (journal pages, the Deepening, contracts) and add notes.
+  const report=emit('raid:end',{outcome,via,mode:R.mode,scav,extracted:outcome==='extract',floor:R.map.floor,vein:R.map.plan&&R.map.plan.vein,deepest,boss:R.bossDown?R.bossDown.name:null,
+    party:[...party.map(m=>({c:m.c,downed:m.downed,kills:m.kills||0,hpFrac:m.hp/m.maxHp})),...(R.slot3?[{c:R.slot3.c,downed:false,kills:0,hpFrac:null}]:[])],kills:R.kills,eliteKills:R.eliteKills||0,bag:R.bag,caught:caughtC,deepening:R.deepening,notes:L.notes});
   // Catch-up: a Keeper well behind the expected rank for their calendar day earns double.
   const kx=Math.round((R.kxp+deepest*25)*R.mods.kxp*(scav?.5:1)*(1+perk('kxp'))*(R.fmods?R.fmods.kxp:1)*catchupMul());
   L.keeper=addKeeperXp(kx);
   const title=outcome==='extract'?(R.bossDown?`Champion over ${R.bossDown.name}`:via==='gate'?'Extracted through the gate':via==='cliff'?'Leapt from the cliff':'Escaped through the rift'):(outcome==='collapse'?'Buried in the collapse':'Lost in the dungeon');
   addLog(`${scav?'Scav run':'Raid'}: ${title.toLowerCase()} on floor ${R.map.floor}.`+(L.caught.length?' Caught '+L.caught.length+'.':'')+(L.lost.length&&outcome!=='extract'?' Lost: '+L.lost.join(', ')+'.':''));
-  track('raid_end',{outcome,floor:R.map.floor,deepest,mode:R.mode});
-  processDay();paceTick();save();marketDay();exitRaid();demoProgress();
+  report.day=S.day;report.rank=S.keeper.level;
+  passDay();save();exitRaid();emit('raid:done',report);
   sfx(outcome==='extract'?'level':'fail');
   const sec=(h,arr,col)=>arr.length?`<div class="rsec"><h3 ${col?`style="color:${col}"`:''}>${h}</h3><ul class="plain">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
   const quests=NPC_IDS.filter(id=>{const q=npcQuest(id);return q&&q.done}).map(id=>`${NPCS[id].name} has a reward waiting.`);

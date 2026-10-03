@@ -1,0 +1,182 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/creatures.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "PERS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "BOND_TH": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "BOND_PASSIVE": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "BOND_PERKS": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "GENES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "GENE_HINT": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "TRAITS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "w": {
+      "type": "number"
+     },
+     "dom": {
+      "type": "boolean"
+     },
+     "defect": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "w",
+     "dom"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "NEG_TRAITS": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "HISTORY": {
+   "type": "object",
+   "properties": {
+    "max": {
+     "type": "number"
+    },
+    "nearDeath": {
+     "type": "number"
+    },
+    "text": {
+     "type": "object",
+     "properties": {
+      "before": {
+       "type": "string"
+      },
+      "start": {
+       "type": "string"
+      },
+      "caught": {
+       "type": "string"
+      },
+      "hatched": {
+       "type": "string"
+      },
+      "evolved": {
+       "type": "string"
+      },
+      "boss": {
+       "type": "string"
+      },
+      "child": {
+       "type": "string"
+      },
+      "title": {
+       "type": "string"
+      },
+      "neardeath": {
+       "type": "string"
+      },
+      "expedition": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "before",
+      "start",
+      "caught",
+      "hatched",
+      "evolved",
+      "boss",
+      "child",
+      "title",
+      "neardeath",
+      "expedition"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "max",
+    "nearDeath",
+    "text"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "PERS",
+  "BOND_TH",
+  "BOND_PASSIVE",
+  "BOND_PERKS",
+  "GENES",
+  "GENE_HINT",
+  "TRAITS",
+  "NEG_TRAITS",
+  "HISTORY"
+ ],
+ "additionalProperties": false
+}

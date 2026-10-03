@@ -2,7 +2,7 @@ import globals from 'globals';
 
 // Kept deliberately small: catch undeclared names (which throw in ES modules) and stale imports.
 export default [
-  {ignores: ['dist/', 'prototype/', 'node_modules/']},
+  {ignores: ['dist/', 'dist-dev/', 'prototype/', 'node_modules/']},
   {
     files: ['src/**/*.js'],
     languageOptions: {ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser},

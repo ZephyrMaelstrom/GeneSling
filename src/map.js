@@ -9,7 +9,8 @@ import {S,byId,npcAttention,secTier,sectionUnlocked,syncNpcs,ui} from './state.j
 import {OL,drawCreature,drawPerson,drawSigil} from './sprites.js';
 import {drawBossBody} from './draw.js';
 import {sfx} from './audio.js';
-import {act,openNpc,renderSecPanel} from './ui.js';
+import {openNpc,renderSecPanel} from './ui.js';
+import {act} from './actions.js';
 import {R} from './raid.js';
 import {dayPhase,fits,foot,isNight,isStation,itemAt,layer,lifePlan,minRow,moveItem,placeNew,rowCount} from './hideout.js';
 import {save} from './save.js';

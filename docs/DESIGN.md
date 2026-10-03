@@ -228,6 +228,19 @@ Each evolution line has a raid role on top of its type. Three companion slots an
 - **Tutoring.** A high-level creature in the Training Grounds levels young ones faster. It also teaches them a learned technique, a skill that isn't genetic and has to be passed from creature to creature.
 - **Vein keys.** Some veins need certain types to enter or get through: Tide for flooded lanes, Echo to see in the Hollow Choir, Gale for cliff routes. A narrow roster closes off parts of the dungeon.
 
+### Every creature has a page
+
+With 20 to 40 creatures, lists have to stay short and each creature still has to feel like someone. So every list (the roster, the party picker, the breeding screen, a station's crew, the family tree) shows the same small card: sprite, name, level, form, types, sex, where it is, and at most one flag (Can evolve, then Hurt, Tired, Unproven, New). Tapping a card opens the creature's own page:
+
+- **Identity column:** sprite, name (tap to rename), form, types, level and XP, HP, bond, where it is, Evolve and Feed.
+- **Overview:** HP, Attack, Move and Rate, each opening to the factors that make it (type, species, gene, level, stage, bond, size, traits, personality); attack and ability; personality, raid role, slot-3 passive and bond passive; titles and ribbons; the evolution line.
+- **Genes:** the genome, as far as the Keeper's tools read it, and the family tree.
+- **Work:** what it would make at every open station, alone and before crew chemistry; its crew's chemistry and clashes and whether it's foreman; fatigue and when it's rested; how it would do on an expedition.
+- **Story:** its form's codex entry, its raids, extracts and kills, who bred it, and its own history: where it was caught, who its parents and children are, bosses it was there for, close calls, titles, evolutions and expeditions.
+- **Actions:** evolve, feed, put in a party slot, post to a station, breed, share its card, serums, sell, retire to the Hall of Legends.
+
+The page shows only what the player knows. Without a Sequencer, gene factors show as stars; an unproven catch keeps its traits secret until it comes home. Prev and next (or a swipe, or the arrow keys) step through the list it was opened from, and Back returns to that list where it was. In a raid, the ⚙ Creatures tab opens a compact, read-only version that fits the screen.
+
 ### Loss that hurts but builds
 
 When a creature dies, its station meter drops and its job goes unfilled. That should sting. Its legacy carries on: its closest bred descendant inherits 25% of its bond, and it joins the Memorial wall with its titles and raid count. Lineages make loss part of a family story instead of a delete button.
@@ -418,7 +431,7 @@ About one raid in four rolls an event:
 
 Decisions made while building, so the design and the code agree. Every number lives in `src/data/bloom.json`.
 
-- **Veins.** Floors 1 to 3 are the Rootworks. Beating the Floor 3 boss opens a portal to the five veins; the player picks one for floors 4 to 6. The Drowned Galleries need a Tide, the Hollow Choir an Echo and the Glasswind Spires a Gale in the party (slot 3 counts). Each vein has its own palette, enemies (four new ones each, plus a few deep-dwellers borrowed from the Ember Abyss), wild-type weighting, materials and three rotating bosses. The Rootworks keeps its four.
+- **Veins.** Floors 1 to 3 are the Rootworks. Beating the Floor 3 boss opens a portal to the five veins; the player picks one for floors 4 to 6. The Drowned Galleries need a Tide, the Hollow Choir an Echo and the Glasswind Spires a Gale in the party (slot 3 counts). Each vein has its own palette, enemies (four new ones each, plus a few deep-dwellers borrowed from the Ember Abyss), wild-type weighting, materials and three rotating bosses. The Rootworks keeps its four. Each vein is rich in its own goods: every pickup there is scaled (Ember Abyss ore ×1.6; Drowned Galleries food and hide ×1.5; Glasswind Spires crystal dust ×2), rounded up or down at random, and 12% of the Hollow Choir's chests hold a memory shard. The Journey Simulator counts the same bonuses.
 - **Twists.** The **Ember Abyss**: lava vents in every fight room flash a warning ring, then erupt on a 3.2 s beat for 16 damage and leave burning ground. The **Drowned Galleries**: water rises in every room you've entered; deep water slows you and drowns you (5 HP a second) unless a Tide is standing in your party. The **Hollow Choir**: darkness with a small circle of sight (wider with an Echo), and enemies sleep until they hear you shoot within 430 px or you come within 110 px. The **Glasswind Spires**: each room has a wind lane that pushes you, your companions and every bullet (a Gale cuts the push to a third), and every floor has a cliff extract. **The Sump**: poison pools (7 HP a second; the Apothecary at tier 5 makes you immune), Sump foes drop bog sap, and every creature caught there carries an extra mutation.
 - **Layouts.** Warrens (the prototype grid), Labyrinth (four more rooms, fewer foes each, up to two secret rooms), Gauntlet (one chain of rooms; rooms behind you seal once cleared), Sinkhole (rooms you've left collapse after 22 s, never the exits), Flood (the Drowned twist on any vein), Nest (one room holds a colony of 6 to 8 of one species and the floor gives 3 extra cages), Caravan (a trader follows you and pays 220 to 500 coin per floor number if you extract with it alive) and Mirror (some rooms hold uncatchable shadow copies of your companions). Boss floors only use layouts that can hold a boss room. A floor never repeats the layout of the floor above.
 - **Doors that never trap you.**

@@ -1,0 +1,464 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/endgame.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "UNDERHEART": {
+   "type": "object",
+   "properties": {
+    "timeAdd": {
+     "type": "number"
+    },
+    "kxp": {
+     "type": "number"
+    },
+    "relicBoss": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "timeAdd",
+    "kxp",
+    "relicBoss"
+   ],
+   "additionalProperties": false
+  },
+  "ENDINGS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "title": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "unbound": {
+      "type": "object",
+      "properties": {
+       "wild": {
+        "type": "number"
+       },
+       "hp": {
+        "type": "number"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "coin": {
+        "type": "number"
+       },
+       "dmg": {
+        "type": "number"
+       },
+       "sleep": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "desc"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "name",
+     "title",
+     "col",
+     "desc",
+     "unbound"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "UNBOUND": {
+   "type": "object",
+   "properties": {
+    "tiers": {
+     "type": "number"
+    },
+    "floors": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "lordFrom": {
+     "type": "number"
+    },
+    "lordChance": {
+     "type": "number"
+    },
+    "coinPerTier": {
+     "type": "number"
+    },
+    "kxpPerTier": {
+     "type": "number"
+    },
+    "apexShards": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "bloomscarFrom": {
+     "type": "number"
+    },
+    "renownPerTier": {
+     "type": "number"
+    },
+    "rules": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id",
+       "name",
+       "desc"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "tiers",
+    "floors",
+    "lordFrom",
+    "lordChance",
+    "coinPerTier",
+    "kxpPerTier",
+    "apexShards",
+    "bloomscarFrom",
+    "renownPerTier",
+    "rules"
+   ],
+   "additionalProperties": false
+  },
+  "LORDS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "gunMul": {
+      "type": "number"
+     },
+     "hear": {
+      "type": "number"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "frac": {
+      "type": "number"
+     },
+     "hp": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "TOOLS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "rank": {
+      "type": "number"
+     },
+     "cost": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "slots": {
+      "type": "number"
+     },
+     "per": {
+      "type": "number"
+     },
+     "cap": {
+      "type": "number"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "ARCHIVE": {
+   "type": "object",
+   "properties": {
+    "perDay": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "perDay"
+   ],
+   "additionalProperties": false
+  },
+  "RUNES": {
+   "type": "object",
+   "properties": {
+    "alphabet": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "alphabet"
+   ],
+   "additionalProperties": false
+  },
+  "RENOWN": {
+   "type": "object",
+   "properties": {
+    "tier": {
+     "type": "number"
+    },
+    "deepeningTop": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "apex": {
+     "type": "number"
+    },
+    "ribbon": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hybridHatched": {
+     "type": "number"
+    },
+    "recipeMastered": {
+     "type": "number"
+    },
+    "legendary": {
+     "type": "number"
+    },
+    "milestone": {
+     "type": "number"
+    },
+    "relic": {
+     "type": "number"
+    },
+    "ending": {
+     "type": "number"
+    },
+    "ilsa": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "tier",
+    "deepeningTop",
+    "apex",
+    "ribbon",
+    "hybridHatched",
+    "recipeMastered",
+    "legendary",
+    "milestone",
+    "relic",
+    "ending",
+    "ilsa"
+   ],
+   "additionalProperties": false
+  },
+  "SHOWS": {
+   "type": "object",
+   "properties": {
+    "every": {
+     "type": "number"
+    },
+    "rivals": {
+     "type": "number"
+    },
+    "rivalScore": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "classes": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "gen": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        }
+       }
+      },
+      "required": [
+       "id",
+       "name",
+       "desc"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "every",
+    "rivals",
+    "rivalScore",
+    "classes"
+   ],
+   "additionalProperties": false
+  },
+  "DEEPENING": {
+   "type": "object",
+   "properties": {
+    "rivals": {
+     "type": "number"
+    },
+    "score": {
+     "type": "object",
+     "properties": {
+      "floor": {
+       "type": "number"
+      },
+      "kill": {
+       "type": "number"
+      },
+      "coin": {
+       "type": "number"
+      },
+      "extract": {
+       "type": "number"
+      },
+      "caught": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "floor",
+      "kill",
+      "coin",
+      "extract",
+      "caught"
+     ],
+     "additionalProperties": false
+    },
+    "rivalMean": {
+     "type": "number"
+    },
+    "rivalSpread": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "rivals",
+    "score",
+    "rivalMean",
+    "rivalSpread"
+   ],
+   "additionalProperties": false
+  },
+  "SEASON": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "number"
+    },
+    "twists": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "desc": {
+        "type": "string"
+       },
+       "type": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "desc",
+       "type"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "awards": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "renown": {
+        "type": "number"
+       },
+       "title": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "renown",
+       "title"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "days",
+    "twists",
+    "awards"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "UNDERHEART",
+  "ENDINGS",
+  "UNBOUND",
+  "LORDS",
+  "TOOLS",
+  "ARCHIVE",
+  "RUNES",
+  "RENOWN",
+  "SHOWS",
+  "DEEPENING",
+  "SEASON"
+ ],
+ "additionalProperties": false
+}

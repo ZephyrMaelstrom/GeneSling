@@ -1,0 +1,702 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/jobs.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "MATERIALS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "sell": {
+      "type": "number"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "kind",
+     "sell",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "STATIONS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "verb": {
+      "type": "string"
+     },
+     "in": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "out": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "rate": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "verb",
+     "in",
+     "out"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "WORK": {
+   "type": "object",
+   "properties": {
+    "base": {
+     "type": "number"
+    },
+    "perYield": {
+     "type": "number"
+    },
+    "perLevel": {
+     "type": "number"
+    },
+    "perStage": {
+     "type": "number"
+    },
+    "match": {
+     "type": "number"
+    },
+    "secondary": {
+     "type": "number"
+    },
+    "offType": {
+     "type": "number"
+    },
+    "worker": {
+     "type": "number"
+    },
+    "gardenTier": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "apothecaryTier": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "base",
+    "perYield",
+    "perLevel",
+    "perStage",
+    "match",
+    "secondary",
+    "offType",
+    "worker",
+    "gardenTier",
+    "apothecaryTier"
+   ],
+   "additionalProperties": false
+  },
+  "FATIGUE": {
+   "type": "object",
+   "properties": {
+    "work": {
+     "type": "number"
+    },
+    "expedition": {
+     "type": "number"
+    },
+    "rest": {
+     "type": "number"
+    },
+    "maxPenalty": {
+     "type": "number"
+    },
+    "tireless": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "work",
+    "expedition",
+    "rest",
+    "maxPenalty",
+    "tireless"
+   ],
+   "additionalProperties": false
+  },
+  "WORK_TRAITS": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "CHEMISTRY": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "station": {
+      "type": "string"
+     },
+     "types": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "name": {
+      "type": "string"
+     },
+     "bonus": {
+      "type": "number"
+     },
+     "desc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "station",
+     "types",
+     "name",
+     "bonus",
+     "desc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "CLASHES": {
+   "type": "array",
+   "items": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   }
+  },
+  "CLASH_PENALTY": {
+   "type": "number"
+  },
+  "CLASH_MAX": {
+   "type": "number"
+  },
+  "QUALITY": {
+   "type": "object",
+   "properties": {
+    "names": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "thresholds": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "roll": {
+     "type": "number"
+    },
+    "emptyKnack": {
+     "type": "number"
+    },
+    "artisan": {
+     "type": "number"
+    },
+    "printBonus": {
+     "type": "number"
+    },
+    "dmg": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "dur": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "satchelSlots": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "cageBonus": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "names",
+    "thresholds",
+    "roll",
+    "emptyKnack",
+    "artisan",
+    "printBonus",
+    "dmg",
+    "dur",
+    "satchelSlots",
+    "cageBonus"
+   ],
+   "additionalProperties": false
+  },
+  "MASTERY": {
+   "type": "object",
+   "properties": {
+    "thresholds": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "perLevel": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "thresholds",
+    "perLevel"
+   ],
+   "additionalProperties": false
+  },
+  "RECIPES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "in": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "out": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      }
+     },
+     "station": {
+      "type": "string"
+     },
+     "cages": {
+      "type": "number"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "gilded": {
+      "type": "number"
+     },
+     "needForge": {
+      "type": "number"
+     },
+     "satchel": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "kind",
+     "name",
+     "in"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "WEAPON_PARTS": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "DURABILITY": {
+   "type": "object",
+   "properties": {
+    "perRaid": {
+     "type": "number"
+    },
+    "repairPerPoint": {
+     "type": "number"
+    },
+    "foundFraction": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "foundQuality": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "perRaid",
+    "repairPerPoint",
+    "foundFraction",
+    "foundQuality"
+   ],
+   "additionalProperties": false
+  },
+  "PRINTS": {
+   "type": "object",
+   "properties": {
+    "chest": {
+     "type": "number"
+    },
+    "boss": {
+     "type": "number"
+    },
+    "minTier": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "chest",
+    "boss",
+    "minTier"
+   ],
+   "additionalProperties": false
+  },
+  "BAG": {
+   "type": "object",
+   "properties": {
+    "slots": {
+     "type": "number"
+    },
+    "stack": {
+     "type": "number"
+    },
+    "hauler": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "slots",
+    "stack",
+    "hauler"
+   ],
+   "additionalProperties": false
+  },
+  "TONIC": {
+   "type": "object",
+   "properties": {
+    "carry": {
+     "type": "number"
+    },
+    "at": {
+     "type": "number"
+    },
+    "heal": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "carry",
+    "at",
+    "heal"
+   ],
+   "additionalProperties": false
+  },
+  "ROLES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "dmg": {
+      "type": "number"
+     },
+     "combo": {
+      "type": "number"
+     },
+     "combat": {
+      "type": "boolean"
+     },
+     "hp": {
+      "type": "number"
+     },
+     "shield": {
+      "type": "number"
+     },
+     "range": {
+      "type": "number"
+     },
+     "regen": {
+      "type": "number"
+     },
+     "burst": {
+      "type": "number"
+     },
+     "burstTime": {
+      "type": "number"
+     },
+     "bag": {
+      "type": "number"
+     },
+     "radius": {
+      "type": "number"
+     },
+     "catch": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "name",
+     "desc",
+     "combat"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "SPECIES_ROLE": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "ROSTER": {
+   "type": "object",
+   "properties": {
+    "base": {
+     "type": "number"
+    },
+    "perPen": {
+     "type": "number"
+    },
+    "maxPens": {
+     "type": "number"
+    },
+    "penCost": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "number"
+     }
+    }
+   },
+   "required": [
+    "base",
+    "perPen",
+    "maxPens",
+    "penCost"
+   ],
+   "additionalProperties": false
+  },
+  "EXPEDITIONS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "days": {
+      "type": "number"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "loot": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      }
+     },
+     "egg": {
+      "type": "number"
+     },
+     "injury": {
+      "type": "number"
+     },
+     "need": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "name",
+     "days",
+     "desc",
+     "loot",
+     "egg",
+     "injury"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "EXPEDITION_TEAM": {
+   "type": "number"
+  },
+  "EXPEDITION_SCALE": {
+   "type": "object",
+   "properties": {
+    "perLevel": {
+     "type": "number"
+    },
+    "perSwift": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "perLevel",
+    "perSwift"
+   ],
+   "additionalProperties": false
+  },
+  "LEGACY_BOND": {
+   "type": "number"
+  },
+  "MARKET_BUY": {
+   "type": "object",
+   "properties": {
+    "food1": {
+     "type": "number"
+    },
+    "food10": {
+     "type": "number"
+    },
+    "cage": {
+     "type": "number"
+    },
+    "ore": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "food1",
+    "food10",
+    "cage",
+    "ore"
+   ],
+   "additionalProperties": false
+  },
+  "SUPPLY_SIM": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "number"
+    },
+    "roster": {
+     "type": "number"
+    },
+    "startCoin": {
+     "type": "number"
+    },
+    "startFood": {
+     "type": "number"
+    },
+    "startCages": {
+     "type": "number"
+    },
+    "death": {
+     "type": "number"
+    },
+    "cagesUsed": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "raid": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      }
+     }
+    },
+    "keepCages": {
+     "type": "number"
+    },
+    "keepTonics": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "days",
+    "roster",
+    "startCoin",
+    "startFood",
+    "startCages",
+    "death",
+    "cagesUsed",
+    "raid",
+    "keepCages",
+    "keepTonics"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "MATERIALS",
+  "STATIONS",
+  "WORK",
+  "FATIGUE",
+  "WORK_TRAITS",
+  "CHEMISTRY",
+  "CLASHES",
+  "CLASH_PENALTY",
+  "CLASH_MAX",
+  "QUALITY",
+  "MASTERY",
+  "RECIPES",
+  "WEAPON_PARTS",
+  "DURABILITY",
+  "PRINTS",
+  "BAG",
+  "TONIC",
+  "ROLES",
+  "SPECIES_ROLE",
+  "ROSTER",
+  "EXPEDITIONS",
+  "EXPEDITION_TEAM",
+  "EXPEDITION_SCALE",
+  "LEGACY_BOND",
+  "MARKET_BUY",
+  "SUPPLY_SIM"
+ ],
+ "additionalProperties": false
+}

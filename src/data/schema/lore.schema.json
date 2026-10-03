@@ -1,0 +1,457 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/lore.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "ACTS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "n": {
+      "type": "number"
+     },
+     "name": {
+      "type": "string"
+     },
+     "question": {
+      "type": "string"
+     },
+     "gate": {
+      "type": [
+       "null",
+       "object"
+      ],
+      "properties": {
+       "deepest": {
+        "type": "number"
+       },
+       "ilsa": {
+        "type": "boolean"
+       }
+      },
+      "additionalProperties": false
+     },
+     "opens": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "n",
+     "name",
+     "question",
+     "gate",
+     "opens"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "RANK_PAGES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "number"
+    }
+   }
+  },
+  "PAGES": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "n": {
+      "type": "number"
+     },
+     "act": {
+      "type": "number"
+     },
+     "find": {
+      "type": "object",
+      "properties": {
+       "floor": {
+        "type": "number"
+       },
+       "vein": {
+        "type": "string"
+       },
+       "rest": {
+        "type": "boolean"
+       },
+       "ending": {
+        "type": "boolean"
+       }
+      },
+      "additionalProperties": false
+     },
+     "title": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "n",
+     "act",
+     "find",
+     "title",
+     "text"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "WALLS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     },
+     "act": {
+      "type": "number"
+     },
+     "find": {
+      "type": "object",
+      "properties": {
+       "floor": {
+        "type": "number"
+       },
+       "vein": {
+        "type": "string"
+       }
+      },
+      "additionalProperties": false
+     },
+     "secret": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "text",
+     "act",
+     "find"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "SECRET_HYBRID": {
+   "type": "string"
+  },
+  "WHISPER": {
+   "type": "object",
+   "properties": {
+    "chance": {
+     "type": "number"
+    },
+    "note": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "chance",
+    "note"
+   ],
+   "additionalProperties": false
+  },
+  "WHISPERS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "act": {
+      "type": "number"
+     },
+     "text": {
+      "type": "string"
+     },
+     "floor": {
+      "type": "number"
+     },
+     "vein": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "act",
+     "text"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "MURALS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "where": {
+      "type": "string"
+     },
+     "pal": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "motif": {
+      "type": "string"
+     },
+     "stages": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "where",
+     "pal",
+     "motif",
+     "stages"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ARCHIVE": {
+   "type": "object",
+   "properties": {
+    "odileEvery": {
+     "type": "number"
+    },
+    "relicChestVeins": {
+     "type": "number"
+    },
+    "fragmentRenown": {
+     "type": "number"
+    }
+   },
+   "required": [
+    "odileEvery",
+    "relicChestVeins",
+    "fragmentRenown"
+   ],
+   "additionalProperties": false
+  },
+  "RELICS": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "letters": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "letters",
+     "text"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "MEMORIES": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "string"
+   }
+  },
+  "CODEX": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "string"
+    }
+   }
+  },
+  "ARCS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "array",
+    "items": {
+     "type": "object",
+     "properties": {
+      "text": {
+       "type": "string"
+      },
+      "stat": {
+       "type": "string"
+      },
+      "n": {
+       "type": "number"
+      },
+      "abs": {
+       "type": "boolean"
+      },
+      "reward": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "number"
+       }
+      },
+      "done": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "text",
+      "stat",
+      "n",
+      "reward",
+      "done"
+     ],
+     "additionalProperties": false
+    }
+   }
+  },
+  "RESIDENTS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string"
+     },
+     "home": {
+      "type": "string"
+     },
+     "homeName": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "skin": {
+      "type": "string"
+     },
+     "arrive": {
+      "type": "object",
+      "properties": {
+       "deepest": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "deepest"
+      ],
+      "additionalProperties": false
+     },
+     "arriveText": {
+      "type": "string"
+     },
+     "intro": {
+      "type": "string"
+     },
+     "idle": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "quests": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        },
+        "stat": {
+         "type": "string"
+        },
+        "n": {
+         "type": "number"
+        },
+        "abs": {
+         "type": "boolean"
+        },
+        "reward": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "number"
+         }
+        },
+        "done": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "text",
+        "stat",
+        "n",
+        "reward",
+        "done"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "outro": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "role",
+     "home",
+     "homeName",
+     "col",
+     "skin",
+     "arrive",
+     "arriveText",
+     "intro",
+     "idle",
+     "quests",
+     "outro"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "ACTS",
+  "RANK_PAGES",
+  "PAGES",
+  "WALLS",
+  "SECRET_HYBRID",
+  "WHISPER",
+  "WHISPERS",
+  "MURALS",
+  "ARCHIVE",
+  "RELICS",
+  "MEMORIES",
+  "CODEX",
+  "ARCS",
+  "RESIDENTS"
+ ],
+ "additionalProperties": false
+}

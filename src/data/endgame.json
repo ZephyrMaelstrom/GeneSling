@@ -1,5 +1,5 @@
 {
-  "UNDERHEART": {"timeAdd": 300, "kxp": 120, "relicBoss": 2, "relicChest": 0.5},
+  "UNDERHEART": {"timeAdd": 300, "kxp": 120, "relicBoss": 2},
   "ENDINGS": {
     "wake": {"name": "Wake", "title": "Waker of the Bloom", "col": "#ffcf4a",
       "desc": "Wake the Bloom and let it see the healed world. It opens its arms: everything it kept comes out to play, and it plays rough.",

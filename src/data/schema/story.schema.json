@@ -1,0 +1,153 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/story.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "LORE_INTRO": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "JOURNAL": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "rank": {
+      "type": "number"
+     },
+     "title": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "rank",
+     "title",
+     "text"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "NPCS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string"
+     },
+     "home": {
+      "type": "string"
+     },
+     "col": {
+      "type": "string"
+     },
+     "skin": {
+      "type": "string"
+     },
+     "arrive": {
+      "type": "object",
+      "properties": {
+       "always": {
+        "type": "boolean"
+       },
+       "keeper": {
+        "type": "number"
+       },
+       "section": {
+        "type": "string"
+       },
+       "tier": {
+        "type": "number"
+       }
+      },
+      "additionalProperties": false
+     },
+     "arriveText": {
+      "type": "string"
+     },
+     "intro": {
+      "type": "string"
+     },
+     "idle": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "quests": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "text": {
+         "type": "string"
+        },
+        "stat": {
+         "type": "string"
+        },
+        "n": {
+         "type": "number"
+        },
+        "reward": {
+         "type": "object",
+         "additionalProperties": {
+          "type": [
+           "number",
+           "string",
+           "boolean"
+          ]
+         }
+        },
+        "done": {
+         "type": "string"
+        },
+        "abs": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "text",
+        "stat",
+        "n",
+        "reward",
+        "done"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "outro": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "role",
+     "home",
+     "col",
+     "skin",
+     "arrive",
+     "arriveText",
+     "intro",
+     "idle",
+     "quests",
+     "outro"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "LORE_INTRO",
+  "JOURNAL",
+  "NPCS"
+ ],
+ "additionalProperties": false
+}

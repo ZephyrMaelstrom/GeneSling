@@ -1,35 +1,36 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {BALANCE,LORE,BLOOM,ABILITIES,ARMORY_TIERS,ATTACKS,BASE_SPECIES,BOND_PASSIVE,BOND_TH,BOSSES,BOSS_IDS,COMBOS,DONATE_PTS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SCRAP_ORE,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,rollTraits,speciesOf} from './content.js';
+import {BALANCE,LORE,BLOOM,ABILITIES,ATTACKS,BASE_SPECIES,BOND_TH,BOSSES,BOSS_IDS,COMBOS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,speciesOf} from './content.js';
 import {save} from './save.js';
-import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,bump,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,evolveCost,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,processDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sectionUnlockedArmory,sellValue,sexSym,slotBonus,stats,supportText,typeTier,ui,unplace,whereIs,xpNeed} from './state.js';
-import {paintSprites,sexChip,spr,sprSp,stars,typeChips} from './sprites.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,passDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sellValue,sexSym,slotBonus,stats,supportText,ui,unplace,whereIs} from './state.js';
+import {paintSprites,spr,sprSp,stars,typeChips} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
 import {R,startRaid} from './raid.js';
 import {DEMO} from './flags.js';
 import {calendarDay,catchupMul,expectedRank,gateNeeds,nextGate} from './balance.js';
-import {formLore,labLore,pagesFound,secretHybridKnown,whisper} from './lore.js';
-import {journeyPanel,runJourneyLab} from './journeyui.js';
+import {formLore,pagesFound,secretHybridKnown} from './lore.js';
+import {journeyPanel} from './journeyui.js';
 import {applyPalette,resetScale} from './access.js';
 import {journalView,labLorePanel,muralView,storyView} from './loreui.js';
-import {buyPlot,craftDecor,displayWeapon,retire,setSigil,storeItem,takeDownWeapon} from './hideout.js';
-import {bredBy,buildPanel,hallPanel,mapTools,openLegend,openTrophy,renderBuildPanel,sigilPanel,titleChips} from './prideui.js';
-import {openShare,shareGo} from './share.js';
-import {demoGoalsHtml,feedbackHtml,sendFeedback,setStats,statsPanel} from './demo.js';
+import {buildPanel,hallPanel,mapTools,sigilPanel} from './prideui.js';
+import {demoGoalsHtml,statsPanel} from './demo.js';
 import {mapH} from './map.js';
 import {contractBoard,labBloom,mapPicker,veinCodex} from './bloomui.js';
-import {archivePanel,bloomBelow,breedingTools,labEndgamePanel,ribbonChips} from './endgameui.js';
-import {enterShow,labEndgame,setMutlab,splice,story,weekOf} from './endgame.js';
-import {craftMap,dropContract,takeContract,varietyRun} from './bloom.js';
-import {GRADE_LOCI,TRAIT_LOCI,express,expressTrait} from './genetics.js';
-import {geneSight,genomeBlock,lineageChips,previewHtml,runSim,simPanel,traitName,treeHtml} from './geneui.js';
-import {serumLocus,useSerum,amt,buildPen,craft,craftWeapon,expAway,fatigueMul,give,itemByUid,itemName,makerText,mouths,newItem,overCap,repair,rosterCap,rosterCount,scrapItem,startExpedition,usable} from './jobs.js';
-import {candidateOption,expeditionPanel,fatBar,gearPanel,memberRow,memorialView,roleChip,rosterBar,runSupply,stationPanel,supplyPanel,workshopView} from './workui.js';
-import {startMarket,marketDay} from './exchange/market.js';
-import {viewExchange,economyPanel,runEconomy} from './exchangeui.js';
+import {archivePanel,bloomBelow,breedingTools,labEndgamePanel} from './endgameui.js';
+
+
+import {GRADE_LOCI,TRAIT_LOCI,expressTrait} from './genetics.js';
+import {geneSight,previewHtml,simPanel,traitName} from './geneui.js';
+import {amt,expAway,give,itemByUid,itemName,mouths,newItem,overCap,rosterCap,rosterCount,usable} from './jobs.js';
+import {candidateOption,expeditionPanel,gearPanel,memberRow,memorialView,roleChip,rosterBar,stationPanel,supplyPanel,workshopView} from './workui.js';
+import {startMarket} from './exchange/market.js';
+import {viewExchange,economyPanel} from './exchangeui.js';
 import {bindCharts} from './chart.js';
-import {marketView,onMarket,buyNow,sellNow,postOrder,cancelOrder,bid,buyout,listItem,fulfilBounty} from './exchange/market.js';
+import {onMarket} from './exchange/market.js';
+import {onAct,onChange,onInput,act,changed,inputted} from './actions.js';
+import {OPTS,saveOpts} from './device.js';
+import {creatureCard,creaturePage,pageCreature,rosterList} from './creatureui.js';
 // The demo has no Test Lab.
 const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['exchange','Exchange'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']].filter(([k])=>!(DEMO&&k==='lab'));
 function renderAll(){renderHeader();renderTabs();renderMain()}
@@ -42,7 +43,9 @@ function renderTabs(){
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${ui.tab===k}" data-act="tab" data-k="${k}">${l}${dot(k)?'<i class="dot" aria-label="new"></i>':''}</button>`).join('');
 }
 function renderMain(){
-  const m=$('#main');
+  const m=$('#main'),c=pageCreature();
+  // A creature's page, opened from any list, takes the main view until Back.
+  if(c){m.innerHTML=creaturePage(c);paintSprites(m);return}
   m.innerHTML=({raid:viewRaid,hideout:viewHideout,roster:viewRoster,breeding:viewBreeding,research:viewResearch,armory:viewArmory,exchange:viewExchange,codex:viewCodex,lab:viewLab,settings:viewSettings}[ui.tab])();
   paintSprites(m);
   if(ui.tab==='hideout')startHideoutMap();
@@ -92,7 +95,7 @@ function viewRaid(){
       <button class="btn small" data-act="choose" data-slot="${i}">Choose</button></div>`;
     const st=stats(c),A=ABILITIES[st.abilId];
     return`<div class="slot ${sup?'support':''}"><div class="slot-label">${labels[i]}</div>
-      <div class="slot-body">${spr(c,56)}<div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
+      <div class="slot-body"><button class="sprlink" data-act="creature" data-id="${c.id}" data-list="party" aria-label="Open ${esc(c.name)}’s page">${spr(c,56)}</button><div style="min-width:0;flex:1"><div class="nm">${esc(c.name)} <small style="color:var(--gold)">Lv ${c.level}</small></div>
       <div class="status">${sexSym(c.sex)} ${esc(formName(c))} · ${ATTACKS[st.atkId].name}</div>
       <div class="row" style="gap:4px">${typeChips(c)}${roleChip(c)}${stars(st.star)}${c.origin==='wild'&&!c.proven?'<span class="chip warn">Unproven</span>':''}</div></div></div>
       ${hpBar(c)}
@@ -198,52 +201,14 @@ function sectionDetail(k){
     ${extra}`;
 }
 
-function creCard(c){
-  const st=stats(c),sp=SPECIES[c.species],T=c.type,L=lineOf(c),nf=nextForm(c),A=ABILITIES[st.abilId],K=ATTACKS[st.atkId];
-  const sellArmed=ui.sellId===c.id;
-  const chain=L.map((f,i)=>`<span class="evo ${i===(c.stage||0)?'on':i<(c.stage||0)?'done':''}">${f.name}${i?` <small>Lv ${f.lv}</small>`:''}</span>`).join('<i>›</i>');
-  let evo='';
-  if(nf){const ok=canEvolve(c),k=evolveCost(c),afford=S.coin>=k.coin&&S.ore>=k.ore&&S.shards>=k.shard;
-    const why=!c.proven?'Must be proven first':c.level<nf.lv?`Needs Lv ${nf.lv}`:nf.need&&c.genes[nf.need[0]]<nf.need[1]?`Needs ${GENES[nf.need[0]]} ${nf.need[1]}+`:'';
-    evo=`<div class="row"><button class="btn small ${ok&&afford?'primary':''}" data-act="evolve" data-id="${c.id}" ${ok&&afford?'':'disabled'}>${ok?`Evolve into ${nf.name} · ${k.coin}c ${k.ore} ore${k.shard?' '+k.shard+' shard':''}`:`${nf.name}: ${why}`}</button></div>`}
-  const bs=st.star,bp=BOND_PASSIVE[T],nextB=BOND_TH[bs];
-  return`<article class="cre">${spr(c,72)}<div class="cre-main">
-    <div class="cre-name">${esc(c.name)} <span class="lv">Lv ${c.level}</span></div>
-    <div class="status">${esc(formName(c))} · ${formLore(c.species,c.stage||0)||sp.blurb}</div>${bredBy(c)}
-    <div class="row" style="gap:4px">${sexChip(c)}${typeChips(c)}${persChip(c)}${roleChip(c)}${titleChips(c)}${ribbonChips(c)}${c.origin==='bred'?'':(c.proven?'<span class="chip">Wild · Proven</span>':'<span class="chip warn">Wild · Unproven</span>')}${lineageChips(c)}</div>
-    ${hpBar(c)}
-    <dl class="stats"><div><dt>HP</dt><dd>${c.hp}/${st.hp}</dd></div><div><dt>Atk</dt><dd>${st.atk}</dd></div><div><dt>Move</dt><dd>${st.spd}</dd></div><div><dt>Rate</dt><dd>×${st.rate}</dd></div></dl>
-    <p class="status"><b class="lbl">Attack:</b> ${K.name}, ${K.desc.toLowerCase()}<br><b class="lbl">Ability:</b> ${A.name}, ${A.desc.toLowerCase()}</p>
-    <div class="evochain">${chain}</div>${evo}
-    <div class="row" style="gap:6px">${stars(bs)}<small class="status">${nextB!=null?`${c.bondXp}/${nextB} bond`:'Max bond'}${bs>=3?` · ${bp.name}: ${bp.desc}`:` · ★3 unlocks ${bp.name}`}</small></div>
-    ${genomeBlock(c)}
-    <div class="bar" title="XP"><i style="width:${c.xp/xpNeed(c)*100}%;background:var(--sky)"></i></div>
-    <p class="status"><b class="lbl">Fatigue</b> ${Math.round(c.fat||0)}%${c.fat>0?` · working at ${Math.round(fatigueMul(c)*100)}%`:''}</p>${fatBar(c)}
-    <p class="status">${statusText(c)} · XP ${c.xp}/${xpNeed(c)}${c.origin==='wild'?` · obeys ${Math.round(st.obey*100)}%`:''}</p>
-    <div class="row"><button class="btn small" data-act="feed" data-id="${c.id}" ${S.food<1?'disabled':''}>Feed (1 food)</button>
-    <button class="btn small ${sellArmed?'danger':''}" data-act="sell" data-id="${c.id}">${sellArmed?'Confirm: sell for '+sellValue(c)+' coin':'Sell'}</button>
-    <button class="btn small" data-act="sharecard" data-id="${c.id}">Share card</button>
-    ${amt('bloomscar')>0&&c.genome.shine[0]!==2&&c.genome.shine[1]!==2?`<button class="btn small" data-act="bloomscar" data-id="${c.id}">Bloomscar serum (${amt('bloomscar')})</button>`:''}
-    ${amt('serum')>0&&serumLocus(c)?`<button class="btn small" data-act="serum" data-id="${c.id}" title="Raises the weaker copy of its lowest gene by 1">Gene serum (${amt('serum')})</button>`:''}</div>
-  </div></article>`;
-}
 function viewRoster(){
   const F=[['all','All'],['evolve','Can evolve'],['wild','Wild'],['bred','Bred'],['unproven','Unproven'],['f','Female'],['m','Male'],['hybrid','Hybrids'],['idle','Idle']];
-  let list=S.creatures.slice();const f=ui.filter;
-  if(f==='evolve')list=list.filter(canEvolve);
-  if(f==='wild')list=list.filter(c=>c.origin==='wild');
-  if(f==='bred')list=list.filter(c=>c.origin==='bred');
-  if(f==='unproven')list=list.filter(c=>!c.proven);
-  if(f==='f')list=list.filter(c=>c.sex==='F');
-  if(f==='m')list=list.filter(c=>c.sex==='M');
-  if(f==='hybrid')list=list.filter(c=>c.type2);
-  if(f==='idle')list=list.filter(c=>whereIs(c).kind==='idle');
-  list.sort((a,b)=>b.level-a.level||typeTier(b)-typeTier(a));
+  const list=rosterList();
   return`<section class="card" style="margin-bottom:16px"><div class="row" style="justify-content:space-between"><h2>Roster · ${S.creatures.length} creatures</h2>
     <div class="filters">${F.map(([k,l])=>`<button class="tab" aria-selected="${ui.filter===k}" data-act="filter" data-k="${k}">${l}</button>`).join('')}</div></div>
     ${rosterBar()}
-    <p class="hint">Every species has its own evolution line. Each evolution changes its attack and ability and raises its stats. Bond grows from raids, feeding and training; stars unlock bonuses up to Last Stand at ★5.</p></section>
-    <div class="grid">${list.map(creCard).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
+    <p class="hint">Tap a creature to open its page: stats and what makes them, genes, work, its story, and everything you can do with it.</p></section>
+    <div class="cgrid">${list.map(c=>creatureCard(c,{list:'roster'})).join('')||'<p class="empty">No creatures match this filter.</p>'}</div>`;
 }
 
 function viewBreeding(){
@@ -260,6 +225,7 @@ function viewBreeding(){
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
       <label class="field">Mother ♀<select id="breedMom" data-act="mom">${opt(moms,ui.mom)}</select></label>
       <label class="field">Father ♂<select id="breedDad" data-act="dad">${opt(dads,ui.dad)}</select></label>
+      ${a||b?`<div class="cgrid two">${[a,b].filter(Boolean).map(p=>creatureCard(p,{ctx:p===a?'Mother: sets the species':'Father: weighs most in stats'})).join('')}</div>`:''}
     </div>${pred}
     <div class="row"><button class="btn primary" data-act="breed" ${can?'':'disabled'}>Lay an egg</button><span class="status">Incubator ${S.eggs.length}/${eggCap()}</span></div>
   </section>
@@ -370,7 +336,7 @@ function viewLab(){
 }
 
 function viewSettings(){
-  const o=S.opts;
+  const o=OPTS;
   const seg=(k,vals,label)=>`<div class="field"><span>${label}</span><div class="seg">${vals.map(([v,l])=>`<button class="tab" aria-selected="${o[k]===v}" data-act="opt" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div></div>`;
   const tg=(k,l,d)=>`<label class="toggle"><input type="checkbox" id="opt-${k}" data-act="optc" data-k="${k}" ${o[k]?'checked':''}> <span><b style="font-family:var(--display)">${l}</b><br><small class="status">${d}</small></span></label>`;
   const sl=(k,l)=>`<label class="field">${l} <small class="status" id="v-${k}">${Math.round(o[k]*100)}%</small><input id="opt-${k}" type="range" min="0" max="1" step="0.05" value="${o[k]}" data-act="optr" data-k="${k}"></label>`;
@@ -418,11 +384,11 @@ function queueModal(html){if($('#modal').hidden&&!R)openModal(html);else modalQu
 function openChooser(slot){
   const cur=S.loadout.slots[slot];
   const list=S.creatures.filter(c=>c.id!==cur&&!expAway(c)).sort((a,b)=>b.level-a.level);
-  const items=list.map(c=>{const w=whereIs(c);const note=w.kind==='section'?`Leaves the ${SECTIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';const st=stats(c);
-    return`<button class="choice" data-act="pickslot" data-slot="${slot}" data-id="${c.id}">${spr(c,44)}<span style="min-width:0;flex:1"><span class="nm">${esc(c.name)} · ${sexSym(c.sex)} ${esc(formName(c))} Lv ${c.level} ${'★'.repeat(st.star)}</span><small>${c.hp}/${st.hp} HP · ${slot===2?'Passive: '+supportText(c):ABILITIES[st.abilId].name+' · '+ATTACKS[st.atkId].name}${c.proven?'':' · Unproven'}</small>${note?`<small style="color:var(--gold)">${note}</small>`:''}</span></button>`}).join('');
+  const items=list.map(c=>{const w=whereIs(c),st=stats(c);const note=w.kind==='section'?`Leaves the ${SECTIONS[w.key].name}`:w.kind==='loadout'?`Moves from slot ${w.slot+1}`:'';
+    return creatureCard(c,{act:'pickslot',data:{slot},ctx:`${slot===2?'Passive: '+esc(supportText(c)):ABILITIES[st.abilId].name+' · '+ATTACKS[st.atkId].name}${note?` · <b>${note}</b>`:''}`})}).join('');
   openModal(`<h2>${slot===2?'Slot 3: support or free':'Combat slot '+(slot+1)}</h2>
     ${slot===2?'<p class="hint">A support creature gives its passive but stays out of the fight until you swap it into slot 1 or 2. Leave the slot free if you plan to cage something.</p>':''}
-    <div class="choose-list">${slot===2?'<button class="choice" data-act="clearslot" data-slot="2"><span class="nm">Leave free for a capture</span></button>':''}${items||'<p class="empty">No other creatures.</p>'}</div>
+    <div class="choose-list cgrid">${slot===2?'<button class="choice" data-act="clearslot" data-slot="2"><span class="nm">Leave free for a capture</span></button>':''}${items||'<p class="empty">No other creatures.</p>'}</div>
     <div class="row"><button class="btn" data-act="close">Cancel</button></div>`);
 }
 function openNpc(id){
@@ -443,130 +409,60 @@ function openIntro(first){
 }
 
 /* ================= Actions ================= */
-// Exchange actions are async: re-render when the market answers, and explain a refusal.
-function mkDone(p){Promise.resolve(p).then(res=>{if(res&&res.ok===false&&res.why)openModal(`<h2>Not this time</h2><p>${esc(res.why)}</p><div class="row"><button class="btn primary" data-act="close">OK</button></div>`);renderAll()})}
 onMarket(()=>{if(!S)return;renderHeader();if(ui.tab==='exchange'&&!document.activeElement?.matches?.('input'))renderMain()});
 bindCharts(document);
-function act(a,d){
-  switch(a){
-    case'tab':ui.tab=d.k;ui.sellId=null;ui.resetArm=false;ui.scrapArm=null;renderAll();window.scrollTo(0,0);break;
-    case'filter':ui.filter=d.k;renderMain();break;
-    case'section':ui.section=d.k;HMAP.sel=d.k;if($('#secPanel'))renderSecPanel();else renderMain();break;
-    case'codex':ui.codex=d.k;renderMain();break;
-    case'dextype':ui.dexType=d.k;renderMain();break;
-    case'close':closeModal();break;
-    case'npc':openNpc(d.k);break;
-    case'turnin':{const got=npcTurnIn(d.k);if(got){sfx('quest');save();renderAll();const n=NPCS[d.k];openModal(`<div class="row" style="gap:12px;flex-wrap:nowrap"><canvas class="spr" width="72" height="72" data-npc="${d.k}"></canvas><h2>${n.name}</h2></div><blockquote class="say">${n.quests[S.npc[d.k].q-1].done}</blockquote><p class="status">Received ${got}.</p><div class="row"><button class="btn primary" data-act="npc" data-k="${d.k}">Continue</button><button class="btn" data-act="close">Close</button></div>`)}break}
-    case'claim':{const m=DEX_MILES[S.dex.claimed];if(m&&dexScore()>=m.n){const got=giveReward(m.reward);S.dex.claimed++;addLog(`Codex milestone ${m.n}: received ${got}.`);sfx('quest');save();renderAll()}break}
-    case'research':if(buyResearch(d.k)){sfx('level');save();renderAll()}break;
-    case'evolve':{const c=byId(+d.id);const old=evolve(c);if(old){sfx('evolve');save();renderAll();
+// The hideout, raid prep, roster, research, Codex, settings and Test Lab actions. Other screens register their own.
+onAct('tab',d=>{ui.tab=d.k;ui.creature=null;ui.sellId=null;ui.resetArm=false;ui.scrapArm=null;renderAll();window.scrollTo(0,0)});
+onAct('filter',d=>{ui.filter=d.k;renderMain()});
+onAct('section',d=>{ui.section=d.k;HMAP.sel=d.k;if($('#secPanel'))renderSecPanel();else renderMain()});
+onAct('codex',d=>{ui.codex=d.k;renderMain()});
+onAct('dextype',d=>{ui.dexType=d.k;renderMain()});
+onAct('close',d=>{closeModal()});
+onAct('npc',d=>{openNpc(d.k)});
+onAct('turnin',d=>{const got=npcTurnIn(d.k);if(got){sfx('quest');save();renderAll();const n=NPCS[d.k];openModal(`<div class="row" style="gap:12px;flex-wrap:nowrap"><canvas class="spr" width="72" height="72" data-npc="${d.k}"></canvas><h2>${n.name}</h2></div><blockquote class="say">${n.quests[S.npc[d.k].q-1].done}</blockquote><p class="status">Received ${got}.</p><div class="row"><button class="btn primary" data-act="npc" data-k="${d.k}">Continue</button><button class="btn" data-act="close">Close</button></div>`)}});
+onAct('claim',d=>{const m=DEX_MILES[S.dex.claimed];if(m&&dexScore()>=m.n){const got=giveReward(m.reward);S.dex.claimed++;addLog(`Codex milestone ${m.n}: received ${got}.`);sfx('quest');save();renderAll()}});
+onAct('research',d=>{if(buyResearch(d.k)){sfx('level');save();renderAll()}});
+onAct('evolve',d=>{const c=byId(+d.id);const old=evolve(c);if(old){sfx('evolve');save();renderAll();
       openModal(`<h2 class="res-title win">${esc(c.name)} evolved!</h2><div class="row" style="justify-content:center;gap:10px">${sprSp(c.species,c.stage-1,80)}<b style="font-family:var(--display);font-size:1.6rem">›</b>${sprSp(c.species,c.stage,96)}</div>
-        <p style="text-align:center">${esc(old)} became <b style="color:var(--gold)">${esc(formName(c))}</b>.</p><p class="status" style="text-align:center">New attack: ${ATTACKS[formOf(c).atk].name}. Ability: ${ABILITIES[formOf(c).abil].name}.</p><div class="row" style="justify-content:center"><button class="btn primary" data-act="close">Wonderful</button></div>`)}break}
-    case'choose':openChooser(+d.slot);break;
-    case'pickslot':{const c=byId(+d.id);unplace(c);S.loadout.slots[+d.slot]=c.id;closeModal();save();renderAll();break}
-    case'clearslot':S.loadout.slots[+d.slot]=null;closeModal();save();renderAll();break;
-    case'deploy':if(overCap()){renderAll();break}startRaid('raid');break;
-    case'make':{const got=craft(d.k);if(got){addLog(`Workshop: made ${got}.`);sfx('heavy');save();renderAll()}break}
-    case'forge':case'forgeprint':{const id=a==='forge'?d.k:S.prints[+d.i];const it=craftWeapon(id,a==='forgeprint'?+d.i:null);if(it){addLog(`The Forge made a ${itemName(it)}. ${makerText(it)}.`);sfx('heavy');save();renderAll()}break}
-    case'repair':if(repair(+d.uid)){sfx('heavy');save();renderAll()}break;
-    case'scrapitem':{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun')break;if(ui.scrapArm!==it.uid){ui.scrapArm=it.uid;renderMain();break}ui.scrapArm=null;
-      const ore=Math.round(SCRAP_ORE[GUNS[it.id].tier]*(secTier('forge')>=3?1.5:1));scrapItem(it);S.ore+=ore;S.blueprints[it.id]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${itemName(it)} for ${ore} ore.`);sfx('heavy');save();renderAll();break}
-    case'donateitem':{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun'||!sectionUnlockedArmory())break;const before=armoryTier(),pts=DONATE_PTS[GUNS[it.id].tier];scrapItem(it);S.armory+=pts;S.blueprints[it.id]=1;validGuns();
-      addLog(`Donated a ${itemName(it)} to the Armory (+${pts} pts).${armoryTier()>before?' Armory tier '+armoryTier()+' reached: '+ARMORY_TIERS[armoryTier()-1]+'.':''}`);save();renderAll();break}
-    case'buildpen':if(buildPen()){sfx('level');save();renderAll()}break;
-    case'expgo':{const ids=ui.exp.team.map(Number);if(startExpedition(ui.exp.dest,ids)){ui.exp={dest:'',team:['','','']};sfx('ui');save();renderAll()}break}
-    case'scav':startRaid('scav');break;
-    case'arena':startRaid('arena');break;
-    case'tutorial':closeModal();startRaid('tutorial');break;
-    case'intro':openIntro(false);break;
-    case'wait':processDay();save();renderAll();marketDay().then(()=>renderAll());break;
-    case'assign':{const sel=$('#addsel');if(!sel)break;const c=byId(+sel.value);if(!c||S.sections[d.k].ids.length>=secCap(d.k))break;unplace(c);S.sections[d.k].ids.push(c.id);save();renderAll();break}
-    case'unassign':{const c=byId(+d.id);if(c){unplace(c);save();renderAll()}break}
-    case'expand':{const ec=expandCost(d.k);if(S.coin<ec.coin||S.ore<ec.ore||S.sections[d.k].cap>=10)break;S.coin-=ec.coin;S.ore-=ec.ore;S.sections[d.k].cap++;save();renderAll();break}
-    case'genelab':{const c=byId(+ui.gl.id);if(!c)break;const g=ui.gl.gene,pair=c.genome[g],w=pair[0]<=pair[1]?0:1,v=pair[w],cc={coin:20*(v+1),ore:2*(v+1)};if(v>=10||S.coin<cc.coin||S.ore<cc.ore)break;
-      S.coin-=cc.coin;S.ore-=cc.ore;pair[w]=v+1;express(c);addLog(`Gene Lab: ${c.name}'s weaker ${GENES[g]} copy rose to ${v+1}.`);sfx('level');save();renderAll();break}
-    case'tutor':{const c=byId(+ui.tt.id);if(!c||S.coin<60||S.ore<8)break;S.coin-=60;S.ore-=8;const k=ui.tt.slot,old=expressTrait(c.genome[k]);const nt=rollTraits(1,c.traits,true)[0];c.genome[k]=[nt,nt];express(c);
-      addLog(`Trait Tutor: ${c.name} ${old?`swapped ${TRAITS[old].name} for`:'learned'} ${TRAITS[nt].name}.`);save();renderAll();break}
-    case'tree':{const c=byId(+d.id);if(c)openModal(treeHtml(c));break}
-    case'lab-sim':{runSim(ui.sim);renderMain();break}
-    case'lab-supply':{runSupply(1);renderMain();break}
-    case'lab-eco':{runEconomy({...ui.eco,days:+d.k});renderMain();break}
-    case'mktab':ui.mk.tab=d.k;renderMain();break;
-    case'mkgood':ui.mk.good=ui.mk.good===d.k?null:d.k;ui.mk.price='';renderMain();break;
-    case'mktrade':ui.tab='exchange';ui.mk.tab='goods';ui.mk.good=d.k;renderAll();break;
-    case'mkcat':ui.mk.cat=d.k;renderMain();break;
-    case'mkbuy':case'mksell':{const b=marketView().books[d.k],q=Math.max(1,+ui.mk.qty||1);
-      const p=a==='mkbuy'?buyNow(d.k,q,Math.ceil(b.asks[0].price*1.1*100)/100):sellNow(d.k,q,Math.floor(b.bids[0].price*.9*100)/100);mkDone(p);break}
-    case'mkpost':mkDone(postOrder(d.k,d.side,Math.max(.1,+ui.mk.price||marketView().books[d.k].last),Math.max(1,+ui.mk.qty||1)));break;
-    case'mkcancel':mkDone(cancelOrder(+d.id));break;
-    case'mkbid':mkDone(bid(+d.id,+d.min));break;
-    case'mkbuyout':mkDone(buyout(+d.id));break;
-    case'mklist':{const ref=$('#mk-listref').value,start=Math.max(1,+$('#mk-start').value||1),bo=+$('#mk-buyout').value||null;mkDone(listItem(d.k,d.k==='print'?ref:+ref,start,bo&&bo>start?bo:null));break}
-    case'mkbounty':{const sel=$('#bounty-'+d.id);if(sel)mkDone(fulfilBounty(+d.id,+sel.value));break}
-    case'feed':{const c=byId(+d.id);if(S.food<1)break;S.food--;addBond(c,10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));sfx('pickup');save();renderAll();break}
-    case'sell':{const c=byId(+d.id);if(!c||expAway(c))break;if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();break}
-      S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);sfx('coin');save();renderAll();break}
-    case'breed':breed();break;
-    case'opt':S.opts[d.k]=d.v;if(d.k==='palette')applyPalette();if(d.k==='quality')resetScale();save();renderAll();break;
-    case'lab-spawn':{const L=ui.lab;const lv=clamp(+L.level||1,1,40);
+        <p style="text-align:center">${esc(old)} became <b style="color:var(--gold)">${esc(formName(c))}</b>.</p><p class="status" style="text-align:center">New attack: ${ATTACKS[formOf(c).atk].name}. Ability: ${ABILITIES[formOf(c).abil].name}.</p><div class="row" style="justify-content:center"><button class="btn primary" data-act="close">Wonderful</button></div>`)}});
+onAct('choose',d=>{openChooser(+d.slot)});
+onAct('pickslot',d=>{const c=byId(+d.id);unplace(c);S.loadout.slots[+d.slot]=c.id;closeModal();save();renderAll()});
+onAct('clearslot',d=>{S.loadout.slots[+d.slot]=null;closeModal();save();renderAll()});
+onAct('deploy',d=>{if(overCap()){renderAll();return}startRaid('raid')});
+onAct('scav',d=>{startRaid('scav')});
+onAct('arena',d=>{startRaid('arena')});
+onAct('tutorial',d=>{closeModal();startRaid('tutorial')});
+onAct('intro',d=>{openIntro(false)});
+onAct('wait',d=>{passDay();save();renderAll()});
+onAct('assign',d=>{const sel=$('#addsel');if(!sel)return;const c=byId(+sel.value);if(!c||S.sections[d.k].ids.length>=secCap(d.k))return;unplace(c);S.sections[d.k].ids.push(c.id);save();renderAll()});
+onAct('unassign',d=>{const c=byId(+d.id);if(c){unplace(c);save();renderAll()}});
+onAct('expand',d=>{const ec=expandCost(d.k);if(S.coin<ec.coin||S.ore<ec.ore||S.sections[d.k].cap>=10)return;S.coin-=ec.coin;S.ore-=ec.ore;S.sections[d.k].cap++;save();renderAll()});
+onAct('feed',d=>{const c=byId(+d.id);if(S.food<1)return;S.food--;addBond(c,10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));sfx('pickup');save();renderAll()});
+onAct('sell',d=>{const c=byId(+d.id);if(!c||expAway(c))return;if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();return}
+      S.coin+=sellValue(c);unplace(c);S.creatures=S.creatures.filter(x=>x!==c);ui.sellId=null;addLog(`Sold ${c.name} for ${sellValue(c)} coin.`);sfx('coin');save();renderAll()});
+onAct('breed',d=>{breed()});
+onAct('opt',d=>{OPTS[d.k]=d.v;if(d.k==='palette')applyPalette();if(d.k==='quality')resetScale();saveOpts();renderAll()});
+onAct('lab-spawn',(d,a)=>{const L=ui.lab;const lv=clamp(+L.level||1,1,40);
       let traits=null;if(L.t1||L.t2||L.t3){traits=[L.t1,L.t2,L.t3].map(t=>t||null)}
       const c=makeCreature(L.species,L.origin,lv,{proven:L.proven,sex:L.sex==='R'?null:L.sex,traits,genes:L.max?Object.fromEntries(GRADE_LOCI.map(k=>[k,10])):undefined,captureRaid:L.origin==='wild'&&!L.proven?S.stats.raids:-1});
-      S.creatures.push(c);dexForm(c.species,0,'owned');addLog(`Test Lab: added ${c.name}, a ${sexSym(c.sex)} ${L.origin} ${SPECIES[c.species].name} at Lv ${lv}.`);save();renderAll();break}
-    case'lab-squad':{for(let i=0;i<10;i++){const sp=pick(BASE_SPECIES);const c=makeCreature(sp,'bred',10);S.creatures.push(c);dexForm(sp,0,'owned')}addLog('Test Lab: added 10 Lv 10 creatures.');save();renderAll();break}
-    case'lab-evoready':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{const n=nextForm(c);if(!n)return;c.level=Math.max(c.level,n.lv);c.proven=true;if(n.need)c.genes[n.need[0]]=Math.max(c.genes[n.need[0]],n.need[1]);c.hp=stats(c).hp});S.coin+=600;S.ore+=60;S.shards+=2;save();renderAll();break;
-    case'lab-evomax':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{const L=lineOf(c);c.stage=L.length-1;c.level=Math.max(c.level,L[L.length-1].lv);c.proven=true;for(let i=0;i<=c.stage;i++)dexForm(c.species,i,'owned');c.hp=stats(c).hp});save();renderAll();break;
-    case'lab-bond':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.bondXp=BOND_TH[4];c.hp=stats(c).hp});save();renderAll();break;
-    case'lab-floor':startRaid('raid',+d.k);break;
-    case'lab-res':{const k=d.k;if(k==='coin')S.coin+=500;if(k==='food')S.food+=50;if(k==='ore')S.ore+=50;if(k==='shard')S.shards+=5;if(k==='cage')S.cages.basic+=5;
+      S.creatures.push(c);dexForm(c.species,0,'owned');addLog(`Test Lab: added ${c.name}, a ${sexSym(c.sex)} ${L.origin} ${SPECIES[c.species].name} at Lv ${lv}.`);save();renderAll()});
+onAct('lab-squad',d=>{for(let i=0;i<10;i++){const sp=pick(BASE_SPECIES);const c=makeCreature(sp,'bred',10);S.creatures.push(c);dexForm(sp,0,'owned')}addLog('Test Lab: added 10 Lv 10 creatures.');save();renderAll()});
+onAct('lab-evoready',d=>{S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{const n=nextForm(c);if(!n)return;c.level=Math.max(c.level,n.lv);c.proven=true;if(n.need)c.genes[n.need[0]]=Math.max(c.genes[n.need[0]],n.need[1]);c.hp=stats(c).hp});S.coin+=600;S.ore+=60;S.shards+=2;save();renderAll()});
+onAct('lab-evomax',d=>{S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{const L=lineOf(c);c.stage=L.length-1;c.level=Math.max(c.level,L[L.length-1].lv);c.proven=true;for(let i=0;i<=c.stage;i++)dexForm(c.species,i,'owned');c.hp=stats(c).hp});save();renderAll()});
+onAct('lab-bond',d=>{S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.bondXp=BOND_TH[4];c.hp=stats(c).hp});save();renderAll()});
+onAct('lab-floor',d=>{startRaid('raid',+d.k)});
+onAct('lab-res',d=>{const k=d.k;if(k==='coin')S.coin+=500;if(k==='food')S.food+=50;if(k==='ore')S.ore+=50;if(k==='shard')S.shards+=5;if(k==='cage')S.cages.basic+=5;
       if(k==='guns')GUN_IDS.forEach(g=>{if(g!=='pistol'&&!S.items.some(i=>i.kind==='gun'&&i.id===g))newItem('gun',g,1,{src:'legacy'})});
       if(k==='mats')Object.keys(JOBS.MATERIALS).forEach(m=>give(m,30));if(k==='bp')GUN_IDS.forEach(g=>S.blueprints[g]=1);
       if(k==='keeper')addKeeperXp(keeperNeed()-S.keeper.xp);
       if(k==='dex'){for(const sp in LINES)LINES[sp].forEach((f,i)=>dexForm(sp,i,'seen'));FOE_IDS.forEach(f=>dexFoe(f,true));BOSS_IDS.forEach(b=>{S.progress.bosses[b]=S.progress.bosses[b]||1})}
-      save();renderAll();break}
-    case'lab-heal':S.creatures.forEach(c=>c.hp=stats(c).hp);save();renderAll();break;
-    case'lab-prove':S.creatures.forEach(c=>c.proven=true);save();renderAll();break;
-    case'lab-xp':S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.level=Math.min(40,c.level+5);c.hp=stats(c).hp});save();renderAll();break;
-    case'lab-hatch':{const n=S.eggs.length;S.eggs.forEach(hatchEgg);S.eggs=[];if(n)addLog(`Test Lab: hatched ${n} egg${n>1?'s':''}.`);save();renderAll();break}
-    case'buildmode':HMAP.build=!HMAP.build;HMAP.pick=null;renderMain();break;
-    case'placepick':HMAP.pick={kind:'place',key:d.k,ref:d.ref!=null?+d.ref:undefined};renderBuildPanel();break;
-    case'cancelpick':HMAP.pick=null;renderBuildPanel();break;
-    case'storeitem':if(storeItem(+d.id)){HMAP.pick=null;save();renderBuildPanel()}break;
-    case'buyplot':if(buyPlot()){sfx('level');save();renderAll()}break;
-    case'makedecor':if(craftDecor(d.k)){sfx('heavy');save();renderAll()}break;
-    case'retire':{const c=byId(+ui.retire);if(!c)break;if(ui.retireArm!==c.id){ui.retireArm=c.id;renderSecPanel();break}ui.retireArm=null;const L=retire(c);if(L){ui.retire='';sfx('quest');save();renderAll();openLegend(L.id)}break}
-    case'takedown':if(takeDownWeapon(+d.id)){save();renderAll()}break;
-    case'displayweapon':if(displayWeapon(+d.uid)){validGuns();sfx('quest');save();renderAll()}break;
-    case'trophy':openTrophy(+d.id);break;
-    case'legend':openLegend(+d.id);break;
-    case'sigil':{const Z=S.sigil||ui.sigilDraft||{};ui.sigilDraft={shape:Z.shape,color:Z.color,glyph:Z.glyph,[d.k]:d.v};if(S.sigil){setSigil(ui.sigilDraft);save()}renderMain();break}
-    case'sigilsave':setSigil(ui.sigilDraft||S.sigil||{});save();renderMain();break;
-    case'sigilclear':setSigil(null);ui.sigilDraft=null;save();renderMain();break;
-    case'sharecard':openShare('card',+d.id);break;
-    case'snapshot':openShare('snapshot');break;
-    case'sharego':shareGo();break;
-    case'feedback':openModal(feedbackHtml());break;
-    case'sendfeedback':{const rate=$('#fb-rate').value,text=$('#fb-text').value;sendFeedback(rate,text).then(how=>{const st=$('#fb-status');if(st)st.textContent=how==='empty'?'Write something first.':how==='firebase'?'Thank you! Sent.':'Thank you! Finish sending it on GitHub.'});break}
-    case'stats':setStats(d.k==='1');closeModal();if(ui.tab==='settings')renderMain();break;
-    case'contract':if(takeContract(+d.i)){save();renderMain()}break;
-    case'contractdrop':dropContract();save();renderMain();break;
-    case'makemap':if(craftMap(d.k,ui.mapVein||BLOOM.VEIN_ORDER[0])){sfx('pickup');save();renderAll()}break;
-    case'serum':{const c=byId(+d.id);if(c&&useSerum(c)){sfx('level');save();renderAll()}break}
-    case'lab-vein':startRaid('raid',4,null,d.k);break;
-    case'lab-variety':ui.variety=varietyRun(20,Date.now()%100000);renderMain();break;
-    case'unbound':startRaid('raid',7,null,'unbound',{tier:+d.k});break;
-    case'deepening':startRaid('raid',1,null,null,{deepening:weekOf(S.day)});break;
-    case'splice':{const dn=byId(+ui.spDonor);if(!dn)break;if(ui.spArm!==dn.id){ui.spArm=dn.id;renderMain();break}ui.spArm=null;if(splice(+ui.spDonor,+ui.spRecip,ui.spLocus||'pow')){ui.spDonor='';sfx('evolve');save();renderAll()}break}
-    case'bloomscar':{const c=byId(+d.id);if(c&&amt('bloomscar')>0){give('bloomscar',-1);c.genome.shine[c.genome.shine[0]<=c.genome.shine[1]?0:1]=2;express(c);addLog(`A Bloomscar serum scarred ${c.name}'s shine gene.`);sfx('evolve');save();renderAll()}break}
-    case'lab-endgame':labEndgame();save();renderAll();break;
-    case'lab-journey':runJourneyLab();renderAll();break;
-    case'lab-lore':labLore(d.k==='all');save();renderAll();break;
-    case'lab-whisper':{const w=whisper();addLog(w?'Whisper: '+w.text:'No whisper is left to hear in this act.');save();renderAll();break}
-    case'lab-deep':startRaid('raid',+d.k,null,'ember');break;
-    case'lab-unbound':story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;startRaid('raid',7,null,'unbound',{tier:+d.k});break;
-    case'lab-ending':story().ilsa=true;story().heart=true;story().ending=story().ending||'wake';story().endings[story().ending]=true;save();renderAll();break;
-    case'reset':if(!ui.resetArm){ui.resetArm=true;renderMain();break}ui.resetArm=false;newGame();save();startMarket();ui.tab='raid';renderAll();openIntro(true);break;
-  }
-}
+      save();renderAll()});
+onAct('lab-heal',d=>{S.creatures.forEach(c=>c.hp=stats(c).hp);save();renderAll()});
+onAct('lab-prove',d=>{S.creatures.forEach(c=>c.proven=true);save();renderAll()});
+onAct('lab-xp',d=>{S.loadout.slots.map(byId).filter(Boolean).forEach(c=>{c.level=Math.min(40,c.level+5);c.hp=stats(c).hp});save();renderAll()});
+onAct('lab-hatch',d=>{const n=S.eggs.length;S.eggs.forEach(hatchEgg);S.eggs=[];if(n)addLog(`Test Lab: hatched ${n} egg${n>1?'s':''}.`);save();renderAll()});
+onAct('lab-deep',d=>{startRaid('raid',+d.k,null,'ember')});
+onAct('reset',d=>{if(!ui.resetArm){ui.resetArm=true;renderMain();return}ui.resetArm=false;newGame();save();startMarket();ui.tab='raid';renderAll();openIntro(true)});
 document.addEventListener('click',e=>{
   if(e.target.id==='modal'){closeModal();return}
   const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT'||b.tagName==='INPUT'||b.disabled)return;
@@ -574,44 +470,19 @@ document.addEventListener('click',e=>{
   if(b.dataset.act!=='tab')sfx('ui');
   act(b.dataset.act,b.dataset);
 });
-document.addEventListener('change',e=>{
-  const el=e.target,a=el.dataset.act;if(!a)return;
-  if(a==='gunsel'){S.loadout.guns[+el.dataset.slot]=el.value?+el.value:null;validGuns();save();renderMain()}
-  else if(a==='keepername'){S.keeperName=el.value.trim().slice(0,24);save()}
-  else if(a==='satchelsel'){S.loadout.satchel=el.value?+el.value:null;validGuns();save();renderMain()}
-  else if(a==='tonicsel'){S.loadout.tonics=+el.value||0;validGuns();save();renderMain()}
-  else if(a==='expsel'){ui.exp.team[+el.dataset.i]=el.value;renderSecPanel()}
-  else if(a==='expdest'){ui.exp.dest=el.dataset.k;renderSecPanel()}
-  else if(a==='mom'){ui.mom=el.value;renderMain()}
-  else if(a==='tiersel'){ui.tier=el.value;renderMain()}
-  else if(a==='spdonor'){ui.spDonor=el.value;ui.spArm=null;renderMain()}
-  else if(a==='sprecip'){ui.spRecip=el.value;renderMain()}
-  else if(a==='splocus'){ui.spLocus=el.value;renderMain()}
-  else if(a==='mutlab'){const ids=(S.mutlab||[]).slice();ids[+el.dataset.i]=el.value?+el.value:null;const c=byId(+el.value);if(c)unplace(c);setMutlab(ids.filter(Boolean));save();renderMain()}
-  else if(a==='apexlocus'){ui.apexLocus=el.value||'';renderMain()}
-  else if(a==='showenter'){enterShow(+el.dataset.i,el.value?+el.value:null);save()}
-  else if(a==='archivist'){S.archive.archivist=el.value?+el.value:null;save();renderMain()}
-  else if(a==='mapsel'){S.loadout.map=el.value?+el.value:null;save()}
-  else if(a==='mapvein'){ui.mapVein=el.value;renderMain()}
-  else if(a==='retiresel'){ui.retire=el.value;ui.retireArm=null;renderSecPanel()}
-  else if(a==='statsopt'){setStats(el.checked);renderMain()}
-  else if(a==='dad'){ui.dad=el.value;renderMain()}
-  else if(a==='glc'){ui.gl.id=el.value;renderSecPanel()}
-  else if(a==='glg'){ui.gl.gene=el.value;renderSecPanel()}
-  else if(a==='ttc'){ui.tt.id=el.value;ui.tt.slot='0';renderSecPanel()}
-  else if(a==='tts'){ui.tt.slot=el.value}
-  else if(a==='lab'){const k=el.dataset.k;ui.lab[k]=el.type==='checkbox'?el.checked:el.value}
-  else if(a==='eco'){ui.eco[el.dataset.k]=el.type==='number'?+el.value:el.value}
-  else if(a==='mkqty'){ui.mk.qty=Math.max(1,+el.value||1);renderMain()}
-  else if(a==='mkprice'){ui.mk.price=el.value;renderMain()}
-  else if(a==='mklistkind'){ui.mk.listKind=el.value;ui.mk.listRef='';renderMain()}
-  else if(a==='mklistref'){ui.mk.listRef=el.value;renderMain()}
-  else if(a==='sim'){ui.sim[el.dataset.k]=Math.max(+el.min||0,Math.min(+el.max||1e9,+el.value||0))}
-  else if(a==='setting'){S.settings[el.dataset.k]=el.checked;save();if(el.dataset.k==='genes')renderMain()}
-  else if(a==='mode'){S.modes[el.dataset.k]=el.checked;save()}
-  else if(a==='optc'){S.opts[el.dataset.k]=el.checked;save();auVol()}
-  else if(a==='opthud'){S.opts.hudAlpha=+el.value;save()}
-});
-document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act==='optr'){S.opts[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();save()}});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.act)changed(el)});
+onChange('gunsel',el=>{S.loadout.guns[+el.dataset.slot]=el.value?+el.value:null;validGuns();save();renderMain()});
+onChange('keepername',el=>{S.keeperName=el.value.trim().slice(0,24);save()});
+onChange('satchelsel',el=>{S.loadout.satchel=el.value?+el.value:null;validGuns();save();renderMain()});
+onChange('tonicsel',el=>{S.loadout.tonics=+el.value||0;validGuns();save();renderMain()});
+onChange('mom',el=>{ui.mom=el.value;renderMain()});
+onChange('dad',el=>{ui.dad=el.value;renderMain()});
+onChange('lab',el=>{const k=el.dataset.k;ui.lab[k]=el.type==='checkbox'?el.checked:el.value});
+onChange('setting',el=>{S.settings[el.dataset.k]=el.checked;save();if(el.dataset.k==='genes')renderMain()});
+onChange('mode',el=>{S.modes[el.dataset.k]=el.checked;save()});
+onChange('optc',el=>{OPTS[el.dataset.k]=el.checked;saveOpts();auVol()});
+onChange('opthud',el=>{OPTS.hudAlpha=+el.value;saveOpts()});
+onInput('optr',el=>{OPTS[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();saveOpts()});
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act)inputted(el)});
 
-export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,creCard,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro,act};
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro};

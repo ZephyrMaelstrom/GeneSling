@@ -15,6 +15,7 @@ import {S,addKeeperXp,addLog,secTier} from './state.js';
 import {GRADE_LOCI} from './genetics.js';
 import {canPay,costText,give,pay} from './jobs.js';
 import {seasonTypeMul,tierTwists,unboundBoss} from './endgame.js';
+import {on} from './events.js';
 
 const VEIN_IDS=Object.keys(B.VEINS),DEEP=B.VEIN_ORDER,LAYOUT_IDS=Object.keys(B.LAYOUTS),EVENT_IDS=Object.keys(B.EVENTS.list);
 const veinIdx=v=>VEIN_IDS.indexOf(v);
@@ -122,6 +123,12 @@ function settleContract(res){
   c.done=(c.done||0)+1;addLog(`Contract complete: ${o.text} Paid ${rewardText(o.reward)}.`);
   return{ok:true,text:`Contract complete! ${rewardText(o.reward)}.`};
 }
+// A contract is settled at the end of a raid or scav run.
+on('raid:end',r=>{
+  if(r.mode!=='raid'&&!r.scav)return;
+  const cr=settleContract({extracted:r.extracted,bagCoin:r.bag.coin,bagOre:r.bag.ore,kills:r.kills,eliteKills:r.eliteKills,deepest:r.deepest,caught:r.caught});
+  if(cr)r.notes.push(cr.text);
+},{order:30});
 
 /* ---------- vein maps (crafted at the Roost) ---------- */
 const MK=B.MAPS.kinds;
@@ -155,6 +162,13 @@ function bloomify(d){
   if(d.loadout)d.loadout.map=d.loadout.map??null;
   return d;
 }
-export {VEIN_IDS,DEEP,LAYOUT_IDS,EVENT_IDS,veinIdx,veinOfFloor,raidEvent,floorLayout,floorPlan,raidPlans,signature,seedKeys,bloomState,newBloom,pickRaidSeed,rememberSeed,
+/* ---------- what each vein is rich in ---------- */
+// VEINS[v].rich: a material's multiplier on what you pick up there (Ember Abyss ore ×1.6), or for shards
+// and relics, the chance a chest holds one. 1 (no bonus) when the vein names nothing.
+const veinRich=(vein,k)=>{const r=vein&&B.VEINS[vein]&&B.VEINS[vein].rich;return r&&r[k]!=null?r[k]:k==='shards'||k==='relic'?0:1};
+// n of a material scaled by the vein's richness, rounded up or down at random so 1 × 1.5 is 1 or 2, evenly.
+const richAmount=(vein,mat,n)=>{const x=n*veinRich(vein,mat),w=Math.floor(x);return w+(rand()<x-w?1:0)};
+
+export {veinRich,richAmount,VEIN_IDS,DEEP,LAYOUT_IDS,EVENT_IDS,veinIdx,veinOfFloor,raidEvent,floorLayout,floorPlan,raidPlans,signature,seedKeys,bloomState,newBloom,pickRaidSeed,rememberSeed,
   veinBlock,pickBoss,wildTypeWeight,rollWildIn,herdSpecies,contractOffers,takeContract,dropContract,rewardText,settleContract,mapBlock,craftMap,mapName,loadoutMap,useMap,
   varietyRun,bloomify};

@@ -168,6 +168,6 @@ test('the secret hybrid is off the breeding list until its wall is copied', asyn
 
 test('a v12 save loads with empty lore', async () => {
   const r = await run(() => { const d = migrate({...JSON.parse(JSON.stringify(S)), v: 12, lore: undefined}); return {v: d.v, lore: d.lore}; });
-  assert.deepEqual(r, {v: 14, lore: {pages: [], walls: [], whispers: []}});
+  assert.deepEqual(r, {v: 16, lore: {pages: [], walls: [], whispers: []}});
   assert.deepEqual(errors, []);
 });

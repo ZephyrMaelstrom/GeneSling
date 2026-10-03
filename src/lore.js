@@ -14,6 +14,7 @@ import {LORE as L,JOURNAL} from './content.js';
 import {S} from './state.js';
 import {R,msg,float,later} from './raid.js';
 import {sfx} from './audio.js';
+import {on} from './events.js';
 import {runeWall} from './endgame.js';
 
 const loreState=()=>S.lore||(S.lore={pages:[],walls:[],whispers:[]});
@@ -77,6 +78,7 @@ function loreEnd(extracted){
   const st=loreState();got.forEach(id=>{if(!st.pages.includes(id))st.pages.push(id)});
   return`You brought home ${got.length} page${got.length>1?'s':''} of Ilsa’s journal. Read ${got.length>1?'them':'it'} in the Codex.`;
 }
+on('raid:end',r=>{const ln=loreEnd(r.extracted);if(ln)r.notes.push(ln)},{order:10});
 // Choosing an ending at the Heart leaves the last page.
 function onEnding(){const st=loreState();if(!st.pages.includes('after'))st.pages.push('after')}
 
