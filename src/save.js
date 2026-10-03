@@ -22,8 +22,9 @@ import {balancify} from './balance.js';
 import {S,setS} from './state.js';
 import {adoptOpts} from './device.js';
 import {DEMO} from './flags.js';
+import {perkify} from './buildings.js';
 
-const SAVE_VERSION=16;
+const SAVE_VERSION=17;
 const LEGACY_KEY='genesling-save-v5';   // v5 prototype, localStorage
 const NAMES={full:{db:'genesling',fallback:'genesling-save'},demo:{db:'genesling-demo',fallback:'genesling-demo-save'}};
 const OWN=DEMO?NAMES.demo:NAMES.full;
@@ -94,6 +95,9 @@ const MIGRATIONS={
     (d.eggs||[]).forEach(e=>{const c=e.child;c.log=c.log||[];c.kills=c.kills||0;c.extracts=c.extracts||0});
     return d;
   },
+  // v17 (Perks): stations become buildings with levels, and creatures bring their own perks and flaws.
+  // Each station's building starts at the level matching the tier it had, so nothing built is lost.
+  16:perkify,
 };
 
 function migrate(d){

@@ -176,7 +176,7 @@ test('the breeder’s sigil marks creatures you breed and travels through the Ex
     S.keeperName = 'Conner'; setSigil({shape: 'hex', color: '#7fd860', glyph: '☾'});
     const mom = makeCreature('pebblet', 'bred', 5, {sex: 'F', proven: true}), dad = makeCreature('pebblet', 'bred', 5, {sex: 'M', proven: true});
     S.creatures.push(mom, dad); S.pens = 20;
-    const t = secTier('nursery'); if (!t) { const w = makeCreature('wardlet' in SPECIES ? 'wardlet' : BASE_SPECIES.find(k => SPECIES[k].type === 'warden'), 'bred', 30); S.creatures.push(w); S.sections.nursery.ids.push(w.id); }
+    const t = stationLevel('nursery'); if (!t) { const w = makeCreature('wardlet' in SPECIES ? 'wardlet' : BASE_SPECIES.find(k => SPECIES[k].type === 'warden'), 'bred', 30); S.creatures.push(w); S.sections.nursery.ids.push(w.id); }
     ui.mom = String(mom.id); ui.dad = String(dad.id); S.eggs = []; const laid = breed();
     const child = laid && laid[0];
     const back = materialize({kind: 'creature', c: structuredClone(child)});
@@ -255,7 +255,7 @@ test('a v9 save loads into the current version with the old map’s layout, and 
   void r;
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, layout: S.layout.length === defaultLayout().length, plots: S.plots, trophies: S.trophies.map(t => [t.boss, !!t.legacy]), placed: S.layout.some(i => i.key === 'trophy'), titles: S.creatures.every(c => Array.isArray(c.titles)), story: trophyStory(S.trophies[0])}));
-  assert.equal(s.v, 16);
+  assert.equal(s.v, 17);
   assert.equal(s.layout, true);
   assert.equal(s.plots, 0);
   assert.deepEqual(s.trophies, [['bloom', true]]);

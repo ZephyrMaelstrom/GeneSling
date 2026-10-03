@@ -3,7 +3,7 @@
    the veins in the Codex, and the Test Lab's vein jumps and variety check. */
 import {esc} from './util.js';
 import {BLOOM as B,TYPES,BLOOM} from './content.js';
-import {secTier,S,ui} from './state.js';
+import {S,ui} from './state.js';
 import {costText,amt} from './jobs.js';
 import {bloomState,contractOffers,loadoutMap,mapBlock,mapName,rewardText,craftMap,dropContract,takeContract,varietyRun} from './bloom.js';
 import {onAct,onChange} from './actions.js';
@@ -11,6 +11,7 @@ import {renderAll,renderMain} from './ui.js';
 import {save} from './save.js';
 import {sfx} from './audio.js';
 import {startRaid} from './raid.js';
+import {stationLevel} from './buildings.js';
 
 function contractBoard(){
   const c=bloomState().contracts,act=c.active,offers=contractOffers();
@@ -29,7 +30,7 @@ function mapPicker(){
 function mapRecipes(ui){
   const K=B.MAPS.kinds,vein=ui.mapVein||B.VEIN_ORDER[0];
   const veinSel=`<select data-act="mapvein" aria-label="Vein">${B.VEIN_ORDER.map(v=>`<option value="${v}" ${v===vein?'selected':''}>${B.VEINS[v].name}</option>`).join('')}</select>`;
-  return`<h3>Vein maps · the Roost</h3><p class="hint">Maps are used up when you raid their vein. Explorers sell them on to breeders hunting one species.${secTier('roost')<B.MAPS.needRoost?` The Roost needs to reach tier ${B.MAPS.needRoost} first.`:''}</p>
+  return`<h3>Vein maps · the Roost</h3><p class="hint">Maps are used up when you raid their vein. Explorers sell them on to breeders hunting one species.${stationLevel('roost')<B.MAPS.needRoost?' Post a creature at the Roost first.':''}</p>
     <div class="row">${veinSel}</div><div class="recipes">${Object.entries(K).map(([k,M])=>{const why=mapBlock(k);
       return`<div class="recipe"><b>${M.name}</b><small>${esc(M.desc)}</small><small>${Object.entries(M.cost).map(([m,n])=>`<span class="${amt(m)>=n?'':'short'}">${costText({[m]:n})}</span>`).join(' · ')}</small>
       <button class="btn small" data-act="makemap" data-k="${k}" ${why?'disabled':''}>${why||'Draw'}</button></div>`}).join('')}</div>

@@ -17,7 +17,7 @@
    shows a compact, read-only page (compactPage). */
 import {$,esc,clamp} from './util.js';
 import {ABILITIES,ATTACKS,BOND_PASSIVE,BOND_TH,GENES,JOBS as J,PERS,SECTIONS,SECTION_IDS,SPECIES,TRAITS,TYPES} from './content.js';
-import {S,ui,byId,whereIs,unplace,stats,statParts,formName,lineOf,nextForm,canEvolve,evolveCost,xpNeed,sellValue,sectionUnlocked,secCap,secContribution,secTier,sexSym,supportText,bondStar} from './state.js';
+import {S,ui,byId,whereIs,unplace,stats,statParts,formName,lineOf,nextForm,canEvolve,evolveCost,xpNeed,sellValue,sectionUnlocked,secCap,sexSym,supportText,bondStar} from './state.js';
 import {spr,typeChips,sexChip,stars,paintSprites} from './sprites.js';
 import {amt,serumLocus,fatigueMul,workUnit,crewMods,members,foremanOf,teamScale,roleInfo,expAway} from './jobs.js';
 import {gradeStars} from './genetics.js';
@@ -30,6 +30,8 @@ import {history} from './history.js';
 import {save} from './save.js';
 import {renderAll,renderMain,statusText,closeModal} from './ui.js';
 import {onAct,onChange,act} from './actions.js';
+import {activeHere,perkText,perksOf} from './perks.js';
+import {buildingLevel} from './buildings.js';
 
 /* ---------- the card ---------- */
 // Where it is, in a few words, with days left when it's away.
@@ -146,7 +148,16 @@ function overview(c){
       <p class="status"><b class="lbl">In slot 3:</b> ${esc(supportText(c))}</p>
       <p class="status"><b class="lbl">Bond ${bondStar(c)}★:</b> ${bondStar(c)>=3?`${bp.name}, ${esc(bp.desc)}`:`★3 unlocks ${bp.name}`}</p>
       <div class="row" style="gap:4px">${titleChips(c)}${ribbonChips(c)}${lineageChips(c)}</div></div></div>
+    <h3>Perks and flaws</h3>${perkList(c)}
     <div class="evochain">${chain}</div>`;
+}
+
+/* ---------- perks and flaws ---------- */
+const SRC={species:'its line',mastery:'its final form',hybrid:'its parent lines',personality:'its personality',earned:'earned'};
+function perkList(c){
+  const P=perksOf(c);
+  const li=p=>`<li class="${p.kind==='flaw'?'bad':'good'}"><b>${p.known?esc(p.name):'Unknown'}</b> <span>${p.known?esc(perkText(p)):'Not seen yet'}</span> <small>${SRC[p.src]}${p.at==='party'?' · in raids':p.at==='station'&&p.st!=='any'?' · '+[].concat(p.st).map(k=>SECTIONS[k]?SECTIONS[k].name:k).join(', '):''}</small></li>`;
+  return`<ul class="cp-perks">${P.map(li).join('')}</ul>`;
 }
 
 /* ---------- Genes ---------- */
@@ -155,13 +166,15 @@ function genes(c){
 }
 
 /* ---------- Work ---------- */
-// What it would put into station k in a day, alone, before crew chemistry and the inputs on hand.
+// What it would put into station k in a day beside the crew there now, with its perks and flaws, before crew
+// chemistry and the inputs on hand. For stations that make nothing, what its perks would do there.
 function stationLine(c,k){
-  const sec=SECTIONS[k],R=J.STATIONS[k],here=whereIs(c).kind==='section'&&whereIs(c).key===k;
-  const tierMul=k==='garden'?J.WORK.gardenTier[secTier(k)]:k==='apothecary'?J.WORK.apothecaryTier[secTier(k)]:1;
+  const sec=SECTIONS[k],R=J.STATIONS[k],here=whereIs(c).kind==='section'&&whereIs(c).key===k,crew=[...members(k).filter(x=>x!==c),c];
+  const lv=buildingLevel(k),tierMul=k==='garden'?J.WORK.gardenTier[lv]:k==='apothecary'?J.WORK.apothecaryTier[lv]:1;
+  const perks=activeHere(c,k,crew);
   let what;
-  if(R){const u=workUnit(c,k)*tierMul*(R.rate||1);what=Object.entries(R.out).map(([m,n])=>`${(u*n).toFixed(1)} ${J.MATERIALS[m]?J.MATERIALS[m].name.toLowerCase():m}`).join(', ')+' a day'}
-  else what=`${secContribution(c,k).toFixed(1)} points toward the next tier`;
+  if(R){const u=workUnit(c,k,crew)*tierMul*(R.rate||1);what=u?Object.entries(R.out).map(([m,n])=>`${(u*n).toFixed(1)} ${J.MATERIALS[m]?J.MATERIALS[m].name.toLowerCase():m}`).join(', ')+' a day':'nothing: '+perks.filter(x=>x.kind==='flaw').map(x=>x.name).join(', ')}
+  else what=perks.length?perks.map(x=>x.name).join(', '):'no perks here';
   const match=!sec.type?'':c.type===sec.type?' · its type':c.type2===sec.type?' · second type':' · off type';
   return`<li class="${here?'on':''}"><span><b>${sec.name}</b>${match}${here?' · works here now':''}</span><span>${what}</span></li>`;
 }

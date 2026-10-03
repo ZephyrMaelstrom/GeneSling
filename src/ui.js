@@ -1,8 +1,8 @@
 /* ================= Hideout UI ================= */
 import {$,clamp,esc,fxPick,pick} from './util.js';
-import {BALANCE,LORE,BLOOM,ABILITIES,ATTACKS,BASE_SPECIES,BOND_TH,BOSSES,BOSS_IDS,COMBOS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SECTIONS,SECTION_IDS,SEC_TH,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,speciesOf} from './content.js';
+import {BALANCE,LORE,BLOOM,ABILITIES,ATTACKS,BASE_SPECIES,BOND_TH,BOSSES,BOSS_IDS,COMBOS,ELEM,FOES,FOE_IDS,GENES,GUNS,GUN_IDS,HYBRIDS,JOBS,LINES,LORE_INTRO,MODES,NPCS,NPC_IDS,PERS,REACTIONS,RESEARCH,RES_IDS,SECTIONS,SECTION_IDS,SPECIES,TRAITS,TRAIT_IDS,TYPES,TYPE_IDS,comboFor,comboKey,speciesOf,PERKS_DATA} from './content.js';
 import {save} from './save.js';
-import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,passDay,researchCost,secCap,secContribution,secScore,secTier,sectionUnlocked,sellValue,sexSym,slotBonus,stats,supportText,ui,unplace,whereIs} from './state.js';
+import {DEX_MILES,DEX_TOTAL,S,addBond,addKeeperXp,addLog,armoryTier,breed,breedBlock,buyResearch,byId,cageCap,canEvolve,dexFoe,dexForm,dexScore,eggCap,evolve,expandCost,formName,formOf,giveReward,hatchEgg,keeperNeed,lineOf,makeCreature,modeUnlocked,newGame,nextForm,npcAttention,npcQuest,npcTurnIn,passDay,researchCost,secCap,sectionUnlocked,sellValue,sexSym,slotBonus,stats,supportText,ui,unplace,whereIs} from './state.js';
 import {paintSprites,spr,sprSp,stars,typeChips} from './sprites.js';
 import {auVol,sfx} from './audio.js';
 import {HMAP,startHideoutMap} from './map.js';
@@ -22,7 +22,7 @@ import {archivePanel,bloomBelow,breedingTools,labEndgamePanel} from './endgameui
 
 import {GRADE_LOCI,TRAIT_LOCI,expressTrait} from './genetics.js';
 import {geneSight,previewHtml,simPanel,traitName} from './geneui.js';
-import {amt,expAway,give,itemByUid,itemName,mouths,newItem,overCap,rosterCap,rosterCount,usable} from './jobs.js';
+import {amt,expAway,give,itemByUid,itemName,mouths,newItem,overCap,rosterCap,rosterCount,usable,costText,workUnit} from './jobs.js';
 import {candidateOption,expeditionPanel,gearPanel,memberRow,memorialView,roleChip,rosterBar,stationPanel,supplyPanel,workshopView} from './workui.js';
 import {startMarket} from './exchange/market.js';
 import {viewExchange,economyPanel} from './exchangeui.js';
@@ -31,6 +31,8 @@ import {onMarket} from './exchange/market.js';
 import {onAct,onChange,onInput,act,changed,inputted} from './actions.js';
 import {OPTS,saveOpts} from './device.js';
 import {creatureCard,creaturePage,pageCreature,rosterList} from './creatureui.js';
+import {hideoutFx} from './perks.js';
+import {stationLevel,buildingLevel,maxLevel,upgradeBlock,upgradeBuilding,upgradeCost} from './buildings.js';
 // The demo has no Test Lab.
 const TABS=[['raid','Raid'],['hideout','Hideout'],['roster','Roster'],['breeding','Breeding'],['research','Research'],['armory','Workshop'],['exchange','Exchange'],['codex','Codex'],['lab','Test Lab'],['settings','Settings']].filter(([k])=>!(DEMO&&k==='lab'));
 function renderAll(){renderHeader();renderTabs();renderMain()}
@@ -73,7 +75,6 @@ function weaponLine(g){
   if(g.pierce)bits.push(`pierce ${g.pierce}`);if(g.explode)bits.push('explodes');if(g.bounce)bits.push('bounces');if(g.homing)bits.push('homing');if(g.split)bits.push('splits');if(g.spin)bits.push('spins up');
   return bits.join(' · ')+el;
 }
-const tierTag=t=>`<span class="chip tier t${t}">T${t}</span>`;
 const persChip=c=>`<span class="chip pers" title="${esc(PERS[c.pers].desc)}">${PERS[c.pers].name}</span>`;
 
 // The next act gate: what it needs, ticked off as it's met, and catch-up when it's on.
@@ -105,8 +106,9 @@ function viewRaid(){
   let combo='';
   if(slots[0]&&slots[1]){const cb=comboFor(slots[0].type,slots[1].type),special=!!COMBOS[comboKey(slots[0].type,slots[1].type)];combo=`<div class="combo ${special?'special':''}"><b>Combo · ${cb.name}</b><span>${cb.desc} Press C, or the Combo button, when it charges.</span></div>`}
   const risk=slots.filter(Boolean).map(c=>esc(c.name));[...L.guns,L.satchel].forEach(uid=>{const it=itemByUid(uid);if(it)risk.push(esc(itemName(it)))});if(L.tonics)risk.push(`${L.tonics} tonic${L.tonics>1?'s':''}`);
-  const vt=secTier('vault');const keeps=[vt>=1&&'slot 3 creature',vt>=2&&'held weapons',vt>=4&&'slot 1 companion',vt>=5?'60% of coin and all ore':vt>=3&&'30% of coin',armoryTier()>=4&&vt<2&&'primary weapon'].filter(Boolean);
-  const modes=Object.entries(MODES).map(([k,m])=>{const un=modeUnlocked(k);return`<label class="toggle ${un?'':'locked'}"><input type="checkbox" id="mode-${k}" data-act="mode" data-k="${k}" ${S.modes[k]&&un?'checked':''} ${un?'':'disabled'}> <span><b style="font-family:var(--display)">${m.name}</b>${un?'':' · locked'}<br><small class="status">${un?m.desc:`Reach War Room tier ${m.need[1]} to unlock.`}</small></span></label>`}).join('');
+  const vl=stationLevel('vault'),hf=hideoutFx(),coinPct=Math.round(Math.min(PERKS_DATA.SCALE.keepCoinCap,(PERKS_DATA.BUILDINGS.vaultCoin[vl]||0)+hf.keepCoin)*100);
+  const keeps=[vl>=1&&'slot 3 creature',hf.keep.weapons&&'held weapons',hf.keep.companion&&'slot 1 companion',coinPct&&`${coinPct}% of coin`,hf.keepOre&&'all ore',armoryTier()>=4&&!hf.keep.weapons&&'primary weapon'].filter(Boolean);
+  const modes=Object.entries(MODES).map(([k,m])=>{const un=modeUnlocked(k);return`<label class="toggle ${un?'':'locked'}"><input type="checkbox" id="mode-${k}" data-act="mode" data-k="${k}" ${S.modes[k]&&un?'checked':''} ${un?'':'disabled'}> <span><b style="font-family:var(--display)">${m.name}</b>${un?'':' · locked'}<br><small class="status">${un?m.desc:`Build the War Room to level ${m.need[1]} and post someone there.`}</small></span></label>`}).join('');
   const bossRow=BOSS_IDS.map(b=>{const n=S.progress.bosses[b]||0,B=BOSSES[b];return`<div class="trophy ${n?'won':''}" title="${esc(B.blurb)}"><canvas class="spr" width="48" height="48" data-boss="${b}" ${n?'':'data-sil="1"'}></canvas><span>${n?esc(B.name):'???'}</span><small>${B.vein==='bloomlord'?'Bloomlord':B.vein&&B.vein!=='rootworks'&&BLOOM.VEINS[B.vein]?BLOOM.VEINS[B.vein].short:'Floor 3'}${n?' · ×'+n:''}</small></div>`}).join('');
   const kn=keeperNeed();
   return`<div class="cols">
@@ -142,12 +144,8 @@ function viewRaid(){
   </section></div>`;
 }
 
-function meterHtml(score,th,tier){
-  const max=th[th.length-1]*1.08,pct=Math.min(100,score/max*100);
-  return`<div class="meter"><i style="width:${pct}%"></i>${th.map((t,i)=>`<b class="${tier>i?'on':''}" style="left:${t/max*100}%"><span>T${i+1}</span></b>`).join('')}</div>`;
-}
 function viewHideout(){
-  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'T'+secTier(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='legends'}" data-act="section" data-k="legends">Legends</button><button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button><button class="tab" aria-selected="${ui.section==='memorial'}" data-act="section" data-k="memorial">Memorial</button>`;
+  const chips=SECTION_IDS.map(k=>`<button class="tab ${sectionUnlocked(k)?'':'lockedtab'}" aria-selected="${ui.section===k}" data-act="section" data-k="${k}">${SECTIONS[k].name} ${sectionUnlocked(k)?'L'+buildingLevel(k):'· locked'}</button>`).join('')+`<button class="tab" aria-selected="${ui.section==='legends'}" data-act="section" data-k="legends">Legends</button><button class="tab" aria-selected="${ui.section==='log'}" data-act="section" data-k="log">Log</button><button class="tab" aria-selected="${ui.section==='memorial'}" data-act="section" data-k="memorial">Memorial</button>`;
   const npcs=NPC_IDS.filter(id=>S.npc[id]).map(id=>`<button class="tab" data-act="npc" data-k="${id}">${NPCS[id].name}${npcAttention(id)?' <i class="dot"></i>':''}</button>`).join('');
   return`<section class="card mapcard"><div class="mapwrap" style="aspect-ratio:1000/${mapH()}"><canvas id="hmap" aria-label="Hideout map. Select a building to manage it."></canvas></div>
     ${mapTools()}
@@ -165,10 +163,11 @@ function logView(){
 function sectionDetail(k){
   const sec=SECTIONS[k];
   if(!sectionUnlocked(k))return`<h2>${sec.name}</h2><p class="hint">${sec.blurb}</p><div class="risk"><b>Locked.</b> Reach Keeper rank ${sec.unlock} to build the ${sec.name}. Keeper XP comes from every raid, won or lost.</div>`;
-  const ids=S.sections[k].ids,cap=secCap(k),t=secTier(k),sc=secScore(k),next=SEC_TH[t];
-  const tiers=sec.tiers.map((d,i)=>`<li class="${t>i?'on':''}"><b>T${i+1}</b> <span>${d}</span> <small>${SEC_TH[i]} pts</small></li>`).join('');
+  const ids=S.sections[k].ids,cap=secCap(k),t=stationLevel(k),lvl=buildingLevel(k),cost=upgradeCost(k),why=upgradeBlock(k);
+  // The building: what each level does, and what the next one costs.
+  const tiers=PERKS_DATA.BUILDINGS.levels[k].map((d,i)=>`<li class="${lvl>i?'on':''}"><b>L${i+1}</b> <span>${d}</span>${i===lvl&&cost?` <small>${costText(cost.mats)}${cost.rank?` · rank ${cost.rank}`:''}</small>`:''}</li>`).join('');
   const members=ids.map(byId).filter(Boolean).map(c=>memberRow(c,k)).join('');
-  const cand=S.creatures.filter(c=>!ids.includes(c.id)&&!expAway(c)).sort((a,b)=>secContribution(b,k)-secContribution(a,k));
+  const cand=S.creatures.filter(c=>!ids.includes(c.id)&&!expAway(c)).sort((a,b)=>{const crew=ids.map(byId).filter(Boolean);return workUnit(b,k,[...crew,b])-workUnit(a,k,[...crew,a])});
   const add=ids.length<cap&&cand.length?`<div class="row"><select id="addsel" aria-label="Add a creature">${cand.map(c=>candidateOption(c,k)).join('')}</select><button class="btn small primary" data-act="assign" data-k="${k}">Add</button></div>`:'';
   const ec=expandCost(k),canExp=S.sections[k].cap<10;
   let extra='';
@@ -179,20 +178,20 @@ function sectionDetail(k){
     if(!GRADE_LOCI.includes(ui.gl.gene))ui.gl.gene='pow';if(!TRAIT_LOCI.includes(ui.tt.slot))ui.tt.slot='t1';
     const gc=byId(+ui.gl.id),gv=gc?Math.min(...gc.genome[ui.gl.gene]):0,gcost={coin:20*(gv+1),ore:2*(gv+1)},sight=geneSight();
     const tc=byId(+ui.tt.id);
-    extra=`<h3>Gene Lab ${t>=2?'':'· opens at T2'}</h3>
+    extra=`<h3>Gene Lab ${t>=2?'':'· opens at level 2'}</h3>
       ${t>=2?`<p class="hint">Raise the weaker copy of one gene by 1, up to 10. Some evolutions need a gene at 7 or higher.</p>
       <div class="row">${sel('glc',ui.gl.id)}<select id="glg" data-act="glg">${GRADE_LOCI.map(g=>`<option value="${g}" ${ui.gl.gene===g?'selected':''}>${GENES[g]}${gc&&sight!=='stars'?' ('+gc.genes[g]+')':''}</option>`).join('')}</select>
-      <button class="btn small" data-act="genelab" ${gc&&gv<10&&S.coin>=gcost.coin&&S.ore>=gcost.ore?'':'disabled'}>${gv>=10?'Maxed':`Train · ${gcost.coin}c ${gcost.ore} ore`}</button></div>`:'<p class="status">Reach tier 2 to raise genes with coin and ore.</p>'}
-      <h3>Trait Tutor ${t>=4?'':'· opens at T4'}</h3>
+      <button class="btn small" data-act="genelab" ${gc&&gv<10&&S.coin>=gcost.coin&&S.ore>=gcost.ore?'':'disabled'}>${gv>=10?'Maxed':`Train · ${gcost.coin}c ${gcost.ore} ore`}</button></div>`:'<p class="status">Build the Training Grounds to level 2 (with a trainee posted) to raise genes with coin and ore.</p>'}
+      <h3>Trait Tutor ${t>=4?'':'· opens at level 4'}</h3>
       ${t>=4?`<p class="hint">Rewrite one trait slot, both copies, with a random positive trait. 60 coin and 8 ore.</p>
       <div class="row">${sel('ttc',ui.tt.id)}<select id="tts" data-act="tts">${tc?TRAIT_LOCI.map((k,i)=>`<option value="${k}" ${ui.tt.slot===k?'selected':''}>Slot ${i+1}: ${traitName(expressTrait(tc.genome[k]))}</option>`).join(''):''}</select>
-      <button class="btn small" data-act="tutor" ${tc&&S.coin>=60&&S.ore>=8?'':'disabled'}>Retrain trait</button></div>`:'<p class="status">Reach tier 4 to swap out unwanted traits.</p>'}`;
+      <button class="btn small" data-act="tutor" ${tc&&S.coin>=60&&S.ore>=8?'':'disabled'}>Retrain trait</button></div>`:'<p class="status">Build the Training Grounds to level 4 to swap out unwanted traits.</p>'}`;
   }
-  return`<div class="row" style="justify-content:space-between"><h2>${sec.name}</h2>${tierTag(t)}</div>
-    <p class="hint">${sec.blurb} ${sec.type?`${TYPES[sec.type].name} creatures count double, ${TYPES[sec.type].name} hybrids 1.6×, others 0.6×.`:'Every creature counts the same here.'} Contribution grows with level, evolution and ${GENES[sec.gene]}.</p>
-    ${meterHtml(sc,SEC_TH,t)}
-    <p class="status">${Math.round(sc)} points${next?` · ${Math.round(next-sc)} more for tier ${t+1}`:' · maxed'}</p>
+  return`<div class="row" style="justify-content:space-between"><h2>${sec.name}</h2><span class="tier">Level ${lvl}/${maxLevel(k)}</span></div>
+    <p class="hint">${sec.blurb} ${sec.type?`${TYPES[sec.type].name} creatures work at full rate here, ${TYPES[sec.type].name} hybrids at 80%, others at half.`:'Every creature works at the same rate here.'} The building sets what the ${sec.name} can do; the creatures posted here, and their perks and flaws, set how well.</p>
+    <p class="status">${t?`Working at level ${t}.`:`Level ${lvl} built, but nobody is posted, so it does nothing.`}</p>
     <ul class="tierlist">${tiers}</ul>
+    ${cost?`<div class="row"><button class="btn small ${why?'':'primary'}" data-act="upgrade" data-k="${k}" ${why?'disabled':''}>Build level ${lvl+1} · ${costText(cost.mats)}</button>${why?`<span class="status">${esc(why)}</span>`:''}</div>`:'<p class="status">Fully built.</p>'}
     <h3>Creatures · ${ids.length}/${cap}</h3>
     <div class="members">${members||'<p class="empty">Nobody is assigned yet.</p>'}</div>
     ${add}
@@ -212,7 +211,7 @@ function viewRoster(){
 }
 
 function viewBreeding(){
-  const t=secTier('nursery');
+  const t=stationLevel('nursery');
   const moms=S.creatures.filter(c=>c.proven&&c.sex==='F'),dads=S.creatures.filter(c=>c.proven&&c.sex==='M');
   const opt=(list,sel)=>`<option value="">Choose</option>`+list.map(c=>`<option value="${c.id}" ${String(c.id)===String(sel)?'selected':''}>${esc(c.name)} · ${esc(formName(c))}${c.type2?' (hybrid)':''} Lv ${c.level}</option>`).join('');
   const a=byId(+ui.mom),b=byId(+ui.dad);
@@ -436,6 +435,7 @@ onAct('intro',d=>{openIntro(false)});
 onAct('wait',d=>{passDay();save();renderAll()});
 onAct('assign',d=>{const sel=$('#addsel');if(!sel)return;const c=byId(+sel.value);if(!c||S.sections[d.k].ids.length>=secCap(d.k))return;unplace(c);S.sections[d.k].ids.push(c.id);save();renderAll()});
 onAct('unassign',d=>{const c=byId(+d.id);if(c){unplace(c);save();renderAll()}});
+onAct('upgrade',d=>{if(upgradeBuilding(d.k)){sfx('level');save();renderAll()}});
 onAct('expand',d=>{const ec=expandCost(d.k);if(S.coin<ec.coin||S.ore<ec.ore||S.sections[d.k].cap>=10)return;S.coin-=ec.coin;S.ore-=ec.ore;S.sections[d.k].cap++;save();renderAll()});
 onAct('feed',d=>{const c=byId(+d.id);if(S.food<1)return;S.food--;addBond(c,10);c.hp=Math.min(stats(c).hp,c.hp+Math.round(stats(c).hp*.2));sfx('pickup');save();renderAll()});
 onAct('sell',d=>{const c=byId(+d.id);if(!c||expAway(c))return;if(ui.sellId!==c.id){ui.sellId=c.id;renderMain();return}
@@ -485,4 +485,4 @@ onChange('opthud',el=>{OPTS.hudAlpha=+el.value;saveOpts()});
 onInput('optr',el=>{OPTS[el.dataset.k]=+el.value;const v=$('#v-'+el.dataset.k);if(v)v.textContent=Math.round(el.value*100)+'%';auVol();saveOpts()});
 document.addEventListener('input',e=>{const el=e.target;if(el.dataset.act)inputted(el)});
 
-export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,tierTag,persChip,viewRaid,meterHtml,viewHideout,renderSecPanel,logView,sectionDetail,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro};
+export {TABS,renderAll,renderHeader,renderTabs,renderMain,hpBar,statusText,validGuns,weaponLine,persChip,viewRaid,viewHideout,renderSecPanel,logView,sectionDetail,viewRoster,viewBreeding,viewResearch,viewArmory,journalNew,milestoneReady,viewCodex,rewardText,viewLab,viewSettings,openModal,closeModal,queueModal,openChooser,openNpc,questRewardText,openIntro};

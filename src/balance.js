@@ -9,17 +9,20 @@
    Catch-up: a Keeper more than 5 ranks behind the rank expected for their calendar day (counted from
    when the save began) earns double Keeper XP from raids, so nothing is lost to a slow week. */
 import {BALANCE as BL,BOSSES,SECTION_IDS} from './content.js';
-import {S,byId,secTier} from './state.js';
+import {S,byId} from './state.js';
 import {cutFree} from './genetics.js';
+import {buildingLevel} from './buildings.js';
 
 const G=BL.GATES,DEEP=['ember','drowned','choir','spires','sump'];
 const veinBosses=()=>DEEP.filter(v=>Object.keys(S.progress.bosses||{}).some(b=>S.progress.bosses[b]&&BOSSES[b]&&BOSSES[b].vein===v)).length;
+// Stations built to a level and staffed by enough workers (the veins gate, and the demo's Act I goal).
+const stationsBuilt=({level,workers})=>SECTION_IDS.filter(k=>buildingLevel(k)>=level&&S.sections[k].ids.filter(id=>byId(id)).length>=workers).length;
 const loadoutParty=()=>S.loadout.slots.map(byId).filter(Boolean);
 // What a gate needs, each with whether it's met. party: the creatures going down (defaults to the loadout).
 function gateNeeds(key,party){
   const g=G[key],out=[];if(!g)return out;
   if(g.rank)out.push({text:`Keeper rank ${g.rank}`,ok:S.keeper.level>=g.rank});
-  if(g.stations){const n=SECTION_IDS.filter(k=>secTier(k)>=g.stations.tier).length;out.push({text:`${g.stations.n} stations at tier ${g.stations.tier} (${n} now)`,ok:n>=g.stations.n})}
+  if(g.stations){const n=stationsBuilt(g.stations);out.push({text:`${g.stations.n} stations at level ${g.stations.level} with ${g.stations.workers} workers each (${n} now)`,ok:n>=g.stations.n})}
   if(g.veinBosses){const n=veinBosses();out.push({text:`Bosses beaten in ${g.veinBosses} veins (${n} so far)`,ok:n>=g.veinBosses})}
   if(g.cutFree){const n=S.creatures.filter(cutFree).length;out.push({text:'A Gen 3 cut-free creature',ok:n>=g.cutFree})}
   if(g.cutFreeParty){const n=(party||loadoutParty()).filter(c=>c&&cutFree(c)).length;out.push({text:`A cut-free party of three (${n} now)`,ok:n>=g.cutFreeParty})}
@@ -45,4 +48,4 @@ const catchupMul=(day=calendarDay())=>S.keeper.level<expectedRank(day)-BL.CATCHU
 // v14: when the save began, for catch-up. Old saves start counting from the day they're loaded.
 function balancify(d){d.startedAt=d.startedAt||Date.now();return d}
 
-export {gateNeeds,gateOpen,gateBlockText,nextGate,veinBosses,calendarDay,expectedRank,catchupMul,balancify};
+export {stationsBuilt,gateNeeds,gateOpen,gateBlockText,nextGate,veinBosses,calendarDay,expectedRank,catchupMul,balancify};

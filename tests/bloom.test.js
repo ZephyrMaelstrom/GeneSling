@@ -235,7 +235,7 @@ test('vein maps are drawn at the Roost', async () => {
     give('cloth', 3); give('herbs', 3);
     const m = craftMap('lure', 'sump');
     S.sections.roost.ids = roost;
-    return {no, m: m && m.kind + '/' + m.vein, tier: secTier('roost') >= 1};
+    return {no, m: m && m.kind + '/' + m.vein, tier: stationLevel('roost') >= 1};
   });
   assert.equal(r.no, null);
   assert.equal(r.m, 'lure/sump');
@@ -281,7 +281,7 @@ test('a v10 save loads into the current version with the Apothecary on the map',
   });
   await p2.reload(); await p2.evaluate(() => window.gameReady);
   const s = await p2.evaluate(() => ({v: S.v, sec: !!S.sections.apothecary, placed: S.layout.some(i => i.key === 'apothecary'), bloom: !!S.bloom && Array.isArray(S.bloom.maps), map: S.loadout.map}));
-  assert.deepEqual(s, {v: 16, sec: true, placed: true, bloom: true, map: null});
+  assert.deepEqual(s, {v: 17, sec: true, placed: true, bloom: true, map: null});
   assert.deepEqual(e2, []);
   await ctx.close();
 });

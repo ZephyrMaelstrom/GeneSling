@@ -9,15 +9,16 @@
    Nothing leaves the device unless the player says yes AND src/data/firebase.json names a Firebase
    project; events then go to Firestore over its REST API. Feedback goes to the same project, or to
    a prefilled GitHub issue when no project is set. */
-import {BOSSES,PRIDE as P,SECTION_IDS} from './content.js';
+import {BOSSES,PRIDE as P} from './content.js';
 import FB from './data/firebase.json';
 import {DEMO} from './flags.js';
-import {S,secTier,ui} from './state.js';
+import {S,ui} from './state.js';
 import {save} from './save.js';
 import {esc,$} from './util.js';
 import {queueModal,closeModal,openModal,renderMain} from './ui.js';
 import {on} from './events.js';
 import {onAct,onChange} from './actions.js';
+import {stationsBuilt} from './balance.js';
 
 const ISSUES='https://github.com/ZephyrMaelstrom/GeneSling/issues/new';
 
@@ -27,7 +28,7 @@ function demoGoals(){
   return[
     {name:'Beat a Rootworks boss',v:Object.keys(S.progress.bosses).filter(b=>BOSSES[b]&&BOSSES[b].set===0).length,n:G.bosses},
     {name:`Reach Keeper rank ${G.rank}`,v:S.keeper.level,n:G.rank},
-    {name:`${G.tier2} stations at tier 2`,v:SECTION_IDS.filter(k=>secTier(k)>=2).length,n:G.tier2},
+    {name:`${G.stations.n} stations at level ${G.stations.level} with ${G.stations.workers} workers each`,v:stationsBuilt(G.stations),n:G.stations.n},
   ];
 }
 const demoComplete=()=>demoGoals().every(g=>g.v>=g.n);

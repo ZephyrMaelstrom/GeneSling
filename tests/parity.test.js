@@ -17,7 +17,13 @@ const PHASE1 = {
 // Phase 2 (jobs and production): every station's contribution now grows with Yield, the Garden's
 // tiers boost its production instead of adding flat food, and five blurbs mention what they make.
 const PHASE2 = {
-  SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } t.garden.tiers = now.garden.tiers; t.roost.tiers[2] = now.roost.tiers[2]; return t; },
+  SECTIONS: (t, now) => { for (const k in t) { t[k].gene = 'yld'; t[k].blurb = now[k].blurb; } if (now.garden.tiers) { t.garden.tiers = now.garden.tiers; t.roost.tiers[2] = now.roost.tiers[2]; } return t; },
+};
+// The perk rework (docs/IMPROVEMENTS.md, step 3): stations became buildings with levels, so the tier ladder
+// (SEC_TH) and each station's tier list are gone, and the War Room's modes need building levels 1 to 3.
+const PERKS = {
+  SECTIONS: t => { for (const k in t) delete t[k].tiers; return t; },
+  MODES: t => { const L = {2: 1, 4: 2, 5: 3}; for (const k in t) if (t[k].need) t[k].need[1] = L[t[k].need[1]]; return t; },
 };
 // Phase 5 (the Bloom expands) only adds: the Venom type and its species, lines and names, the poison
 // element and its reactions, new weapons, foes, bosses and the Apothecary. Every v5 entry must be unchanged,
@@ -39,7 +45,7 @@ after(async () => { await browser.close(); srv.server.close(); });
 const snapshot = page => page.evaluate(tables => {
   const out = {};
   // NPC arrival rules were functions in v5 and are data now; compare the rest of each NPC.
-  for (const t of tables) out[t] = JSON.parse(JSON.stringify(eval(t), (k, v) => k === 'arrive' ? undefined : v));
+  for (const t of tables) { let v; try { v = eval(t); } catch { continue; } out[t] = JSON.parse(JSON.stringify(v, (k, v) => k === 'arrive' ? undefined : v)); }
   // Grit and Focus at the neutral grade 5 add nothing, so v5's Temper 5 and Focus 5 must match.
   const genes = typeof GRADE_LOCI === 'undefined' ? {vig: 7, pow: 6, swf: 5, hst: 8, tmp: 5} : {vig: 7, pow: 6, swf: 5, tem: 8, foc: 5, grt: 5};
   // In this build, pin the whole genome so looks (size changes HP) stay at the species default.
@@ -56,6 +62,8 @@ test('content and stats match the v5 build', async () => {
     if (CHANGED.includes(t)) continue;
     let want = PHASE1[t] ? PHASE1[t](structuredClone(a[t])) : a[t];
     if (PHASE2[t]) want = PHASE2[t](structuredClone(want), b[t]);
+    if (t === 'SEC_TH') { assert.equal(b[t], undefined, 'the tier ladder is gone'); continue; }
+    if (PERKS[t]) want = PERKS[t](structuredClone(want));
     let got = GROWN.includes(t) ? noVein(structuredClone(v5Only(b[t], a[t]))) : b[t];
     // Phase 7 (lore) adds three residents and a story arc after each v5 resident's quests; the v5 part is unchanged.
     if (t === 'NPCS') got = Object.fromEntries(Object.keys(a.NPCS).map(k => [k, {...b.NPCS[k], quests: b.NPCS[k].quests.slice(0, a.NPCS[k].quests.length)}]));
@@ -74,7 +82,7 @@ test('NPCs arrive under the same conditions as v5', async () => {
     const out = [];
     for (const lvl of [1, 2, 3, 4, 5]) {
       S.keeper.level = lvl;
-      const v5 = {brannoc: true, pip: lvl >= 2, sorrel: lvl >= 4 || secTier('nursery') >= 1};   // the v5 arrive() functions
+      const v5 = {brannoc: true, pip: lvl >= 2, sorrel: lvl >= 4 || stationLevel('nursery') >= 1};   // the v5 arrive() functions
       out.push(Object.keys(v5).every(id => npcArrives(NPCS[id].arrive) === v5[id]));
     }
     return out;

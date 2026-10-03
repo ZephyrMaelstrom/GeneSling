@@ -8,17 +8,20 @@
      - crafting with quality tiers and recipe mastery, repairs and single-use prints,
      - the roster cap, Roost expeditions and the death legacy.
    All numbers live in src/data/jobs.json. */
-import {GENES,EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST} from './content.js';
-import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,secTier,unplace,whereIs} from './state.js';
+import {GENES,EXCHANGE_DATA,GUNS,JOBS as J,SECTIONS,TYPES,WEAPON_COST,PERKS_DATA} from './content.js';
+import {S,addBond,addKeeperXp,addLog,byId,canCraft,formName,lineage,unplace,whereIs} from './state.js';
 import {rand} from './rng.js';
 import {GRADE_LOCI,ancestors,express} from './genetics.js';
 import {comfort,perk} from './hideout.js';
 import {logEvent} from './history.js';
+import {chemTypes,homeFx,perkClashes,perksOf,workMods} from './perks.js';
+import {stationLevel} from './buildings.js';
 
 /* ---------- materials ---------- */
 // coin, ore, food and shards keep their v5 homes on S; everything else lives in S.mats.
 // Keeper rank is time played, so crafting, hatching and trading earn Keeper XP too.
 const XP=EXCHANGE_DATA.KEEPER_XP;
+const B=PERKS_DATA.BUILDINGS,J_EARNED=PERKS_DATA.EARNED;
 const TOP={coin:'coin',ore:'ore',food:'food',shard:'shards'};
 const amt=id=>TOP[id]?S[TOP[id]]||0:(S.mats[id]||0);
 function give(id,n){if(!n)return;if(TOP[id])S[TOP[id]]=(S[TOP[id]]||0)+n;else S.mats[id]=(S.mats[id]||0)+n}
@@ -71,6 +74,8 @@ function useSerum(c){
 }
 
 /* ---------- stations ---------- */
+// The Garden's beds and the Apothecary's still grow output with the building's level.
+const levelMul=k=>k==='garden'?J.WORK.gardenTier[stationLevel(k)]:k==='apothecary'?J.WORK.apothecaryTier[stationLevel(k)]:1;
 const prodStation=k=>!!J.STATIONS[k];
 const fatigueMul=c=>1-J.FATIGUE.maxPenalty*Math.min(100,c.fat||0)/100;
 const members=k=>S.sections[k].ids.map(byId).filter(Boolean);
@@ -78,24 +83,28 @@ const members=k=>S.sections[k].ids.map(byId).filter(Boolean);
 function foremanOf(k){const m=members(k);return m.length?m.reduce((a,b)=>(b.genes.foc>a.genes.foc?b:a)):null}
 const crewHas=(k,trait)=>{const f=foremanOf(k);return c=>c.traits.includes(trait)||(!!f&&f.traits.includes(trait))};
 function typeMatch(c,k){const t=SECTIONS[k].type;if(!t)return 1;return c.type===t?J.WORK.match:c.type2===t?J.WORK.secondary:J.WORK.offType}
-// Work units one creature puts into a station per day, before station-wide bonuses.
-function workUnit(c,k){
+// Work units one creature puts into a station per day, before station-wide bonuses: its Yield, level,
+// evolution, type match and fatigue, then its own perks and flaws and its crewmates' (perks.js workMods).
+// crew: who it would work beside (default: the station's crew now; the posting preview passes another).
+function workUnit(c,k,crew){
   const W=J.WORK,worker=crewHas(k,'worker')(c);
-  return(W.base+W.perYield*c.genes.yld)*typeMatch(c,k)*(1+W.perLevel*c.level)*(1+W.perStage*(c.stage||0))*(worker?W.worker:1)*fatigueMul(c);
+  return(W.base+W.perYield*c.genes.yld)*typeMatch(c,k)*(1+W.perLevel*c.level)*(1+W.perStage*(c.stage||0))*(worker?W.worker:1)*fatigueMul(c)*workMods(c,k,crew).out;
 }
-// Station-wide modifiers: crew chemistry pairs and personality clashes.
+// Station-wide modifiers: crew chemistry pairs, and clashes between personalities and from flaws
+// (Hot Temper, Territorial). Aloof creatures count for no chemistry.
 function crewMods(k){
-  const m=members(k),hasType=t=>m.some(c=>c.type===t||c.type2===t);
+  const m=members(k),chemCrew=chemTypes(m),hasType=t=>chemCrew.some(c=>c.type===t||c.type2===t);
   const chem=J.CHEMISTRY.filter(x=>x.station===k&&x.types.every(hasType));
   const clashes=J.CLASHES.filter(([a,b])=>m.some(c=>c.pers===a)&&m.some(c=>c.pers===b));
-  const pen=Math.min(J.CLASH_MAX,clashes.length*J.CLASH_PENALTY);
-  return{chem,clashes,mul:(1+chem.reduce((a,x)=>a+x.bonus,0))*(1-pen)};
+  const flawClashes=perkClashes(m);
+  const pen=Math.min(J.CLASH_MAX,(clashes.length+flawClashes.length)*J.CLASH_PENALTY);
+  return{chem,clashes,flawClashes,mul:(1+chem.reduce((a,x)=>a+x.bonus,0))*(1-pen)};
 }
 // What a station makes in a day, and what limits it. Pure: doesn't change stock.
 function stationReport(k){
   const R=J.STATIONS[k];if(!R)return null;
   const m=members(k),mods=crewMods(k),f=foremanOf(k);
-  const tierMul=k==='garden'?J.WORK.gardenTier[secTier(k)]:k==='apothecary'?J.WORK.apothecaryTier[secTier(k)]:1;
+  const tierMul=levelMul(k);
   const rows=m.map(c=>({c,u:workUnit(c,k)}));
   const units=rows.reduce((a,r)=>a+r.u,0)*mods.mul*tierMul*(R.rate||1);
   // Batches: each needs R.in; inputs on hand can cap it.
@@ -106,7 +115,13 @@ function stationReport(k){
   return{k,rows,units,batches,limit,out,in:R.in,mods,foreman:f,per,tierMul};
 }
 // Daily production. Fractions carry over in S.prod so small crews still make whole goods.
+// First, who skips work today (Flighty, Wanderer): no output and no fatigue for them.
+function rollSkips(){
+  for(const c of S.creatures){const w=whereIs(c);if(w.kind!=='section')continue;
+    const p=perksOf(c).find(x=>x.fx.skip&&x.at==='station');if(p&&rand()<p.fx.skip)c.skipped=S.day}
+}
 function runStations(notes){
+  rollSkips();
   for(const k in J.STATIONS){
     const rep=stationReport(k);if(!rep||!rep.rows.length)continue;
     const R=J.STATIONS[k];const prog=S.prod[k]=(S.prod[k]||0)+rep.batches;
@@ -127,16 +142,18 @@ function runStations(notes){
 function tickFatigue(){
   const F=J.FATIGUE;
   for(const c of S.creatures){
-    const w=whereIs(c);let d=-F.rest-perk('rest');
-    if(w.kind==='section'){d=F.work*(crewHas(w.key,'tireless')(c)?F.tireless:1)*(1-comfort())}
+    const w=whereIs(c);let d=-F.rest-perk('rest')-B.springRest[stationLevel('spring')];
+    if(w.kind==='section'&&c.skipped!==S.day){d=F.work*(crewHas(w.key,'tireless')(c)?F.tireless:1)*(1-comfort())*workMods(c,w.key).tire}
     else if(w.kind==='expedition')d=F.expedition*(1-comfort());
     c.fat=Math.max(0,Math.min(100,(c.fat||0)+d));
+    // Run ragged three times in ten days and it burns out (perks.js), until it gets days off.
+    if(c.fat>=100&&d>0){const E=J_EARNED.burntout;c.maxed=(c.maxed||[]).filter(x=>S.day-x<E.within);c.maxed.push(S.day);if(c.maxed.length>=E.maxed&&!c.burnt){c.burnt=true;c.maxed=[];logEvent(c,'burnt','')}}
   }
 }
 // Who eats today: everyone, except Thrifty workers (or anyone under a Thrifty foreman).
 function mouths(){
   let n=S.creatures.length+S.sections.training.ids.length;
-  for(const c of S.creatures){const w=whereIs(c);if(w.kind==='section'&&crewHas(w.key,'thrifty')(c))n--}
+  for(const c of S.creatures){const w=whereIs(c);if(w.kind==='section'&&crewHas(w.key,'thrifty')(c))n--;n+=homeFx(c).food}
   return Math.max(0,n);
 }
 
@@ -163,7 +180,7 @@ function weaponCost(id){return{coin:WEAPON_COST[GUNS[id].tier].coin,parts:J.WEAP
 // Crafts one recipe. Returns a short description of what was made, or null.
 function craft(r){
   const R=J.RECIPES[r];if(!R)return null;
-  if(R.needForge&&secTier('forge')<R.needForge)return null;
+  if(R.needForge&&stationLevel('forge')<R.needForge)return null;
   if(!pay(recipeCost(r)))return null;
   S.mastery[r]=(S.mastery[r]||0)+1;
   if(R.kind==='component'){addKeeperXp(XP.component);for(const [m,n] of Object.entries(R.out))give(m,n);return`${matName(Object.keys(R.out)[0])}`}
@@ -199,7 +216,7 @@ const roleInfo=c=>{const r=roleOf(c);return r?J.ROLES[r]:null};
 const expAway=c=>S.expeditions.some(e=>e.team.includes(c.id));
 function expeditionBlock(dest,ids){
   const D=J.EXPEDITIONS[dest];if(!D)return'Choose a destination.';
-  if(secTier('roost')<1)return'The Roost needs tier 1 to send expeditions.';
+  if(stationLevel('roost')<1)return'Post a creature at the Roost to send expeditions.';
   const team=ids.map(byId).filter(Boolean);
   if(team.length!==J.EXPEDITION_TEAM)return`Choose ${J.EXPEDITION_TEAM} creatures.`;
   if(new Set(ids).size!==ids.length)return'Choose three different creatures.';
@@ -221,7 +238,9 @@ function tickExpeditions(notes,makeEgg){
     e.days--;if(e.days>0)continue;
     S.expeditions=S.expeditions.filter(x=>x!==e);
     const D=J.EXPEDITIONS[e.dest],team=e.team.map(byId).filter(Boolean),k=teamScale(team),got=[];
-    for(const [mat,[lo,hi]] of Object.entries(D.loot)){const n=Math.round((lo+rand()*(hi-lo))*k);if(n>0){give(mat,n);got.push(`${n} ${matName(mat).toLowerCase()}${n>1&&mat==='shard'?'s':''}`)}}
+    // Curious and Pathfinder creatures bring home one more of everything.
+    const extra=team.reduce((a,c)=>a+homeFx(c).expItems,0);
+    for(const [mat,[lo,hi]] of Object.entries(D.loot)){const n=Math.round((lo+rand()*(hi-lo))*k)+extra;if(n>0){give(mat,n);got.push(`${n} ${matName(mat).toLowerCase()}${n>1&&mat==='shard'?'s':''}`)}}
     if(rand()<D.egg&&makeEgg){makeEgg(team);got.push('an egg')}
     const hurt=team.filter(()=>rand()<D.injury);hurt.forEach(c=>{c.hp=Math.max(1,Math.round(c.hp*.5))});
     team.forEach(c=>{addBond(c,8);logEvent(c,'expedition',D.name.toLowerCase())});
@@ -251,7 +270,7 @@ const sellPrice=id=>(J.MATERIALS[id]||{}).sell||0;
 function sellMat(id,n=1){if(amt(id)<n||!sellPrice(id))return false;give(id,-n);S.coin+=sellPrice(id)*n;return true}
 
 export {serumLocus,useSerum,amt,give,canPay,pay,matName,costText,QN,newItem,itemByUid,itemName,itemBase,makerText,usable,foundGun,gunDmgMul,satchelSlots,repairCost,repair,scrapItem,
-  prodStation,fatigueMul,members,foremanOf,typeMatch,workUnit,crewMods,stationReport,runStations,tickFatigue,mouths,
+  prodStation,levelMul,fatigueMul,members,foremanOf,typeMatch,workUnit,crewMods,stationReport,runStations,tickFatigue,mouths,
   masteryLevel,knackOf,rollQuality,qualityOdds,keeperName,recipeCost,weaponCost,craft,craftWeapon,
   rosterCap,rosterCount,overCap,penCost,buildPen,roleOf,roleInfo,expAway,expeditionBlock,startExpedition,teamScale,tickExpeditions,
   legacyHeir,passLegacy,sellPrice,sellMat};

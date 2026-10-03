@@ -338,14 +338,31 @@
       "rank": {
        "type": "number"
       },
-      "tier2": {
-       "type": "number"
+      "stations": {
+       "type": "object",
+       "properties": {
+        "n": {
+         "type": "number"
+        },
+        "level": {
+         "type": "number"
+        },
+        "workers": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "n",
+        "level",
+        "workers"
+       ],
+       "additionalProperties": false
       }
      },
      "required": [
       "bosses",
       "rank",
-      "tier2"
+      "stations"
      ],
      "additionalProperties": false
     }

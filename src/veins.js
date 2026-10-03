@@ -9,7 +9,7 @@
      poison (the Sump)          poison pools; creatures caught here carry extra mutations
    Numbers live in src/data/bloom.json. */
 import {BLOOM as B,TYPES,GUNS,SPECIES} from './content.js';
-import {S,secTier} from './state.js';
+import {S} from './state.js';
 import {rand} from './rng.js';
 import {dist,ri} from './util.js';
 import {R,RH,RW,TS,bagAdd,descend,float,gunOfTier,hurtComp,hurtPlayer,msg,partyCreatures,roomAt,spawnFoe,spawnPos,wildEnemy} from './raid.js';
@@ -23,6 +23,7 @@ import {gateBlockText} from './balance.js';
 import {gateBlocked} from './playtest.js';
 import {mutateGenome} from './genetics.js';
 import {sfx} from './audio.js';
+import {hideoutFx} from './perks.js';
 
 const EXITS=['stairs','gate','rift','cliff','boss','portal'];
 const TW=B.TWISTS,LR=B.LAYOUT_RULES,EV=B.EVENTS.list;
@@ -117,7 +118,7 @@ function twistUpdate(dt){
     }
   }
   // Poison pools (the Sump), unless the Apothecary has reached tier 5.
-  if(hasTwist('poison')&&r&&r.pools&&secTier('apothecary')<5){for(const q of r.pools)if(dist(q,p)<TW.poison.radius){hurtPlayer(TW.poison.dps*dt);break}}
+  if(hasTwist('poison')&&r&&r.pools&&!hideoutFx().poisonImmune){for(const q of r.pools)if(dist(q,p)<TW.poison.radius){hurtPlayer(TW.poison.dps*dt);break}}
   // Lingering hazards: burning ground.
   if(R.hazards){for(const h of R.hazards){h.t-=dt;if(dist(h,p)<h.r)hurtPlayer(h.dps*dt)}R.hazards=R.hazards.filter(h=>h.t>0)}
   // Water rises in every room you've entered.

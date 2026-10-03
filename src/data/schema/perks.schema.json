@@ -1,0 +1,904 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$comment": "The shape of src/data/perks.json. Started by scripts/make-schemas.js; checked by tests/data.test.js.",
+ "type": "object",
+ "properties": {
+  "SCALE": {
+   "type": "object",
+   "properties": {
+    "perStage": {
+     "type": "number"
+    },
+    "bond3": {
+     "type": "number"
+    },
+    "bond5": {
+     "type": "number"
+    },
+    "hybrid": {
+     "type": "number"
+    },
+    "keepCoinCap": {
+     "type": "number"
+    },
+    "rootOnce": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "perStage",
+    "bond3",
+    "bond5",
+    "hybrid",
+    "keepCoinCap",
+    "rootOnce"
+   ],
+   "additionalProperties": false
+  },
+  "BUILDINGS": {
+   "type": "object",
+   "properties": {
+    "cost": {
+     "type": "array",
+     "items": {
+      "type": [
+       "null",
+       "object"
+      ],
+      "properties": {
+       "coin": {
+        "type": "number"
+       },
+       "ore": {
+        "type": "number"
+       },
+       "rank": {
+        "type": "number"
+       },
+       "ingot": {
+        "type": "number"
+       },
+       "glass": {
+        "type": "number"
+       },
+       "cloth": {
+        "type": "number"
+       }
+      },
+      "additionalProperties": false
+     }
+    },
+    "levels": {
+     "type": "object",
+     "properties": {
+      "forge": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "garden": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "spring": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "roost": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "vault": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "nursery": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "training": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "warroom": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "apothecary": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     "required": [
+      "forge",
+      "garden",
+      "spring",
+      "roost",
+      "vault",
+      "nursery",
+      "training",
+      "warroom",
+      "apothecary"
+     ],
+     "additionalProperties": false
+    },
+    "springHeal": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "springRest": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "vaultCoin": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "trainingXp": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "eggCap": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hatchDays": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "hybridOdds": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "craftTier": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     }
+    },
+    "gildedLevel": {
+     "type": "number"
+    },
+    "wildLevel": {
+     "type": "number"
+    },
+    "venomWildLevel": {
+     "type": "number"
+    },
+    "workers": {
+     "type": "object",
+     "properties": {
+      "needed": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "needed"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "cost",
+    "levels",
+    "springHeal",
+    "springRest",
+    "vaultCoin",
+    "trainingXp",
+    "eggCap",
+    "hatchDays",
+    "hybridOdds",
+    "craftTier",
+    "gildedLevel",
+    "wildLevel",
+    "venomWildLevel",
+    "workers"
+   ],
+   "additionalProperties": false
+  },
+  "LINES": {
+   "type": "object",
+   "properties": {
+    "cindlet": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "pyrrox": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "magmaul": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "puffcap": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "shroomite": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "mycelisk": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "dewdrip": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "coralisk": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "tidewyrm": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "chirrup": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "vesperbat": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "umbrowl": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "zephling": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "kestrix": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "stormwing": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "shardling": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "prismoth": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "geodon": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "pebblet": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "bastion": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "monolord": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "toxlet": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "fangmire": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "hydravine": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "glimmet": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "halowing": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "solaryx": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "cindlet",
+    "pyrrox",
+    "magmaul",
+    "puffcap",
+    "shroomite",
+    "mycelisk",
+    "dewdrip",
+    "coralisk",
+    "tidewyrm",
+    "chirrup",
+    "vesperbat",
+    "umbrowl",
+    "zephling",
+    "kestrix",
+    "stormwing",
+    "shardling",
+    "prismoth",
+    "geodon",
+    "pebblet",
+    "bastion",
+    "monolord",
+    "toxlet",
+    "fangmire",
+    "hydravine",
+    "glimmet",
+    "halowing",
+    "solaryx"
+   ],
+   "additionalProperties": false
+  },
+  "HYBRIDS": {
+   "type": "object",
+   "properties": {
+    "blazewing": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "bogbloom": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "resonyx": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "forgeheart": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "squallfin": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "duskcap": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "gemguard": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "steamfin": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "kilnspark": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "mossguard": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "deepsinger": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "glasswing": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "wailwind": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "blightcap": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "mirefang": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "dawnsong": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "prismheart": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "eclipsar": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "blazewing",
+    "bogbloom",
+    "resonyx",
+    "forgeheart",
+    "squallfin",
+    "duskcap",
+    "gemguard",
+    "steamfin",
+    "kilnspark",
+    "mossguard",
+    "deepsinger",
+    "glasswing",
+    "wailwind",
+    "blightcap",
+    "mirefang",
+    "dawnsong",
+    "prismheart",
+    "eclipsar"
+   ],
+   "additionalProperties": false
+  },
+  "PERSONALITY": {
+   "type": "object",
+   "properties": {
+    "brave": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "timid": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "greedy": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "curious": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "loyal": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "fierce": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "calm": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "playful": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   },
+   "required": [
+    "brave",
+    "timid",
+    "greedy",
+    "curious",
+    "loyal",
+    "fierce",
+    "calm",
+    "playful"
+   ],
+   "additionalProperties": false
+  },
+  "EARNED": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "days": {
+      "type": "number"
+     },
+     "extracts": {
+      "type": "number"
+     },
+     "nearDeaths": {
+      "type": "number"
+     },
+     "title": {
+      "type": "string"
+     },
+     "maxed": {
+      "type": "number"
+     },
+     "within": {
+      "type": "number"
+     },
+     "clearOff": {
+      "type": "number"
+     }
+    },
+    "additionalProperties": false
+   }
+  },
+  "PERKS": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "desc": {
+      "type": "string"
+     },
+     "at": {
+      "type": "string"
+     },
+     "st": {
+      "type": [
+       "string",
+       "array"
+      ],
+      "items": {
+       "type": "string"
+      }
+     },
+     "fx": {
+      "type": "object",
+      "properties": {
+       "out": {
+        "type": "number"
+       },
+       "tire": {
+        "type": "number"
+       },
+       "scrapOre": {
+        "type": "number"
+       },
+       "soloOut": {
+        "type": "number"
+       },
+       "crewTire": {
+        "type": "number"
+       },
+       "settle": {
+        "type": "object",
+        "properties": {
+         "days": {
+          "type": "number"
+         },
+         "out": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "days",
+         "out"
+        ],
+        "additionalProperties": false
+       },
+       "dmg": {
+        "type": "number"
+       },
+       "make": {
+        "type": "object",
+        "properties": {
+         "food": {
+          "type": "number"
+         },
+         "serum": {
+          "type": "number"
+         }
+        },
+        "additionalProperties": false
+       },
+       "food": {
+        "type": "number"
+       },
+       "allOut": {
+        "type": "number"
+       },
+       "refuse": {
+        "type": "boolean"
+       },
+       "heal": {
+        "type": "number"
+       },
+       "hp": {
+        "type": "number"
+       },
+       "clashLine": {
+        "type": "boolean"
+       },
+       "reveal": {
+        "type": "string"
+       },
+       "crewOut": {
+        "type": "number"
+       },
+       "lowBond": {
+        "type": "object",
+        "properties": {
+         "below": {
+          "type": "number"
+         },
+         "out": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "below",
+         "out"
+        ],
+        "additionalProperties": false
+       },
+       "playerHp": {
+        "type": "number"
+       },
+       "skip": {
+        "type": "number"
+       },
+       "weaponDmg": {
+        "type": "number"
+       },
+       "clashPers": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "buff": {
+        "type": "number"
+       },
+       "keepCoin": {
+        "type": "number"
+       },
+       "taken": {
+        "type": "number"
+       },
+       "lowComfort": {
+        "type": "object",
+        "properties": {
+         "below": {
+          "type": "number"
+         },
+         "out": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "below",
+         "out"
+        ],
+        "additionalProperties": false
+       },
+       "keep": {
+        "type": "string"
+       },
+       "xp": {
+        "type": "number"
+       },
+       "hatchDays": {
+        "type": "number"
+       },
+       "move": {
+        "type": "number"
+       },
+       "eggSlots": {
+        "type": "number"
+       },
+       "mutation": {
+        "type": "number"
+       },
+       "noChem": {
+        "type": "boolean"
+       },
+       "poisonRounds": {
+        "type": "boolean"
+       },
+       "poisonImmune": {
+        "type": "boolean"
+       },
+       "bondAll": {
+        "type": "number"
+       },
+       "comfort": {
+        "type": "number"
+       },
+       "clashType": {
+        "type": "string"
+       },
+       "craftTier": {
+        "type": "number"
+       },
+       "compHp": {
+        "type": "number"
+       },
+       "autoRevive": {
+        "type": "number"
+       },
+       "expItems": {
+        "type": "number"
+       },
+       "wildMul": {
+        "type": "number"
+       },
+       "bossDmg": {
+        "type": "number"
+       },
+       "keepOre": {
+        "type": "boolean"
+       },
+       "hatchBond": {
+        "type": "number"
+       },
+       "hybrid": {
+        "type": "number"
+       },
+       "kxp": {
+        "type": "number"
+       },
+       "noFriend": {
+        "type": "number"
+       }
+      },
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "name",
+     "kind",
+     "desc",
+     "at",
+     "fx"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "SCALE",
+  "BUILDINGS",
+  "LINES",
+  "HYBRIDS",
+  "PERSONALITY",
+  "EARNED",
+  "PERKS"
+ ],
+ "additionalProperties": false
+}

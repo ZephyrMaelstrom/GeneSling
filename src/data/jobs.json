@@ -28,7 +28,7 @@
     "apothecary": {"verb":"brews","in":{"sap":1,"herbs":1},"out":{"serum":1},"rate":0.5}
   },
   "WORK": {"base":0.5,"perYield":0.1,"perLevel":0.02,"perStage":0.1,"match":1,"secondary":0.8,"offType":0.5,"worker":1.5,
-    "gardenTier":[1,1.1,1.2,1.35,1.5,1.7],"apothecaryTier":[1,1,1,1,1.25,1.25]},
+    "gardenTier":[1,1.1,1.2,1.35,1.5,1.7],"apothecaryTier": [1, 1, 1, 1.25]},
   "FATIGUE": {"work":12,"expedition":8,"rest":30,"maxPenalty":0.4,"tireless":0.5},
   "WORK_TRAITS": ["worker","thrifty","artisan","tireless"],
   "CHEMISTRY": [

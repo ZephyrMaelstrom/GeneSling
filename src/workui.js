@@ -5,7 +5,7 @@
    screen promises is what the day delivers. */
 import {esc} from './util.js';
 import {JOBS as J,SECTIONS,TYPES,TRAITS,GUNS,GUN_IDS,SCRAP_ORE,DONATE_PTS,ARMORY_TH,ARMORY_TIERS,PERS} from './content.js';
-import {S,armoryTier,byId,cageCap,canCraft,formName,secContribution,secTier,sectionUnlockedArmory,whereIs,addLog,bump,ui} from './state.js';
+import {S,armoryTier,byId,cageCap,canCraft,formName,forgeTier,sectionUnlockedArmory,whereIs,addLog,bump,ui} from './state.js';
 import {spr} from './sprites.js';
 import {simulateSupply} from './supply.js';
 import {decorRecipes} from './prideui.js';
@@ -15,6 +15,8 @@ import {onAct,onChange} from './actions.js';
 import {renderAll,renderMain,renderSecPanel,validGuns} from './ui.js';
 import {save} from './save.js';
 import {sfx} from './audio.js';
+import {hideoutFx,activeHere} from './perks.js';
+import {stationLevel} from './buildings.js';
 
 const f1=v=>(Math.round(v*10)/10).toString();
 const outName=k=>Object.keys(J.STATIONS[k].out).map(m=>matName(m).toLowerCase()).join(', ');
@@ -35,7 +37,7 @@ function memberRow(c,k){
   const prod=rep?`+${f1(rep.per(c)*main[1])} ${matName(main[0]).toLowerCase()}/day · `:'';
   const why=SECTIONS[k].type?(typeMatch(c,k)>=1?`${TYPES[SECTIONS[k].type].name} match`:typeMatch(c,k)>.7?'hybrid match':'off type, works at half rate'):'';
   return`<div class="member"><button class="sprlink" data-act="creature" data-id="${c.id}" data-list="station:${k}" aria-label="Open ${esc(c.name)}’s page">${spr(c,40)}</button><div style="min-width:0;flex:1"><div class="nm">${esc(c.name)}${f?' <span class="chip warn" title="Highest Focus: its work traits apply to the whole station">Foreman</span>':''}</div>
-    <small>${prod}+${Math.round(secContribution(c,k))} pts · Yield ${f1(c.genes.yld)}${why?' · '+why:''}</small>${fatBar(c)}</div>
+    <small>${prod}Yield ${f1(c.genes.yld)}${why?' · '+why:''}</small>${crewPerks(c,k)}${fatBar(c)}</div>
     <button class="btn small" data-act="unassign" data-id="${c.id}" aria-label="Remove ${esc(c.name)}">×</button></div>`;
 }
 // Candidate list: what each creature would add here, and what it leaves behind.
@@ -43,7 +45,7 @@ function candidateOption(c,k){
   const w=whereIs(c),here=J.STATIONS[k]?` · +${f1(addedOutput(c,k))}/day`:'';
   let leaves='';if(w.kind==='section'&&J.STATIONS[w.key])leaves=` · leaves ${SECTIONS[w.key].name} −${f1(stationReport(w.key).per(c)*Object.values(J.STATIONS[w.key].out)[0])} ${outName(w.key).split(',')[0]}`;
   else if(w.kind==='section')leaves=` · leaves ${SECTIONS[w.key].name}`;else if(w.kind==='loadout')leaves=' · leaves the raid loadout';
-  return`<option value="${c.id}">${esc(c.name)} · ${esc(formName(c))} Lv ${c.level} · +${Math.round(secContribution(c,k))} pts${here}${leaves}${c.fat>40?` · tired ${Math.round(c.fat)}%`:''}</option>`;
+  return`<option value="${c.id}">${esc(c.name)} · ${esc(formName(c))} Lv ${c.level}${here}${perkHint(c,k)}${leaves}${c.fat>40?` · tired ${Math.round(c.fat)}%`:''}</option>`;
 }
 function stationPanel(k){
   const rep=stationReport(k);if(!rep)return'';
@@ -60,9 +62,15 @@ function stationPanel(k){
     <p class="hint">Output grows with Yield, level and evolution; wrong-type workers make half. Working creatures tire (up to −${Math.round(J.FATIGUE.maxPenalty*100)}% output); a day off restores ${J.FATIGUE.rest}%.</p></div>`;
 }
 
+// The perks and flaws a worker brings to this station, green and red, with the numbers.
+const pkChip=x=>`<span class="pk ${x.kind==='flaw'?'bad':'good'}" title="${esc(x.text)}">${esc(x.name)}${/ output$/.test(x.text)?' '+esc(x.text.replace(' output','')):''}</span>`;
+function crewPerks(c,k){const a=activeHere(c,k);return a.length?`<div class="pks">${a.map(pkChip).join('')}</div>`:''}
+// The same for a creature not yet posted here, for the posting list: names only.
+function perkHint(c,k){const a=activeHere(c,k);return a.length?' · '+a.map(x=>(x.kind==='flaw'?'−':'+')+x.name).join(', '):''}
+
 /* ---------- expeditions (Roost) ---------- */
 function expeditionPanel(ui){
-  const t=secTier('roost'),E=ui.exp;
+  const t=stationLevel('roost'),E=ui.exp;
   const pool=S.creatures.filter(c=>!expAway(c)).sort((a,b)=>b.level-a.level);
   const sel=i=>`<select id="exp-${i}" data-act="expsel" data-i="${i}" aria-label="Team member ${i+1}"><option value="">Choose</option>${pool.map(c=>`<option value="${c.id}" ${String(E.team[i])===String(c.id)?'selected':''}>${esc(c.name)} · ${TYPES[c.type].name} Lv ${c.level}${whereText(c)?' ('+whereText(c)+')':''}</option>`).join('')}</select>`;
   const dests=Object.entries(J.EXPEDITIONS).map(([k,D])=>`<label class="toggle"><input type="radio" name="expdest" data-act="expdest" data-k="${k}" ${E.dest===k?'checked':''}> <span><b style="font-family:var(--display)">${D.name}</b> · ${D.days} days<br><small class="status">${D.desc} Brings ${Object.keys(D.loot).map(m=>matName(m).toLowerCase()).join(', ')}${D.egg?`, ${Math.round(D.egg*100)}% egg`:''}. ${Math.round(D.injury*100)}% injury risk each, never deadly.</small></span></label>`).join('');
@@ -70,7 +78,7 @@ function expeditionPanel(ui){
   const team=ids.map(byId).filter(Boolean),k=team.length?teamScale(team):1;
   const away=S.expeditions.map(e=>`<li><b>${J.EXPEDITIONS[e.dest].name}</b>: ${e.team.map(byId).filter(Boolean).map(c=>esc(c.name)).join(', ')} · back in ${e.days} day${e.days===1?'':'s'}</li>`).join('');
   return`<h3>Expeditions</h3>
-    ${t<1?'<p class="status">The Roost needs tier 1 to send expeditions.</p>':`<p class="hint">Send a team of ${J.EXPEDITION_TEAM} on an offscreen trip. They can’t work, raid or breed until they return. Higher levels and Swift bring more back.</p>
+    ${t<1?'<p class="status">Post a creature at the Roost to send expeditions.</p>':`<p class="hint">Send a team of ${J.EXPEDITION_TEAM} on an offscreen trip. They can’t work, raid or breed until they return. Higher levels and Swift bring more back.</p>
     <div class="choose-list">${dests}</div>
     <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))">${[0,1,2].map(sel).join('')}</div>
     <div class="row"><button class="btn primary" data-act="expgo" ${block?'disabled':''}>Send the team</button><span class="status">${block||`Haul ×${f1(k)} from this team.`}</span></div>`}
@@ -92,7 +100,7 @@ const oddsBar=o=>`<div class="qodds" title="Quality odds">${o.map((p,i)=>p?`<i c
 const qChip=it=>`<span class="chip q q${it.q}">${QN[it.q]}</span>`;
 function durBar(it){return`<div class="bar dur" title="Durability ${it.dur}/${it.max}"><i style="width:${it.dur/it.max*100}%"></i></div>`}
 function workshopView(ui){
-  const ft=secTier('forge'),at=armoryTier(),un=sectionUnlockedArmory(),need=[0,1,2,4,5];
+  const ft=stationLevel('forge'),mt=forgeTier(),at=armoryTier(),un=sectionUnlockedArmory(),need=[0,1,2,4,5];
   const mats=Object.keys(J.MATERIALS).map(m=>`<div class="matrow"><span><b>${matName(m)}</b> <small>${esc(J.MATERIALS[m].desc)}</small></span><span class="num">${amt(m)}</span>
     <span class="row" style="gap:4px"><button class="btn small" data-act="mktrade" data-k="${m}">Trade on the Exchange</button></span></div>`).join('');
   const comp=Object.entries(J.RECIPES).filter(([,R])=>R.kind==='component').map(([k,R])=>`<div class="recipe"><div class="row" style="justify-content:space-between"><b>${R.name}</b><small>made ${S.mastery[k]||0}×</small></div>
@@ -105,7 +113,7 @@ function workshopView(ui){
   const guns=GUN_IDS.filter(k=>GUNS[k].tier>=1&&S.blueprints[k]).map(k=>{
     const g=GUNS[k],known=!!S.blueprints[k],c=weaponCost(k),ok=canCraft(k);
     return`<div class="recipe ${known?'':'unknown'}"><div class="row" style="justify-content:space-between"><b>${known?g.name:'Unknown blueprint'}</b><span class="chip tier t${g.tier}">T${g.tier}</span></div>
-      ${known?`<small>${have(c)}</small>${oddsBar(qualityOdds('gun:'+k,'forge'))}<button class="btn small" data-act="forge" data-k="${k}" ${ok&&canPay(c)?'':'disabled'}>${ok?'Forge':`Needs Forge T${need[g.tier]}`}</button>`:'<small>Bring this weapon home from a raid to learn it.</small>'}</div>`}).join('');
+      ${known?`<small>${have(c)}</small>${oddsBar(qualityOdds('gun:'+k,'forge'))}<button class="btn small" data-act="forge" data-k="${k}" ${ok&&canPay(c)?'':'disabled'}>${ok?'Forge':ft?`Needs Forge level ${need[g.tier]}`:'Post a worker at the Forge'}</button>`:'<small>Bring this weapon home from a raid to learn it.</small>'}</div>`}).join('');
   const prints=S.prints.map((id,i)=>`<div class="invrow"><span><b>Print: ${GUNS[id].name}</b> <small>single use · no blueprint or Forge tier needed · +${J.QUALITY.printBonus} quality</small></span>
     <button class="btn small" data-act="forgeprint" data-i="${i}" ${canPay(weaponCost(id))?'':'disabled'}>Forge · ${costText(weaponCost(id))}</button></div>`).join('');
   const gear=S.items.slice().sort((a,b)=>b.q-a.q).map(it=>{const rc=repairCost(it),arm=ui.scrapArm===it.uid,eq=S.loadout.guns.includes(it.uid)||S.loadout.satchel===it.uid;
@@ -113,14 +121,14 @@ function workshopView(ui){
     return`<div class="invrow gear"><span style="min-width:0;flex:1"><b>${qChip(it)} ${itemName(it).replace(QN[it.q]+' ','')}</b>${eq?' <small style="color:var(--gold)">equipped</small>':''}${it.dur?'':' <small style="color:var(--rose)">broken</small>'}<br>
       <small>${esc(makerText(it))} · ${it.dur}/${it.max} durability${it.kind==='gun'?` · ×${J.QUALITY.dmg[it.q]} damage`:` · +${J.QUALITY.satchelSlots[it.q]} bag slots`}</small>${durBar(it)}</span>
       <span class="row" style="gap:4px">${rc?`<button class="btn small" data-act="repair" data-uid="${it.uid}" ${canPay(rc)?'':'disabled'}>Repair · ${costText(rc)}</button>`:''}
-      ${it.kind==='gun'?`<button class="btn small ${arm?'danger':''}" data-act="scrapitem" data-uid="${it.uid}">${arm?'Confirm scrap':'Scrap · +'+Math.round(SCRAP_ORE[tier]*(ft>=3?1.5:1))+' ore'}</button>
+      ${it.kind==='gun'?`<button class="btn small ${arm?'danger':''}" data-act="scrapitem" data-uid="${it.uid}">${arm?'Confirm scrap':'Scrap · +'+Math.round(SCRAP_ORE[tier]*(1+hideoutFx().scrapOre))+' ore'}</button>
       <button class="btn small" data-act="donateitem" data-uid="${it.uid}" ${un?'':'disabled'}>Donate · +${DONATE_PTS[tier]}</button>`:''}
       ${it.kind==='gun'&&it.q>=4?`<button class="btn small" data-act="displayweapon" data-uid="${it.uid}">Put on display</button>`:''}</span></div>`}).join('');
   return`<div class="cols"><section class="card"><h2>Workshop</h2>
     <p class="hint">Stations turn raw finds into refined goods each day. Here you turn those into parts, then into gear that carries your maker’s mark. Quality comes from the station’s Knack, its foreman and how often you’ve made the recipe.</p>
     <h3>Components</h3><div class="recipes">${comp}</div>
     <h3>Cages and satchels</h3><div class="recipes">${fin}</div>
-    <h3>Weapons · Forge T${ft}</h3><div class="recipes">${guns}</div>${unknown?`<p class="status">${unknown} more blueprint${unknown>1?'s':''} to find. Bring a weapon home from a raid to learn it.</p>`:''}
+    <h3>Weapons · Forge level ${ft}${mt?` · up to tier ${mt}`:''}</h3><div class="recipes">${guns}</div>${unknown?`<p class="status">${unknown} more blueprint${unknown>1?'s':''} to find. Bring a weapon home from a raid to learn it.</p>`:''}
     ${prints?`<h3>Prints</h3>${prints}`:''}
     <h3>Decor</h3><p class="hint">Place decor in the Hideout’s build mode. It raises Comfort, which cuts fatigue and speeds bond, up to +20%.</p><div class="recipes">${decorRecipes()}</div>
     ${mapRecipes(ui)}
@@ -190,7 +198,7 @@ onAct('make',d=>{const got=craft(d.k);if(got){addLog(`Workshop: made ${got}.`);s
 onAct(['forge','forgeprint'],(d,a)=>{const id=a==='forge'?d.k:S.prints[+d.i];const it=craftWeapon(id,a==='forgeprint'?+d.i:null);if(it){addLog(`The Forge made a ${itemName(it)}. ${makerText(it)}.`);sfx('heavy');save();renderAll()}});
 onAct('repair',d=>{if(repair(+d.uid)){sfx('heavy');save();renderAll()}});
 onAct('scrapitem',(d,a)=>{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun')return;if(ui.scrapArm!==it.uid){ui.scrapArm=it.uid;renderMain();return}ui.scrapArm=null;
-      const ore=Math.round(SCRAP_ORE[GUNS[it.id].tier]*(secTier('forge')>=3?1.5:1));scrapItem(it);S.ore+=ore;S.blueprints[it.id]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${itemName(it)} for ${ore} ore.`);sfx('heavy');save();renderAll()});
+      const ore=Math.round(SCRAP_ORE[GUNS[it.id].tier]*(1+hideoutFx().scrapOre));scrapItem(it);S.ore+=ore;S.blueprints[it.id]=1;bump('scrapped');validGuns();addLog(`Scrapped a ${itemName(it)} for ${ore} ore.`);sfx('heavy');save();renderAll()});
 onAct('donateitem',(d,a)=>{const it=itemByUid(+d.uid);if(!it||it.kind!=='gun'||!sectionUnlockedArmory())return;const before=armoryTier(),pts=DONATE_PTS[GUNS[it.id].tier];scrapItem(it);S.armory+=pts;S.blueprints[it.id]=1;validGuns();
       addLog(`Donated a ${itemName(it)} to the Armory (+${pts} pts).${armoryTier()>before?' Armory tier '+armoryTier()+' reached: '+ARMORY_TIERS[armoryTier()-1]+'.':''}`);save();renderAll()});
 onAct('buildpen',d=>{if(buildPen()){sfx('level');save();renderAll()}});

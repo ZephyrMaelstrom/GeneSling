@@ -12,7 +12,7 @@ before(async () => {
   await page.evaluate(() => {
     closeModal();
     // A creature of a given species, posted nowhere, with exact genes.
-    window.mkc = (sp, o = {}) => { const c = makeCreature(sp, 'bred', o.level || 10, {proven: true, genome: genomeFrom(o.genes || {}, o.traits || []), pers: o.pers || 'calm', sex: o.sex}); c.genome.pat = [0, 0]; express(c); S.creatures.push(c); return c; };
+    window.mkc = (sp, o = {}) => { const c = makeCreature(sp, 'bred', o.level || 10, {proven: true, genome: genomeFrom(o.genes || {}, o.traits || []), pers: o.pers || 'brave', sex: o.sex}); c.genome.pat = [0, 0]; express(c); S.creatures.push(c); return c; };
     window.post = (k, ...cs) => cs.forEach(c => { unplace(c); S.sections[k].ids.push(c.id); });
     window.clearStation = k => { S.sections[k].ids = []; S.sections[k].cap = 6; };
   });
@@ -23,11 +23,12 @@ test('station output comes from Yield, type match and level, and the day deliver
   const r = await page.evaluate(() => {
     clearStation('forge'); S.mats = {}; S.ore = 40; S.prod = {};
     const a = mkc('pyrrox', {genes: {yld: 9}}), b = mkc('pyrrox', {genes: {yld: 3}}), off = mkc('puffcap', {genes: {yld: 9}});
-    const ua = workUnit(a, 'forge'), ub = workUnit(b, 'forge'), uoff = workUnit(off, 'forge');
+    const ua = workUnit(a, 'forge'), ub = workUnit(b, 'forge'), uoff = workUnit(off, 'forge'), perkRatio = workMods(off, 'forge').out / workMods(a, 'forge').out;
     post('forge', a, b);
     const rep = stationReport('forge'), before = amt('ingot'), ore = S.ore;
     processDay();
-    return {ua, ub, ratioOff: uoff / ua, batches: rep.batches, made: amt('ingot') - before, oreUsed: ore - S.ore, sum: rep.per(a) + rep.per(b)};
+    // Type match halves an off-type worker's output; the two species' own perks are factored out.
+    return {ua, ub, ratioOff: uoff / ua / perkRatio, batches: rep.batches, made: amt('ingot') - before, oreUsed: ore - S.ore, sum: rep.per(a) + rep.per(b)};
   });
   assert.ok(r.ua > r.ub, 'higher Yield works faster');
   assert.equal(Math.round(r.ratioOff * 100) / 100, 0.5, 'an off-type worker makes half');
@@ -54,7 +55,7 @@ test('fatigue builds while working, rests off, and costs up to 40% output', asyn
 test('the foreman (highest Focus) shares its work traits with the whole crew', async () => {
   const r = await page.evaluate(() => {
     clearStation('forge');
-    const boss = mkc('magmaul', {genes: {foc: 10}, traits: ['worker']}), crew = mkc('pyrrox', {genes: {foc: 4}});
+    const boss = mkc('magmaul', {genes: {foc: 10}, traits: ['worker']}), crew = mkc('cindlet', {genes: {foc: 4}});
     const alone = workUnit(crew, 'forge');
     post('forge', boss, crew);
     return {foreman: foremanOf('forge') === boss, ratio: workUnit(crew, 'forge') / alone};
@@ -213,7 +214,7 @@ test('expeditions take a team away and bring back loot', async () => {
     clearStation('roost'); post('roost', mkc('chirrup', {level: 30}), mkc('vesperbat', {level: 30}));
     const team = [mkc('dewdrip'), mkc('coralisk'), mkc('pebblet')];
     post('forge', team[0]);
-    const block = expeditionBlock('galleries', team.map(c => c.id)), tier = secTier('roost');
+    const block = expeditionBlock('galleries', team.map(c => c.id)), tier = stationLevel('roost');
     const ok = startExpedition('galleries', team.map(c => c.id));
     const away = team.every(c => whereIs(c).kind === 'expedition'), inForge = S.sections.forge.ids.includes(team[0].id);
     const hide = amt('hide');

@@ -76,7 +76,7 @@
   "DEMO": {
     "maxFloor": 3,
     "maxRank": 10,
-    "goals": {"bosses": 1, "rank": 10, "tier2": 3}
+    "goals": {"bosses": 1, "rank": 10, "stations": {"n": 3, "level": 2, "workers": 2}}
   },
   "STATS": {
     "collection": "stats",

@@ -8,14 +8,15 @@
        is picked so its combination (each floor's layout, and its event) doesn't repeat any of the
        last VARIETY.memory raids.
    Numbers live in src/data/bloom.json. The runtime side of twists and events is in veins.js. */
-import {BLOOM as B,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS,speciesOf} from './content.js';
+import {BLOOM as B,BOSSES,BOSS_IDS,GENES,SPECIES,TYPES,TYPE_IDS,speciesOf,PERKS_DATA} from './content.js';
 import {mixSeed,newSeed,rand,withSeed} from './rng.js';
 import {pick,ri,wpick} from './util.js';
-import {S,addKeeperXp,addLog,secTier} from './state.js';
+import {S,addKeeperXp,addLog} from './state.js';
 import {GRADE_LOCI} from './genetics.js';
 import {canPay,costText,give,pay} from './jobs.js';
 import {seasonTypeMul,tierTwists,unboundBoss} from './endgame.js';
 import {on} from './events.js';
+import {stationLevel} from './buildings.js';
 
 const VEIN_IDS=Object.keys(B.VEINS),DEEP=B.VEIN_ORDER,LAYOUT_IDS=Object.keys(B.LAYOUTS),EVENT_IDS=Object.keys(B.EVENTS.list);
 const veinIdx=v=>VEIN_IDS.indexOf(v);
@@ -77,7 +78,7 @@ function pickBoss(vein,tier){return vein==='unbound'?unboundBoss(tier||1):pick(B
 function wildTypeWeight(t,floor,vein,lair,mapMul){
   const T=TYPES[t],rareMul=(floor===1?1:floor===2?2:floor>=4?3.5:3)*(lair?2:1);
   let w=T.weight*(T.tier===3?rareMul:T.tier===4?(floor>=3?2:1):1);
-  if(t==='venom')w=vein==='sump'?0:secTier('apothecary')>=2?.8:0;
+  if(t==='venom')w=vein==='sump'?0:stationLevel('apothecary')>=PERKS_DATA.BUILDINGS.venomWildLevel?.8:0;
   // A vein's signature types: at least an average type's weight, multiplied.
   const vw=(B.VEINS[vein].types||{})[t];if(vw)w=Math.max(w,12)*vw*(mapMul||1);
   return w*seasonTypeMul(t);
@@ -132,7 +133,7 @@ on('raid:end',r=>{
 
 /* ---------- vein maps (crafted at the Roost) ---------- */
 const MK=B.MAPS.kinds;
-const mapBlock=(kind)=>secTier('roost')<B.MAPS.needRoost?`Needs the Roost at tier ${B.MAPS.needRoost}`:!canPay(MK[kind].cost)?`Needs ${costText(MK[kind].cost)}`:'';
+const mapBlock=(kind)=>stationLevel('roost')<B.MAPS.needRoost?'Needs someone posted at the Roost':!canPay(MK[kind].cost)?`Needs ${costText(MK[kind].cost)}`:'';
 function craftMap(kind,vein){
   if(!MK[kind]||!DEEP.includes(vein)||mapBlock(kind))return null;
   pay(MK[kind].cost);const b=bloomState(),m={id:b.nextMap++,kind,vein};b.maps.push(m);
