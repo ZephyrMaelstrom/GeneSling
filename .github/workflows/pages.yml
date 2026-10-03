@@ -1,5 +1,5 @@
 # Build the game and publish dist/ to GitHub Pages on every push to main:
-# the full game at /GeneSling/ and the demo at /GeneSling/demo/.
+# the full game at /GeneSling/, the demo at /GeneSling/demo/ and GeneSlingVR at /GeneSling/vr/.
 # One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
 name: Deploy to Pages
 on:
@@ -26,6 +26,12 @@ jobs:
         env:
           PUPPETEER_SKIP_DOWNLOAD: 'true'
       - run: npm run build
+      # GeneSlingVR has its own build in vr/; its page goes to dist/vr/.
+      - run: npm ci && npm run build
+        working-directory: vr
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+      - run: mkdir -p dist/vr && cp vr/dist/index.html dist/vr/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

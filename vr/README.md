@@ -76,6 +76,6 @@ Tests need Chrome; set `CHROME=/path/to/chrome` if it isn't at the default path.
 | `src/input.js` | Flat-screen and WebXR input, the sling hand rig, comfort options |
 | `src/main.js` | Boot, renderer, XR session and the frame loop |
 
-## Deploying next to GeneSling
+## Deploying
 
-`vr/` has its own build, so the Pages workflow needs one extra step: run `npm ci && npm run build` inside `vr/` (set `PUPPETEER_SKIP_DOWNLOAD=1`), then copy `vr/dist/index.html` to `dist/vr/index.html` before uploading `dist`. The game is then at `/GeneSling/vr/`. WebXR needs HTTPS, which GitHub Pages provides.
+The repo's Pages workflow builds `vr/` and publishes it at https://zephyrmaelstrom.github.io/GeneSling/vr/ on every push to `main`. WebXR needs HTTPS, which GitHub Pages provides.
